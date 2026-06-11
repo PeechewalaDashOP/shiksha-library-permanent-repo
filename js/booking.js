@@ -129,6 +129,30 @@ async function handleBookingSubmit(e) {
   if (!studentData.gender) { showFormError("Please select gender."); resetBtn(btn); return; }
   if (studentData.aadhar.length !== 12) { showFormError("Please enter valid 12-digit Aadhar number."); resetBtn(btn); return; }
 
+  const payMode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
+
+  if (payMode === "cash") {
+    try {
+      const res  = await fetch("/.netlify/functions/cash-registration", {
+        method : "POST",
+        headers: { "Content-Type": "application/json" },
+        body   : JSON.stringify({
+          studentData, planId: currentPlan.planId, amount: currentPlan.finalPrice,
+          fixedSeat: currentPlan.fixedSeat, locker: currentPlan.locker,
+          startDate: currentPlan.startDate, endDate: currentPlan.endDate,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeBookingModal();
+        showCashSuccessModal(studentData);
+      } else throw new Error(data.error || "Registration failed");
+    } catch(ex) {
+      showFormError(ex.message || "Something went wrong.");
+    } finally { resetBtn(btn); }
+    return;
+  }
+
   try {
     const orderRes  = await fetch("/.netlify/functions/create-order", {
       method : "POST",
@@ -159,6 +183,19 @@ async function handleBookingSubmit(e) {
 }
 
 function showFormError(msg) { document.getElementById("sl-form-error").textContent = msg; }
+
+function updatePayBtn() {
+  const mode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value;
+  const btn  = document.getElementById("sl-submit-btn");
+  const price = "₹" + (currentPlan.finalPrice || 0).toLocaleString();
+  if (mode === "cash") {
+    btn.style.background = "#16a34a";
+    btn.innerHTML = 'Register & Pay Cash at Library <span id="sl-submit-price">' + price + '</span>';
+  } else {
+    btn.style.background = "#f59e0b";
+    btn.innerHTML = 'Proceed to Pay <span id="sl-submit-price">' + price + '</span>';
+  }
+}
 function resetBtn(btn) {
   btn.disabled = false;
   btn.innerHTML = 'Proceed to Pay <span id="sl-submit-price">₹' + (currentPlan.finalPrice || 0).toLocaleString() + '</span>';
@@ -196,6 +233,17 @@ function showSuccessModal(studentData, data) {
   document.getElementById("sl-success-pwd").textContent    = data.isNewUser
     ? "Your password: " + studentData.phone + " (your phone number)"
     : "Use your existing password to login.";
+  document.getElementById("sl-success-modal").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function showCashSuccessModal(studentData) {
+  document.getElementById("sl-success-name").textContent   = studentData.fullName;
+  document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
+  document.getElementById("sl-success-expiry").textContent = formatDate(currentPlan.endDate);
+  document.getElementById("sl-success-email").textContent  = studentData.email;
+  document.getElementById("sl-success-pwd").textContent    = "Your account password is your phone number. Please visit the library and pay ₹" + currentPlan.finalPrice + " in cash to activate your membership.";
+  document.getElementById("sl-stitle").textContent = "Registration Submitted!";
+  document.getElementById("sl-sicon").textContent = "✅";
   document.getElementById("sl-success-modal").style.display = "flex";
   document.body.style.overflow = "hidden";
 }
@@ -320,15 +368,26 @@ function getModalHTML() {
         </label>
         <p class="sl-err" id="sl-form-error"></p>
         <button type="submit" class="sl-submit" id="sl-submit-btn">Proceed to Pay <span id="sl-submit-price">₹0</span></button>
-        <p style="text-align:center;font-size:.76rem;color:#94a3b8;margin-top:.6rem">🔒 Secured by Razorpay · UPI, Cards, Net Banking accepted</p>
+        <div style="margin-top:1rem;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
+          <div style="background:#f8fafc;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#374151">Choose Payment Method</div>
+          <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid #f1f5f9">
+            <input type="radio" name="sl-pay-mode" value="online" checked onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
+            <span style="font-size:.9rem;color:#1e293b;font-weight:500">💳 Pay Online (UPI / Card / Net Banking)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer">
+            <input type="radio" name="sl-pay-mode" value="cash" onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
+            <span style="font-size:.9rem;color:#1e293b;font-weight:500">🏦 Pay at Library (Cash)</span>
+          </label>
+        </div>
+        <p style="text-align:center;font-size:.76rem;color:#94a3b8;margin-top:.6rem">🔒 Online payments secured by Razorpay</p>
       </form>
     </div>
   </div>
 
   <div class="sl-overlay" id="sl-success-modal">
     <div class="sl-sbox">
-      <div class="sl-sicon">🎉</div>
-      <h2 class="sl-stitle">Booking Confirmed!</h2>
+      <div class="sl-sicon" id="sl-sicon">🎉</div>
+      <h2 class="sl-stitle" id="sl-stitle">Booking Confirmed!</h2>
       <p class="sl-ssub">Welcome to Shiksha Library, <strong id="sl-success-name"></strong>!</p>
       <div class="sl-scard">
         <div class="sl-srow"><span class="sl-skey">Plan</span><span class="sl-sval" id="sl-success-plan"></span></div>
