@@ -7,110 +7,105 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Inter',sans-serif;background:#f8fafc;min-height:100vh;color:#1e293b}
-  header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-  .header-left{display:flex;align-items:center;gap:.75rem}
-  .header-left img{height:38px;border-radius:8px}
-  .header-left h1{font-size:1.1rem;font-weight:700}
-  .header-left p{font-size:.75rem;opacity:.7;margin-top:1px}
-  .logout-btn{background:#f59e0b;border:none;color:#fff;padding:.45rem 1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer}
-  .container{max-width:800px;margin:0 auto;padding:1.5rem 1rem}
-  .greeting{font-size:1.4rem;font-weight:800;margin-bottom:.25rem}
-  .greeting-sub{color:#64748b;font-size:.9rem;margin-bottom:1.5rem}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
-  .stat-card{background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-  .stat-icon{font-size:1.75rem;margin-bottom:.5rem}
-  .stat-val{font-size:1.5rem;font-weight:800;color:#1e293b}
-  .stat-label{font-size:.8rem;color:#64748b;margin-top:.15rem}
-  .card{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:1.25rem}
-  .card-title{font-size:1rem;font-weight:700;margin-bottom:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
-  .badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.75rem;font-weight:600}
-  .badge-active{background:#dcfce7;color:#15803d}
-  .badge-expired{background:#fee2e2;color:#dc2626}
-  .badge-prime{background:#fef3c7;color:#92400e}
-  .info-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
-  .info-row:last-child{border-bottom:none}
-  .info-key{color:#64748b}
-  .info-val{font-weight:600;text-align:right}
-  .progress-wrap{background:#e2e8f0;border-radius:999px;height:8px;margin-top:.75rem;overflow:hidden}
-  .progress-bar{background:linear-gradient(90deg,#f59e0b,#d97706);height:100%;border-radius:999px;transition:width .5s}
-  .progress-label{display:flex;justify-content:space-between;font-size:.78rem;color:#94a3b8;margin-top:.4rem}
-  .payment-row{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
-  .payment-row:last-child{border-bottom:none}
-  .payment-date{color:#64748b;font-size:.8rem}
-  .payment-amount{font-weight:700;color:#15803d}
-  .empty{text-align:center;padding:2rem;color:#94a3b8;font-size:.9rem}
-  .action-btn{display:inline-block;background:#f59e0b;color:#fff;padding:.6rem 1.25rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer}
-  .action-btn-outline{background:#fff;color:#f59e0b;border:2px solid #f59e0b}
-  .loader{text-align:center;padding:3rem;color:#94a3b8}
-  .spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 1rem}
-  @keyframes spin{to{transform:rotate(360deg)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;min-height:100vh;color:#1e293b}
+header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:.75rem}
+.header-left img{height:40px;border-radius:8px}
+.header-left h1{font-size:1.1rem;font-weight:700}
+.header-left p{font-size:.72rem;opacity:.7;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:1rem}
+.clock{font-size:.85rem;font-weight:600;color:#f59e0b;background:rgba(245,158,11,.15);padding:.4rem .85rem;border-radius:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.logout-btn{background:#f59e0b;border:none;color:#fff;padding:.45rem 1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.container{max-width:820px;margin:0 auto;padding:1.5rem 1rem}
+.greeting{font-size:1.5rem;font-weight:800;margin-bottom:.2rem}
+.greeting-sub{color:#64748b;font-size:.9rem;margin-bottom:1.5rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:.5rem}
+.stat-icon{font-size:1.6rem}
+.stat-val{font-size:1.4rem;font-weight:800;color:#1e293b}
+.stat-label{font-size:.78rem;color:#64748b;font-weight:500}
+.card{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:1.25rem}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .7rem;border-radius:999px;font-size:.75rem;font-weight:600}
+.badge-active{background:#dcfce7;color:#15803d}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-expired{background:#fee2e2;color:#dc2626}
+.badge-prime{background:#ede9fe;color:#6d28d9}
+.info-row{display:flex;justify-content:space-between;padding:.65rem 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
+.info-row:last-child{border-bottom:none}
+.info-key{color:#64748b;font-weight:500}
+.info-val{font-weight:600;text-align:right;max-width:60%}
+.progress-wrap{background:#e2e8f0;border-radius:999px;height:10px;margin-top:.9rem;overflow:hidden}
+.progress-bar{background:linear-gradient(90deg,#f59e0b,#d97706);height:100%;border-radius:999px;transition:width 1s ease}
+.progress-label{display:flex;justify-content:space-between;font-size:.75rem;color:#94a3b8;margin-top:.4rem}
+.membership-status-banner{border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;font-weight:600;font-size:.95rem}
+.banner-active{background:#f0fdf4;border:1.5px solid #86efac;color:#15803d}
+.banner-pending{background:#fffbeb;border:1.5px solid #fde68a;color:#92400e}
+.banner-expired{background:#fef2f2;border:1.5px solid #fca5a5;color:#dc2626}
+.payment-row{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid #f1f5f9;font-size:.88rem}
+.payment-row:last-child{border-bottom:none}
+.payment-date{color:#64748b;font-size:.78rem;margin-top:.15rem}
+.payment-amount{font-weight:700;color:#15803d}
+.action-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem}
+.btn-primary{display:inline-block;background:#f59e0b;color:#fff;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer}
+.btn-outline{background:#fff;color:#f59e0b;border:2px solid #f59e0b;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none}
+.loader{text-align:center;padding:3rem;color:#94a3b8}
+.spinner{width:38px;height:38px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:2rem;color:#94a3b8;font-size:.9rem}
 </style>
 </head>
 <body>
-
 <header>
   <div class="header-left">
     <img src="assets/shiksha-library-logo.jpeg" alt="Logo" onerror="this.style.display='none'">
     <div>
       <h1>Shiksha Library</h1>
-      <p>Student Dashboard</p>
+      <p>Student Dashboard · Kota, Rajasthan</p>
     </div>
   </div>
-  <button class="logout-btn" onclick="doLogout()">Logout</button>
+  <div class="header-right">
+    <div class="clock" id="live-clock">--:--:-- --</div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
 </header>
 
 <div class="container">
-  <div id="loading" class="loader">
-    <div class="spinner"></div>
-    Loading your account...
-  </div>
-
+  <div id="loading" class="loader"><div class="spinner"></div>Loading your account...</div>
   <div id="content" style="display:none">
     <p class="greeting">Hello, <span id="student-name">Student</span> 👋</p>
-    <p class="greeting-sub">Here's your membership overview at Shiksha Library, Kota.</p>
+    <p class="greeting-sub">Welcome to your Shiksha Library account.</p>
 
-    <div class="grid">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="stat-val" id="stat-plan">—</div>
-        <div class="stat-label">Current Plan</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📅</div>
-        <div class="stat-val" id="stat-days">—</div>
-        <div class="stat-label">Days Remaining</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">💳</div>
-        <div class="stat-val" id="stat-paid">—</div>
-        <div class="stat-label">Amount Paid</div>
-      </div>
+    <!-- STAT CARDS -->
+    <div class="grid3">
+      <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-val" id="stat-plan">—</div><div class="stat-label">Current Plan</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val" id="stat-days">—</div><div class="stat-label">Days Remaining</div></div>
+      <div class="stat-card"><div class="stat-icon">💳</div><div class="stat-val" id="stat-paid">—</div><div class="stat-label">Amount Paid</div></div>
     </div>
 
-    <!-- Active Membership -->
-    <div class="card" id="membership-card">
-      <div class="card-title">🎫 Active Membership</div>
-      <div id="membership-content"><div class="empty">No active membership found.</div></div>
+    <!-- MEMBERSHIP STATUS -->
+    <div class="card">
+      <div class="card-title">🎫 Membership Status</div>
+      <div id="membership-content"><div class="empty-state">No membership found.</div></div>
     </div>
 
-    <!-- Profile -->
+    <!-- PROFILE -->
     <div class="card">
       <div class="card-title">👤 My Profile</div>
       <div id="profile-content"></div>
     </div>
 
-    <!-- Payment History -->
+    <!-- PAYMENT HISTORY -->
     <div class="card">
       <div class="card-title">💰 Payment History</div>
-      <div id="payment-content"><div class="empty">No payments found.</div></div>
+      <div id="payment-content"><div class="empty-state">No payments found.</div></div>
     </div>
 
-    <!-- Actions -->
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem">
-      <a href="index.html#plans" class="action-btn">Renew / Upgrade Plan</a>
-      <a href="index.html" class="action-btn action-btn-outline">← Back to Website</a>
+    <!-- ACTIONS -->
+    <div class="action-row">
+      <a href="index.html#plans" class="btn-primary">🔄 Renew / Upgrade Plan</a>
+      <a href="index.html" class="btn-outline">← Back to Website</a>
     </div>
   </div>
 </div>
@@ -120,6 +115,22 @@ const SUPABASE_URL = "https://ojmxqckunnpthgftwbkq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// LIVE CLOCK
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2,"0");
+    const s = String(now.getSeconds()).padStart(2,"0");
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = String(h % 12 || 12).padStart(2,"0");
+    document.getElementById("live-clock").textContent = h12 + ":" + m + ":" + s + " " + ampm;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+startClock();
+
 async function doLogout() {
   await sb.auth.signOut();
   window.location.href = "login.html";
@@ -127,11 +138,10 @@ async function doLogout() {
 
 function fmt(d) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 }
 function daysLeft(endDate) {
-  const diff = new Date(endDate) - new Date();
-  return Math.max(0, Math.ceil(diff / 86400000));
+  return Math.max(0, Math.ceil((new Date(endDate) - new Date()) / 86400000));
 }
 function pct(start, end) {
   const total = new Date(end) - new Date(start);
@@ -143,66 +153,137 @@ async function loadDashboard() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = "login.html"; return; }
 
-  const email = session.user.email;
+  const { data: student } = await sb.from("students").select("*").eq("email", session.user.email).single();
+  if (!student) {
+    document.getElementById("loading").innerHTML = "<p style='text-align:center;color:#94a3b8;padding:2rem'>Profile not found. Please contact the library.</p>";
+    return;
+  }
 
-  // Fetch student
-  const { data: student } = await sb.from("students").select("*").eq("email", email).single();
-  if (!student) { document.getElementById("loading").innerHTML = "<p>Profile not found. Please contact library.</p>"; return; }
+  const { data: memberships } = await sb.from("memberships")
+    .select("*, plans(name,duration,shift,section)")
+    .eq("student_id", student.id)
+    .order("created_at", { ascending: false });
 
-  // Fetch memberships
-  const { data: memberships } = await sb.from("memberships").select("*, plans(name,duration,shift,section)").eq("student_id", student.id).order("created_at", { ascending: false });
-
-  // Fetch payments
-  const { data: payments } = await sb.from("payments").select("*").eq("student_id", student.id).order("created_at", { ascending: false });
+  const { data: payments } = await sb.from("payments")
+    .select("*")
+    .eq("student_id", student.id)
+    .order("created_at", { ascending: false });
 
   document.getElementById("loading").style.display = "none";
   document.getElementById("content").style.display = "block";
   document.getElementById("student-name").textContent = student.full_name.split(" ")[0];
 
-  // Active membership
-  const active = memberships?.find(m => m.status === "active" && new Date(m.end_date) >= new Date());
-  if (active) {
-    const days = daysLeft(active.end_date);
-    const used = pct(active.start_date, active.end_date);
-    document.getElementById("stat-plan").textContent = active.plans?.duration || "—";
-    document.getElementById("stat-days").textContent = days + "d";
-    document.getElementById("stat-paid").textContent = "₹" + active.amount_paid.toLocaleString();
+  // Find latest membership
+  const active  = memberships?.find(m => m.status === "active");
+  const pending = memberships?.find(m => m.status === "pending");
+  const latest  = active || pending || memberships?.[0];
 
-    document.getElementById("membership-content").innerHTML = `
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
-        <span class="badge badge-active">● Active</span>
-        ${active.plans?.section === "Prime" ? '<span class="badge badge-prime">⭐ Prime Section</span>' : ""}
-        ${active.fixed_seat ? '<span class="badge" style="background:#ede9fe;color:#6d28d9">📌 Fixed Seat</span>' : ""}
-      </div>
-      <div class="info-row"><span class="info-key">Plan</span><span class="info-val">${active.plans?.name || "—"}</span></div>
-      <div class="info-row"><span class="info-key">Duration</span><span class="info-val">${active.plans?.duration || "—"}</span></div>
-      <div class="info-row"><span class="info-key">Shift</span><span class="info-val">${active.plans?.shift || "—"}</span></div>
-      <div class="info-row"><span class="info-key">Start Date</span><span class="info-val">${fmt(active.start_date)}</span></div>
-      <div class="info-row"><span class="info-key">End Date</span><span class="info-val">${fmt(active.end_date)}</span></div>
-      <div class="info-row"><span class="info-key">Days Remaining</span><span class="info-val" style="color:${days < 5 ? "#dc2626" : "#15803d"}">${days} days</span></div>
-      <div class="progress-wrap"><div class="progress-bar" style="width:${used}%"></div></div>
-      <div class="progress-label"><span>Started ${fmt(active.start_date)}</span><span>Ends ${fmt(active.end_date)}</span></div>
-    `;
+  // Stat cards
+  if (latest) {
+    document.getElementById("stat-plan").textContent  = latest.plans?.duration || "—";
+    document.getElementById("stat-paid").textContent  = "₹" + latest.amount_paid.toLocaleString();
+    if (active) {
+      document.getElementById("stat-days").textContent = daysLeft(active.end_date) + "d";
+    } else {
+      document.getElementById("stat-days").textContent = "—";
+    }
   }
+
+  // Membership card
+  let membershipHTML = "";
+  if (!memberships?.length) {
+    membershipHTML = `<div class="empty-state">No membership found. <a href="index.html#plans" style="color:#f59e0b;font-weight:600">Book a plan →</a></div>`;
+  } else {
+    memberships.forEach(m => {
+      const isActive  = m.status === "active";
+      const isPending = m.status === "pending";
+      const isExpired = m.status === "expired" || (isActive && new Date(m.end_date) < new Date());
+      const isCash    = m.payment_mode === "cash";
+
+      let bannerClass = "banner-active";
+      let bannerIcon  = "✅";
+      let bannerMsg   = "";
+
+      if (isPending) {
+        bannerClass = "banner-pending";
+        bannerIcon  = "⏳";
+        bannerMsg   = "Payment Pending — Please visit the library and pay ₹" + m.amount_paid.toLocaleString() + " in cash to activate your membership.";
+      } else if (isExpired) {
+        bannerClass = "banner-expired";
+        bannerIcon  = "❌";
+        bannerMsg   = "Membership expired on " + fmt(m.end_date);
+      } else if (isActive) {
+        const days = daysLeft(m.end_date);
+        bannerMsg = "Active · " + days + " days remaining" + (isCash ? " · Cash Payment" : " · Online Payment");
+      }
+
+      const used = isActive ? pct(m.start_date, m.end_date) : 0;
+
+      membershipHTML += `
+        <div style="margin-bottom:1.25rem">
+          <div class="membership-status-banner ${bannerClass}">
+            <span style="font-size:1.3rem">${bannerIcon}</span>
+            <span>${bannerMsg}</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.9rem">
+            <span class="badge ${isActive?"badge-active":isPending?"badge-pending":"badge-expired"}">
+              ${isActive?"● Active":isPending?"● Pending Cash":isExpired?"● Expired":"● "+m.status}
+            </span>
+            ${m.plans?.section==="Prime"?'<span class="badge badge-prime">⭐ Premium Hall</span>':""}
+            ${m.fixed_seat?'<span class="badge" style="background:#ede9fe;color:#6d28d9">📌 Fixed Seat</span>':""}
+            ${m.locker?'<span class="badge" style="background:#e0f2fe;color:#0369a1">🔒 Locker</span>':""}
+            ${isCash?'<span class="badge" style="background:#f0fdf4;color:#15803d">🏦 Cash</span>':'<span class="badge" style="background:#ede9fe;color:#6d28d9">💳 Online</span>'}
+          </div>
+          <div class="info-row"><span class="info-key">Plan</span><span class="info-val">${m.plans?.name||"—"}</span></div>
+          <div class="info-row"><span class="info-key">Duration</span><span class="info-val">${m.plans?.duration||"—"}</span></div>
+          <div class="info-row"><span class="info-key">Shift</span><span class="info-val">${m.plans?.shift||"—"}</span></div>
+          <div class="info-row"><span class="info-key">Amount Paid</span><span class="info-val">₹${m.amount_paid.toLocaleString()}</span></div>
+          ${isActive ? `
+          <div class="info-row"><span class="info-key">Active Since</span><span class="info-val">${fmt(m.start_date)}</span></div>
+          <div class="info-row"><span class="info-key">Expires On</span><span class="info-val" style="color:${daysLeft(m.end_date)<5?"#dc2626":"#15803d"}">${fmt(m.end_date)}</span></div>
+          <div class="progress-wrap"><div class="progress-bar" style="width:${used}%"></div></div>
+          <div class="progress-label"><span>Started ${fmt(m.start_date)}</span><span>Ends ${fmt(m.end_date)}</span></div>
+          ` : isPending ? `
+          <div class="info-row"><span class="info-key">Registered On</span><span class="info-val">${fmt(m.created_at)}</span></div>
+          <div class="info-row"><span class="info-key">Status</span><span class="info-val" style="color:#92400e">Awaiting Cash Payment</span></div>
+          ` : `
+          <div class="info-row"><span class="info-key">Expired On</span><span class="info-val" style="color:#dc2626">${fmt(m.end_date)}</span></div>
+          `}
+        </div>
+        ${memberships.indexOf(m) < memberships.length-1 ? '<hr style="border:none;border-top:1px dashed #e2e8f0;margin:1rem 0">' : ""}
+      `;
+    });
+  }
+  document.getElementById("membership-content").innerHTML = membershipHTML;
 
   // Profile
   document.getElementById("profile-content").innerHTML = `
     <div class="info-row"><span class="info-key">Full Name</span><span class="info-val">${student.full_name}</span></div>
+    <div class="info-row"><span class="info-key">Father's Name</span><span class="info-val">${student.father_name||"—"}</span></div>
+    <div class="info-row"><span class="info-key">Gender</span><span class="info-val">${student.gender||"—"}</span></div>
     <div class="info-row"><span class="info-key">Email</span><span class="info-val">${student.email}</span></div>
     <div class="info-row"><span class="info-key">Phone</span><span class="info-val">${student.phone}</span></div>
-    <div class="info-row"><span class="info-key">Exam</span><span class="info-val">${student.exam_target || "—"}</span></div>
+    <div class="info-row"><span class="info-key">Aadhar</span><span class="info-val">XXXX XXXX ${(student.aadhar||"").slice(-4)||"—"}</span></div>
+    <div class="info-row"><span class="info-key">Address</span><span class="info-val">${student.address||"—"}</span></div>
+    <div class="info-row"><span class="info-key">Exam Target</span><span class="info-val">${student.exam_target||"—"}</span></div>
     <div class="info-row"><span class="info-key">Member Since</span><span class="info-val">${fmt(student.created_at)}</span></div>
   `;
 
   // Payments
   if (payments?.length) {
-    document.getElementById("payment-content").innerHTML = payments.slice(0,10).map(p => `
+    document.getElementById("payment-content").innerHTML = payments.map(p => `
       <div class="payment-row">
         <div>
-          <div style="font-weight:600">${p.plan_id?.replace(/-/g," ") || "Membership"}</div>
-          <div class="payment-date">${fmt(p.created_at)} · ${p.razorpay_payment_id || "—"}</div>
+          <div style="font-weight:600">${p.plan_id?.replace(/-/g," ")||"Membership"}</div>
+          <div class="payment-date">${fmt(p.created_at)}</div>
         </div>
-        <div class="payment-amount">₹${p.amount.toLocaleString()}</div>
+        <div style="text-align:right">
+          <div class="payment-amount">₹${p.amount.toLocaleString()}</div>
+          <div style="font-size:.75rem;margin-top:.15rem">
+            <span class="badge ${p.status==="success"?"badge-active":"badge-pending"}">${p.status==="success"?"Paid":p.status==="pending"?"Pending":"Failed"}</span>
+            <span class="badge" style="background:#f1f5f9;color:#64748b;margin-left:.3rem">${p.payment_mode==="cash"?"Cash":"Online"}</span>
+          </div>
+        </div>
       </div>
     `).join("");
   }
