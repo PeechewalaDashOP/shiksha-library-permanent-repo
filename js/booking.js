@@ -7,6 +7,19 @@ const SUPABASE_URL = "https://ojmxqckunnpthgftwbkq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
 
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Fetch live prices from Supabase on page load
+async function loadLivePrices() {
+  try {
+    const { data: plans } = await sbClient.from("plans").select("id, price");
+    if (plans?.length) {
+      plans.forEach(p => {
+        if (PLANS[p.id]) PLANS[p.id].price = p.price;
+      });
+    }
+  } catch(e) {
+    console.log("Using default prices:", e);
+  }
+}
 
 const PLANS = {
   "monthly-morning-regular":  { name: "Morning Shift",        duration: "1 Month",  shift: "Morning Regular Section – 1 Month",   price: 500  },
@@ -28,7 +41,8 @@ const PLANS = {
   "3month-fullday-prime":     { name: "Prime Full Day",       duration: "3 Months", shift: "Full Day Premium Hall – 3 Months",    price: 3300 },
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadLivePrices();
   document.body.insertAdjacentHTML("beforeend", getModalHTML());
   attachBookingListeners();
   checkLoggedInUser();
