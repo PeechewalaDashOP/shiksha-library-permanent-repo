@@ -1,2 +1,2 @@
-# shiksha library permanent repo
+# shiksha-library
 

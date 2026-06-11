@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account – Shiksha Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#f8fafc;min-height:100vh;color:#1e293b}
+  header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .header-left{display:flex;align-items:center;gap:.75rem}
+  .header-left img{height:38px;border-radius:8px}
+  .header-left h1{font-size:1.1rem;font-weight:700}
+  .header-left p{font-size:.75rem;opacity:.7;margin-top:1px}
+  .logout-btn{background:#f59e0b;border:none;color:#fff;padding:.45rem 1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer}
+  .container{max-width:800px;margin:0 auto;padding:1.5rem 1rem}
+  .greeting{font-size:1.4rem;font-weight:800;margin-bottom:.25rem}
+  .greeting-sub{color:#64748b;font-size:.9rem;margin-bottom:1.5rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .stat-card{background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .stat-icon{font-size:1.75rem;margin-bottom:.5rem}
+  .stat-val{font-size:1.5rem;font-weight:800;color:#1e293b}
+  .stat-label{font-size:.8rem;color:#64748b;margin-top:.15rem}
+  .card{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:1.25rem}
+  .card-title{font-size:1rem;font-weight:700;margin-bottom:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+  .badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.75rem;font-weight:600}
+  .badge-active{background:#dcfce7;color:#15803d}
+  .badge-expired{background:#fee2e2;color:#dc2626}
+  .badge-prime{background:#fef3c7;color:#92400e}
+  .info-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
+  .info-row:last-child{border-bottom:none}
+  .info-key{color:#64748b}
+  .info-val{font-weight:600;text-align:right}
+  .progress-wrap{background:#e2e8f0;border-radius:999px;height:8px;margin-top:.75rem;overflow:hidden}
+  .progress-bar{background:linear-gradient(90deg,#f59e0b,#d97706);height:100%;border-radius:999px;transition:width .5s}
+  .progress-label{display:flex;justify-content:space-between;font-size:.78rem;color:#94a3b8;margin-top:.4rem}
+  .payment-row{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
+  .payment-row:last-child{border-bottom:none}
+  .payment-date{color:#64748b;font-size:.8rem}
+  .payment-amount{font-weight:700;color:#15803d}
+  .empty{text-align:center;padding:2rem;color:#94a3b8;font-size:.9rem}
+  .action-btn{display:inline-block;background:#f59e0b;color:#fff;padding:.6rem 1.25rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer}
+  .action-btn-outline{background:#fff;color:#f59e0b;border:2px solid #f59e0b}
+  .loader{text-align:center;padding:3rem;color:#94a3b8}
+  .spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 1rem}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="assets/shiksha-library-logo.jpeg" alt="Logo" onerror="this.style.display='none'">
+    <div>
+      <h1>Shiksha Library</h1>
+      <p>Student Dashboard</p>
+    </div>
+  </div>
+  <button class="logout-btn" onclick="doLogout()">Logout</button>
+</header>
+
+<div class="container">
+  <div id="loading" class="loader">
+    <div class="spinner"></div>
+    Loading your account...
+  </div>
+
+  <div id="content" style="display:none">
+    <p class="greeting">Hello, <span id="student-name">Student</span> 👋</p>
+    <p class="greeting-sub">Here's your membership overview at Shiksha Library, Kota.</p>
+
+    <div class="grid">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-val" id="stat-plan">—</div>
+        <div class="stat-label">Current Plan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val" id="stat-days">—</div>
+        <div class="stat-label">Days Remaining</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💳</div>
+        <div class="stat-val" id="stat-paid">—</div>
+        <div class="stat-label">Amount Paid</div>
+      </div>
+    </div>
+
+    <!-- Active Membership -->
+    <div class="card" id="membership-card">
+      <div class="card-title">🎫 Active Membership</div>
+      <div id="membership-content"><div class="empty">No active membership found.</div></div>
+    </div>
+
+    <!-- Profile -->
+    <div class="card">
+      <div class="card-title">👤 My Profile</div>
+      <div id="profile-content"></div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card">
+      <div class="card-title">💰 Payment History</div>
+      <div id="payment-content"><div class="empty">No payments found.</div></div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem">
+      <a href="index.html#plans" class="action-btn">Renew / Upgrade Plan</a>
+      <a href="index.html" class="action-btn action-btn-outline">← Back to Website</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = "https://ojmxqckunnpthgftwbkq.supabase.co
+";
+const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS
+";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function doLogout() {
+  await sb.auth.signOut();
+  window.location.href = "login.html";
+}
+
+function fmt(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+}
+function daysLeft(endDate) {
+  const diff = new Date(endDate) - new Date();
+  return Math.max(0, Math.ceil(diff / 86400000));
+}
+function pct(start, end) {
+  const total = new Date(end) - new Date(start);
+  const elapsed = new Date() - new Date(start);
+  return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+}
+
+async function loadDashboard() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = "login.html"; return; }
+
+  const email = session.user.email;
+
+  // Fetch student
+  const { data: student } = await sb.from("students").select("*").eq("email", email).single();
+  if (!student) { document.getElementById("loading").innerHTML = "<p>Profile not found. Please contact library.</p>"; return; }
+
+  // Fetch memberships
+  const { data: memberships } = await sb.from("memberships").select("*, plans(name,duration,shift,section)").eq("student_id", student.id).order("created_at", { ascending: false });
+
+  // Fetch payments
+  const { data: payments } = await sb.from("payments").select("*").eq("student_id", student.id).order("created_at", { ascending: false });
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("content").style.display = "block";
+  document.getElementById("student-name").textContent = student.full_name.split(" ")[0];
+
+  // Active membership
+  const active = memberships?.find(m => m.status === "active" && new Date(m.end_date) >= new Date());
+  if (active) {
+    const days = daysLeft(active.end_date);
+    const used = pct(active.start_date, active.end_date);
+    document.getElementById("stat-plan").textContent = active.plans?.duration || "—";
+    document.getElementById("stat-days").textContent = days + "d";
+    document.getElementById("stat-paid").textContent = "₹" + active.amount_paid.toLocaleString();
+
+    document.getElementById("membership-content").innerHTML = `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+        <span class="badge badge-active">● Active</span>
+        ${active.plans?.section === "Prime" ? '<span class="badge badge-prime">⭐ Prime Section</span>' : ""}
+        ${active.fixed_seat ? '<span class="badge" style="background:#ede9fe;color:#6d28d9">📌 Fixed Seat</span>' : ""}
+      </div>
+      <div class="info-row"><span class="info-key">Plan</span><span class="info-val">${active.plans?.name || "—"}</span></div>
+      <div class="info-row"><span class="info-key">Duration</span><span class="info-val">${active.plans?.duration || "—"}</span></div>
+      <div class="info-row"><span class="info-key">Shift</span><span class="info-val">${active.plans?.shift || "—"}</span></div>
+      <div class="info-row"><span class="info-key">Start Date</span><span class="info-val">${fmt(active.start_date)}</span></div>
+      <div class="info-row"><span class="info-key">End Date</span><span class="info-val">${fmt(active.end_date)}</span></div>
+      <div class="info-row"><span class="info-key">Days Remaining</span><span class="info-val" style="color:${days < 5 ? "#dc2626" : "#15803d"}">${days} days</span></div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${used}%"></div></div>
+      <div class="progress-label"><span>Started ${fmt(active.start_date)}</span><span>Ends ${fmt(active.end_date)}</span></div>
+    `;
+  }
+
+  // Profile
+  document.getElementById("profile-content").innerHTML = `
+    <div class="info-row"><span class="info-key">Full Name</span><span class="info-val">${student.full_name}</span></div>
+    <div class="info-row"><span class="info-key">Email</span><span class="info-val">${student.email}</span></div>
+    <div class="info-row"><span class="info-key">Phone</span><span class="info-val">${student.phone}</span></div>
+    <div class="info-row"><span class="info-key">Exam</span><span class="info-val">${student.exam_target || "—"}</span></div>
+    <div class="info-row"><span class="info-key">Member Since</span><span class="info-val">${fmt(student.created_at)}</span></div>
+  `;
+
+  // Payments
+  if (payments?.length) {
+    document.getElementById("payment-content").innerHTML = payments.slice(0,10).map(p => `
+      <div class="payment-row">
+        <div>
+          <div style="font-weight:600">${p.plan_id?.replace(/-/g," ") || "Membership"}</div>
+          <div class="payment-date">${fmt(p.created_at)} · ${p.razorpay_payment_id || "—"}</div>
+        </div>
+        <div class="payment-amount">₹${p.amount.toLocaleString()}</div>
+      </div>
+    `).join("");
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

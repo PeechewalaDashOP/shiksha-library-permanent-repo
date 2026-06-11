@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shiksha Library – Your Success Starts Here | Kota, Rajasthan</title>
+  <meta name="description" content="Shiksha Library Kota – A premium, peaceful, distraction-free study environment for IIT JEE, NEET, UPSC, SSC, Banking, and all competitive exam aspirants in Kota, Rajasthan." />
+  <meta name="keywords" content="study library Kota, IIT JEE library, NEET study hall, UPSC library Kota, competitive exam library, Shiksha Library, reading room Kota" />
+  <meta name="author" content="Shiksha Library" />
+  <meta property="og:title" content="Shiksha Library – Your Success Starts Here" />
+  <meta property="og:description" content="Premium study library in Kota for serious exam aspirants. Peaceful, focused, affordable." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #0d47a1;
+      --primary-deeper: #083378;
+      --gold: #f9a825;
+      --gold-dark: #e65100;
+      --white: #ffffff;
+      --light-bg: #f0f4ff;
+      --light-bg2: #e8f0fe;
+      --text-dark: #0d1b3e;
+      --text-mid: #2d4072;
+      --text-muted: #6b7da8;
+      --glass-bg: rgba(255,255,255,0.12);
+      --glass-border: rgba(255,255,255,0.25);
+      --shadow-sm: 0 4px 20px rgba(26,115,232,0.10);
+      --shadow-md: 0 8px 40px rgba(26,115,232,0.18);
+      --shadow-lg: 0 20px 60px rgba(13,71,161,0.22);
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --radius-xl: 40px;
+      --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--white);
+      color: var(--text-dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    ul { list-style: none; }
+
+    /* ===== UTILITY ===== */
+    .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800;
+      color: var(--text-dark);
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .section-title span { color: var(--primary); }
+    .section-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-weight: 400;
+      margin-bottom: 3rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .section-label {
+      display: inline-block;
+      background: var(--light-bg2);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 50px;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 30px;
+      border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--white);
+      box-shadow: 0 6px 24px rgba(26,115,232,0.35);
+    }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(26,115,232,0.45); }
+    .btn-outline {
+      background: transparent;
+      color: var(--white);
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), #ffb300);
+      color: var(--text-dark);
+      box-shadow: 0 6px 24px rgba(249,168,37,0.4);
+      font-weight: 700;
+    }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(249,168,37,0.5); }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0 0;
+      transition: var(--transition);
+    }
+    .navbar.scrolled {
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 4px 30px rgba(13,71,161,0.12);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 15px rgba(26,115,232,0.35);
+      flex-shrink: 0;
+    }
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: contain;
+      flex-shrink: 0;
+      background: white;
+    }
+    .logo-text { font-weight: 800; font-size: 1.2rem; color: var(--text-dark); line-height: 1; }
+    .logo-text span { color: var(--primary); }
+    .logo-sub { font-size: 0.6rem; color: var(--text-muted); font-weight: 500; letter-spacing: 1px; }
+    .navbar.scrolled .logo-text { color: var(--text-dark); }
+    .navbar:not(.scrolled) .logo-text { color: white; }
+    .navbar:not(.scrolled) .logo-sub { color: rgba(255,255,255,0.7); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-links a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.88rem;
+      transition: var(--transition);
+    }
+    .navbar:not(.scrolled) .nav-links a { color: rgba(255,255,255,0.9); }
+    .navbar:not(.scrolled) .nav-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .navbar.scrolled .nav-links a { color: var(--text-dark); }
+    .navbar.scrolled .nav-links a:hover { background: var(--light-bg); color: var(--primary); }
+    .nav-cta { margin-left: 10px; }
+    .navbar:not(.scrolled) .nav-cta { background: white; color: var(--primary-dark) !important; }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: var(--transition);
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+    .navbar:not(.scrolled) .hamburger span { background: white; }
+    .navbar.scrolled .hamburger span { background: var(--text-dark); }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      z-index: 999;
+      flex-direction: column;
+      gap: 4px;
+      border-radius: 0 0 20px 20px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight: 500;
+      color: var(--text-dark);
+      transition: var(--transition);
+    }
+    .mobile-menu a:hover { background: var(--light-bg); color: var(--primary); }
+    .mobile-menu .btn { margin-top: 8px; justify-content: center; }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--primary-deeper) 0%, var(--primary-dark) 40%, var(--primary) 100%);
+    }
+    .hero-bg-img {
+      position: absolute;
+      inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.15;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(8,51,120,0.95) 0%, rgba(13,71,161,0.88) 50%, rgba(26,115,232,0.80) 100%);
+    }
+    .hero-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100px) scale(1); opacity: 0; }
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 120px 20px 80px;
+      max-width: 900px;
+      width: 100%;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      animation: fadeDown 0.8s ease 0.2s both;
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
+    .hero h1 {
+      font-size: clamp(2.4rem, 7vw, 4.2rem);
+      font-weight: 900;
+      color: white;
+      line-height: 1.1;
+      margin-bottom: 1.2rem;
+      animation: fadeDown 0.8s ease 0.4s both;
+    }
+    .hero h1 .gold { color: var(--gold); }
+    .hero p {
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
+      color: rgba(255,255,255,0.82);
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      font-weight: 400;
+      line-height: 1.7;
+      animation: fadeDown 0.8s ease 0.6s both;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeDown 0.8s ease 0.8s both;
+      margin-bottom: 3rem;
+    }
+    .hero-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      animation: fadeDown 0.8s ease 1s both;
+    }
+    .highlight-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 7px 16px;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+    .highlight-chip i { color: var(--gold); font-size: 0.85rem; }
+    .hero-stats {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeDown 0.8s ease 1.1s both;
+      margin-top: 2.5rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: white; line-height: 1; }
+    .stat-num span { color: var(--gold); }
+    .stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.65); font-weight: 500; margin-top: 2px; letter-spacing: 0.5px; }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-scroll {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      animation: fadeDown 0.8s ease 1.3s both;
+    }
+    .scroll-dot {
+      width: 24px; height: 38px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      padding-top: 6px;
+    }
+    .scroll-dot::before {
+      content: '';
+      width: 4px; height: 8px;
+      background: white;
+      border-radius: 2px;
+      animation: scrollAnim 2s ease infinite;
+    }
+    @keyframes scrollAnim { 0%,100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(8px); opacity: 0.3; } }
+    .scroll-text { font-size: 0.65rem; color: rgba(255,255,255,0.5); letter-spacing: 2px; text-transform: uppercase; }
+
+    /* ===== EXAM TICKER ===== */
+    .exam-ticker {
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+      padding: 16px 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .exam-ticker::before, .exam-ticker::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 2;
+    }
+    .exam-ticker::before { left: 0; background: linear-gradient(90deg, var(--primary-dark), transparent); }
+    .exam-ticker::after { right: 0; background: linear-gradient(-90deg, var(--primary-dark), transparent); }
+    .ticker-track {
+      display: flex;
+      gap: 0;
+      animation: tickerScroll 30s linear infinite;
+      width: max-content;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 28px;
+      white-space: nowrap;
+      color: white;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+    .ticker-item:last-child { border-right: none; }
+    .ticker-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; flex-shrink: 0; }
+
+    /* ===== ABOUT ===== */
+    .about-section { padding: 90px 0; background: var(--white); }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .about-img-wrapper {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .about-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      min-height: 420px;
+      display: block;
+    }
+    .about-img-badge {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+    .about-img-badge .num { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+    .about-img-badge .lbl { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
+    .about-content .section-title { text-align: left; }
+    .about-content .section-label { display: inline-block; }
+    .about-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+    .about-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem; }
+    .about-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    .about-list-item i {
+      width: 32px; height: 32px;
+      background: var(--light-bg2);
+      color: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .about-open-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+      color: #2e7d32;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* ===== WHY CHOOSE US ===== */
+    .why-section { padding: 90px 0; background: var(--light-bg); }
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+    }
+    .why-card {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 30px 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .why-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--gold));
+      opacity: 0;
+      transition: var(--transition);
+    }
+    .why-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .why-card:hover::before { opacity: 1; }
+    .why-icon {
+      width: 52px; height: 52px;
+      background: var(--light-bg2);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+      transition: var(--transition);
+    }
+    .why-card:hover .why-icon { background: var(--primary); color: white; }
+    .why-card h3 { font-size: 1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+    .why-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ===== FACILITIES ===== */
+    .facilities-section { padding: 90px 0; background: white; }
+    .facilities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .facility-card {
+      background: var(--light-bg);
+      border-radius: var(--radius-md);
+      padding: 28px 22px;
+      text-align: center;
+      transition: var(--transition);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .facility-card:hover {
+      background: white;
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+    }
+    .facility-icon {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      margin: 0 auto 16px;
+      box-shadow: 0 6px 20px rgba(26,115,232,0.3);
+      transition: var(--transition);
+    }
+    .facility-card:hover .facility-icon { transform: scale(1.1) rotate(-5deg); }
+    .facility-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+    .facility-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* ===== MEMBERSHIP PLANS ===== */
+    .plans-section { padding: 90px 0; background: var(--light-bg); }
+    .plans-toggle-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+    .plans-toggle {
+      display: flex;
+      background: white;
+      border-radius: 50px;
+      padding: 5px;
+      box-shadow: var(--shadow-sm);
+      gap: 4px;
+    }
+    .toggle-btn {
+      padding: 10px 28px;
+      border-radius: 50px;
+      border: none;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .toggle-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(26,115,232,0.3); }
+    .plans-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .plans-grid.active { display: grid; }
+    .plan-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid transparent;
+    }
+    .plan-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .plan-card.featured {
+      background: linear-gradient(145deg, var(--primary-dark), var(--primary));
+      border-color: transparent;
+      color: white;
+    }
+    .plan-card.featured * { color: white; }
+    .plan-badge {
+      position: absolute;
+      top: 18px; right: 18px;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .badge-popular { background: var(--gold); color: var(--text-dark); }
+    .badge-value { background: linear-gradient(135deg, #43a047, #1b5e20); color: white; }
+    .badge-prime { background: linear-gradient(135deg, var(--gold), #e65100); color: white; }
+    .discount-sticker {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, #ff5722, #d32f2f);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .plan-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; color: var(--text-dark); }
+    .plan-card.featured .plan-name { color: rgba(255,255,255,0.85); }
+    .plan-orig-price {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: line-through;
+      margin-bottom: 2px;
+    }
+    .plan-card.featured .plan-orig-price { color: rgba(255,255,255,0.55); }
+    .plan-price {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .plan-card.featured .plan-price { color: var(--gold); }
+    .plan-period { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 20px; }
+    .plan-card.featured .plan-period { color: rgba(255,255,255,0.65); }
+    .plan-divider { height: 1px; background: var(--light-bg); margin-bottom: 20px; }
+    .plan-card.featured .plan-divider { background: rgba(255,255,255,0.15); }
+    .plan-features { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .plan-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text-dark);
+    }
+    .plan-card.featured .plan-feature { color: rgba(255,255,255,0.88); }
+    .plan-feature i { color: var(--primary); font-size: 0.85rem; width: 16px; }
+    .plan-card.featured .plan-feature i { color: var(--gold); }
+    .plan-cta { width: 100%; justify-content: center; padding: 13px; }
+    .plan-card.featured .plan-cta { background: white; color: var(--primary-dark); }
+    .plan-card.featured .plan-cta:hover { background: var(--gold); color: var(--text-dark); }
+
+    /* Plans subgrid for prime section label */
+    .plans-subheading {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .plans-subheading::before, .plans-subheading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(26,115,232,0.15);
+    }
+    .plans-subheading span {
+      background: var(--light-bg2);
+      color: var(--primary);
+      padding: 6px 20px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ===== REVIEWS ===== */
+    .reviews-section { padding: 90px 0; background: white; }
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .review-card {
+      background: var(--light-bg);
+      border-radius: var(--radius-md);
+      padding: 28px 24px;
+      position: relative;
+      transition: var(--transition);
+      border: 2px solid transparent;
+    }
+    .review-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-4px); }
+    .review-quote {
+      font-size: 2.5rem;
+      color: var(--primary);
+      opacity: 0.2;
+      line-height: 1;
+      margin-bottom: 8px;
+      font-family: serif;
+    }
+    .review-text { font-size: 0.88rem; color: var(--text-mid); line-height: 1.7; margin-bottom: 20px; }
+    .review-stars { color: var(--gold); font-size: 0.85rem; margin-bottom: 14px; letter-spacing: 2px; }
+    .review-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .review-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .review-name { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); }
+    .review-exam { font-size: 0.75rem; color: var(--primary); font-weight: 600; }
+
+    /* ===== GALLERY STRIP ===== */
+    .gallery-section { padding: 60px 0; background: var(--light-bg); overflow: hidden; }
+    .gallery-track {
+      display: flex;
+      gap: 16px;
+      animation: tickerScroll 35s linear infinite;
+      width: max-content;
+    }
+    .gallery-track:hover { animation-play-state: paused; }
+    .gallery-img {
+      width: 280px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ===== CONTACT ===== */
+    .contact-section { padding: 90px 0; background: white; }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: start;
+    }
+    .contact-info-card {
+      background: var(--light-bg);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+    }
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(26,115,232,0.1);
+    }
+    .contact-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .contact-icon {
+      width: 46px; height: 46px;
+      background: var(--primary);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .contact-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px; }
+    .contact-value { font-size: 0.95rem; font-weight: 600; color: var(--text-dark); }
+    .contact-value a { color: var(--primary); }
+    .timing-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+    .timing-card {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .timing-shift { font-weight: 700; font-size: 0.88rem; color: var(--text-dark); }
+    .timing-hours { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
+    .map-embed {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      height: 100%;
+      min-height: 400px;
+    }
+    .map-embed iframe { width: 100%; height: 100%; min-height: 400px; border: none; }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      background: var(--primary-deeper);
+      color: rgba(255,255,255,0.8);
+      padding: 60px 0 0;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 50px;
+      padding-bottom: 50px;
+    }
+    .footer-brand .logo-text { color: white; font-size: 1.4rem; }
+    .footer-brand .logo-sub { color: rgba(255,255,255,0.5); }
+    .footer-tagline { font-size: 0.9rem; margin: 12px 0 20px; opacity: 0.7; }
+    .footer-contact-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; }
+    .footer-contact-item i { color: var(--gold); width: 16px; }
+    .footer h4 { color: white; font-size: 0.95rem; font-weight: 700; margin-bottom: 18px; }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 0.85rem; opacity: 0.7; transition: var(--transition); }
+    .footer-links a:hover { opacity: 1; color: var(--gold); padding-left: 6px; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+    .footer-bottom a { opacity: 1; color: var(--gold); }
+
+    /* ===== FLOATING BUTTONS ===== */
+    .float-btns {
+      position: fixed;
+      bottom: 28px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 900;
+    }
+    .float-btn {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+      transition: var(--transition);
+      text-decoration: none;
+    }
+    .float-btn:hover { transform: scale(1.1); }
+    .float-wa { background: #25d366; }
+    .float-call { background: var(--primary); }
+    .float-btn-label {
+      position: absolute;
+      right: 60px;
+      background: white;
+      color: var(--text-dark);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+      opacity: 0;
+      transform: translateX(10px);
+      transition: var(--transition);
+      pointer-events: none;
+    }
+    .float-btn-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .float-btn-wrap:hover .float-btn-label { opacity: 1; transform: translateX(0); }
+
+    /* ===== MEDIA QUERIES ===== */
+    @media (max-width: 900px) {
+      .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 36px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+      .hero-stats { gap: 20px; }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      .hero-highlights { gap: 8px; }
+      .hero-btns { gap: 10px; }
+      .hero-btns .btn { padding: 12px 20px; font-size: 0.9rem; }
+      .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+      .map-embed { min-height: 300px; }
+      .map-embed iframe { min-height: 300px; }
+    }
+    @media (max-width: 480px) {
+      .hero-stats .stat-item { flex: 1 1 40%; }
+      .hero-badge { font-size: 0.7rem; }
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 0.88rem; }
+      .hero-btns .btn { font-size: 0.85rem; padding: 11px 18px; }
+      .highlight-chip { font-size: 0.75rem; padding: 6px 12px; }
+    }
+
+    /* ===== LOADING STATE ===== */
+    .page-loader {
+      position: fixed;
+      inset: 0;
+      background: var(--primary-darker, var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    .page-loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-content { text-align: center; color: white; }
+    .loader-ring {
+      width: 50px; height: 50px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { font-size: 1.1rem; font-weight: 600; opacity: 0.8; }
+  </style>
+</head>
+<body>
+
+<!-- PAGE LOADER -->
+<div class="page-loader" id="pageLoader">
+  <div class="loader-content">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Shiksha Library</div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#home" class="nav-logo">
+        <img src="assets/shiksha-library-logo.jpeg" alt="Shiksha Library Logo" class="logo-img">
+        <div>
+          <div class="logo-text"><span>Shiksha</span> Library</div>
+          <div class="logo-sub">Kota, Rajasthan</div>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#facilities">Facilities</a>
+        <a href="#plans">Membership</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <a href="https://wa.me/917597474668?text=Hi%20%F0%9F%91%8B%20I%27m%20interested%20in%20joining%20Shiksha%20Library.%20Please%20share%20the%20membership%20details." target="_blank" class="btn btn-primary nav-cta">
+        <i class="fas fa-calendar-check"></i> Book Now
+      </a>
+      <div class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#home" onclick="closeMobile()">Home</a>
+  <a href="#about" onclick="closeMobile()">About</a>
+  <a href="#facilities" onclick="closeMobile()">Facilities</a>
+  <a href="#plans" onclick="closeMobile()">Membership Plans</a>
+  <a href="#reviews" onclick="closeMobile()">Reviews</a>
+  <a href="#contact" onclick="closeMobile()">Contact</a>
+  <a href="https://wa.me/917597474668?text=Hi%20%F0%9F%91%8B%20I%27m%20interested%20in%20joining%20Shiksha%20Library.%20Please%20share%20the%20membership%20details." target="_blank" class="btn btn-primary">
+    <i class="fas fa-calendar-check"></i> Book Now
+  </a>
+</div>
+
+<!-- HERO SECTION -->
+<section class="hero" id="home">
+  <div class="hero-bg-img"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-particles" id="particles"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="dot"></div>
+      Kota's Premium Study Space
+    </div>
+
+    <h1>Your <span class="gold">Success</span><br/>Starts Here</h1>
+
+    <p>A focused, peaceful and distraction-free study environment designed for serious students preparing for competitive and academic examinations.</p>
+
+    <div class="hero-btns">
+      <a href="https://wa.me/917597474668?text=Hi%20%F0%9F%91%8B%20I%27m%20interested%20in%20joining%20Shiksha%20Library.%20Please%20share%20the%20membership%20details." target="_blank" class="btn btn-gold">
+        <i class="fas fa-calendar-check"></i> Book Now
+      </a>
+      <a href="#contact" class="btn btn-outline">
+        <i class="fas fa-phone"></i> Contact Us
+      </a>
+    </div>
+
+    <div class="hero-highlights">
+      <div class="highlight-chip"><i class="fas fa-check-circle"></i> Peaceful Environment</div>
+      <div class="highlight-chip"><i class="fas fa-wifi"></i> High Speed WiFi</div>
+      <div class="highlight-chip"><i class="fas fa-bolt"></i> Power Backup</div>
+      <div class="highlight-chip"><i class="fas fa-chair"></i> Comfortable Seating</div>
+      <div class="highlight-chip"><i class="fas fa-clock"></i> 24×7 Open</div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">1000<span>+</span></div>
+        <div class="stat-label">Students Enrolled</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24<span>/7</span></div>
+        <div class="stat-label">Open All Days</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2<span>+</span></div>
+        <div class="stat-label">Years of Excellence</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">99<span>%</span></div>
+        <div class="stat-label">Student Satisfaction</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-dot"></div>
+    <div class="scroll-text">Scroll Down</div>
+  </div>
+</section>
+
+<!-- EXAM TICKER -->
+<div class="exam-ticker">
+  <div class="ticker-track" id="tickerTrack">
+    <!-- Filled by JS -->
+  </div>
+</div>
+
+<!-- ABOUT SECTION -->
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-img-wrapper reveal-left">
+        <img src="assets/library-poster.png" alt="Shiksha Library Kota – Study Hall" loading="lazy" />
+        <div class="about-img-badge">
+          <div class="num">1000+</div>
+          <div class="lbl">Happy Students</div>
+        </div>
+      </div>
+      <div class="about-content reveal-right">
+        <span class="section-label">About Us</span>
+        <h2 class="section-title" style="text-align:left;">About <span>Shiksha Library</span></h2>
+        <p class="about-desc">
+          Shiksha Library is Kota's premium dedicated study space, purpose-built to help students achieve their academic and competitive exam goals. Nestled in the heart of Kota's student hub, we provide a serene, fully-equipped environment where every detail — from ergonomic seating to silent zones — is designed with the serious aspirant in mind.
+        </p>
+        <p class="about-desc">
+          Whether you're preparing for IIT JEE, NEET, UPSC, SSC, Banking, or Board exams, our library offers the perfect blend of comfort, discipline, and resources to help you stay focused and consistent. We believe every student deserves a world-class study space — at a price that doesn't break the bank.
+        </p>
+        <ul class="about-list">
+          <li class="about-list-item">
+            <i class="fas fa-shield-alt"></i>
+            Safe, secure, CCTV-monitored premises
+          </li>
+          <li class="about-list-item">
+            <i class="fas fa-clock"></i>
+            Open 24 hours a day, 7 days a week
+          </li>
+          <li class="about-list-item">
+            <i class="fas fa-map-marker-alt"></i>
+            Conveniently located in Vigyan Nagar, Kota
+          </li>
+          <li class="about-list-item">
+            <i class="fas fa-users"></i>
+            Trusted by 1000+ students and growing
+          </li>
+        </ul>
+        <div class="about-open-badge">
+          <i class="fas fa-circle" style="font-size:0.5rem;"></i>
+          Open 24×7 — All Days Including Holidays
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CHOOSE US -->
+<section class="why-section" id="why">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label" style="display:block;text-align:center;margin-bottom:0.75rem;">Why Us</span>
+      <h2 class="section-title">Why Students Choose <span>Shiksha Library</span></h2>
+      <p class="section-sub">Everything a serious student needs — in one peaceful, affordable space.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card reveal" style="transition-delay:0.05s">
+        <div class="why-icon"><i class="fas fa-volume-mute"></i></div>
+        <h3>Silent & Focused Environment</h3>
+        <p>Strictly maintained silence ensures zero distractions so your concentration remains at peak throughout your session.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.1s">
+        <div class="why-icon"><i class="fas fa-chair"></i></div>
+        <h3>Comfortable Study Seating</h3>
+        <p>Ergonomically designed seats and spacious desks for long study sessions without fatigue or discomfort.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.15s">
+        <div class="why-icon"><i class="fas fa-wifi"></i></div>
+        <h3>High-Speed WiFi</h3>
+        <p>Uninterrupted high-speed internet for video lectures, online mock tests, research, and digital notes.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.2s">
+        <div class="why-icon"><i class="fas fa-bolt"></i></div>
+        <h3>24×7 Power Backup</h3>
+        <p>Uninterrupted power supply ensures your study session is never cut short due to power outages.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.25s">
+        <div class="why-icon"><i class="fas fa-rupee-sign"></i></div>
+        <h3>Affordable Membership</h3>
+        <p>Premium facilities at student-friendly prices. Flexible 15-day, monthly, and 3-month plans to suit your budget.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.3s">
+        <div class="why-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3>Safe & Secure Premises</h3>
+        <p>CCTV surveillance, secure entry, and a safe neighborhood so you can focus entirely on your studies.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.35s">
+        <div class="why-icon"><i class="fas fa-sun"></i></div>
+        <h3>24×7 Study Hours</h3>
+        <p>Study at any hour that suits your schedule. Early morning or late night — we're always open for you.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:0.4s">
+        <div class="why-icon"><i class="fas fa-heart"></i></div>
+        <h3>Student-Friendly Atmosphere</h3>
+        <p>A warm, motivating environment with like-minded aspirants that keeps your spirits and productivity high.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FACILITIES SECTION -->
+<section class="facilities-section" id="facilities">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label" style="display:block;text-align:center;margin-bottom:0.75rem;">What We Offer</span>
+      <h2 class="section-title">Facilities <span>We Offer</span></h2>
+      <p class="section-sub">Every amenity you need for an uninterrupted, productive study experience.</p>
+    </div>
+    <div class="facilities-grid">
+      <div class="facility-card reveal" style="transition-delay:0.05s">
+        <div class="facility-icon"><i class="fas fa-desktop"></i></div>
+        <h3>Individual Study Desks</h3>
+        <p>Personal, spacious study desks with proper lighting for maximum focus.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.1s">
+        <div class="facility-icon"><i class="fas fa-wifi"></i></div>
+        <h3>High-Speed Internet</h3>
+        <p>Fast, reliable WiFi for online study resources and digital learning.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.15s">
+        <div class="facility-icon"><i class="fas fa-bolt"></i></div>
+        <h3>Power Backup</h3>
+        <p>Uninterrupted electricity with backup generators for zero downtime.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.2s">
+        <div class="facility-icon"><i class="fas fa-tint"></i></div>
+        <h3>Drinking Water</h3>
+        <p>Clean, purified drinking water available at all times in the library.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.25s">
+        <div class="facility-icon"><i class="fas fa-broom"></i></div>
+        <h3>Clean Environment</h3>
+        <p>Regularly cleaned and sanitized premises for a hygienic study space.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.3s">
+        <div class="facility-icon"><i class="fas fa-video"></i></div>
+        <h3>CCTV Security</h3>
+        <p>24-hour CCTV monitoring for a safe and secure study environment.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.35s">
+        <div class="facility-icon"><i class="fas fa-chair"></i></div>
+        <h3>Comfortable Seating</h3>
+        <p>Ergonomic chairs and wide desks that support long study sessions.</p>
+      </div>
+      <div class="facility-card reveal" style="transition-delay:0.4s">
+        <div class="facility-icon"><i class="fas fa-leaf"></i></div>
+        <h3>Peaceful Atmosphere</h3>
+        <p>Strictly maintained silence and calm ambiance for deep concentration.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY STRIP -->
+<section class="gallery-section">
+  <div class="container">
+    <h2 class="section-title reveal" style="margin-bottom:1.5rem;">Inside <span>Shiksha Library</span></h2>
+  </div>
+  <div style="overflow:hidden;">
+    <div class="gallery-track" id="galleryTrack">
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=560&q=75" alt="Library study hall" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=560&q=75" alt="Reading room" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=560&q=75" alt="Study books" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=560&q=75" alt="Student studying" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=560&q=75" alt="Study area" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=560&q=75" alt="Library desk" loading="lazy" />
+      <!-- Duplicate for seamless loop -->
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=560&q=75" alt="Library study hall" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=560&q=75" alt="Reading room" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=560&q=75" alt="Study books" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=560&q=75" alt="Student studying" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=560&q=75" alt="Study area" loading="lazy" />
+      <img class="gallery-img" src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=560&q=75" alt="Library desk" loading="lazy" />
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP PLANS -->
+<section class="plans-section" id="plans">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label" style="display:block;text-align:center;margin-bottom:0.75rem;">Pricing</span>
+      <h2 class="section-title">Choose Your <span>Membership</span></h2>
+      <p class="section-sub">Flexible plans for every budget. Prime Section means a fixed reserved seat.</p>
+    </div>
+
+    <div class="plans-toggle-wrap">
+      <div class="plans-toggle">
+        <button class="toggle-btn active" onclick="showPlans('monthly')">Monthly</button>
+        <button class="toggle-btn" onclick="showPlans('fifteenday')">15-Day</button>
+        <button class="toggle-btn" onclick="showPlans('threemonth')">3-Month</button>
+      </div>
+    </div>
+
+    <!-- MONTHLY PLANS -->
+    <div class="plans-grid active" id="plans-monthly">
+      <!-- Regular Section -->
+      <div class="plans-subheading">
+        <span>Regular Section</span>
+      </div>
+
+      <!-- Morning -->
+      <div class="plan-card reveal" style="transition-delay:0.05s">
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹100</div>
+        <div class="plan-name">Morning Shift</div>
+        <div class="plan-orig-price">₹600/month</div>
+        <div class="plan-price">₹500</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="monthly-morning-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <!-- Evening -->
+      <div class="plan-card featured reveal" style="transition-delay:0.1s">
+        <div class="plan-badge badge-popular">Most Popular</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹100</div>
+        <div class="plan-name">Evening Shift</div>
+        <div class="plan-orig-price">₹700/month</div>
+        <div class="plan-price">₹600</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="monthly-evening-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <!-- Full Day -->
+      <div class="plan-card reveal" style="transition-delay:0.15s">
+        <div class="plan-badge badge-value">Best Value</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹200</div>
+        <div class="plan-name">Full Day</div>
+        <div class="plan-orig-price">₹1200/month</div>
+        <div class="plan-price">₹1000</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 24×7 Access</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="monthly-fullday-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <!-- Prime Section -->
+      <div class="plans-subheading">
+        <span>Prime Section — Fixed Reserved Seat</span>
+      </div>
+
+      <!-- Prime Morning -->
+      <div class="plan-card reveal" style="transition-delay:0.2s">
+        <div class="plan-badge badge-prime">Prime</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹100</div>
+        <div class="plan-name">Prime Morning Shift</div>
+        <div class="plan-orig-price">₹700/month</div>
+        <div class="plan-price">₹600</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+     <a class="btn btn-primary plan-cta" data-plan-id="monthly-morning-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <!-- Prime Evening -->
+      <div class="plan-card featured reveal" style="transition-delay:0.25s">
+        <div class="plan-badge badge-popular">Most Popular</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹100</div>
+        <div class="plan-name">Prime Evening Shift</div>
+        <div class="plan-orig-price">₹800/month</div>
+        <div class="plan-price">₹700</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="monthly-evening-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <!-- Prime Full Day -->
+      <div class="plan-card reveal" style="transition-delay:0.3s">
+        <div class="plan-badge badge-value">Best Value</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹200</div>
+        <div class="plan-name">Prime Full Day</div>
+        <div class="plan-orig-price">₹1400/month</div>
+        <div class="plan-price">₹1200</div>
+        <div class="plan-period">per month &nbsp;•&nbsp; 24×7 Access</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Study Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Clean Facilities</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="monthly-fullday-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+    </div>
+
+    <!-- 15-DAY PLANS -->
+    <div class="plans-grid" id="plans-fifteenday">
+      <div class="plans-subheading"><span>Regular Section — 15 Days</span></div>
+
+      <div class="plan-card reveal">
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹51</div>
+        <div class="plan-name">Morning Shift – 15 Days</div>
+        <div class="plan-orig-price">₹350 for 15 days</div>
+        <div class="plan-price">₹300</div>
+        <div class="plan-period">15 days &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="15days-morning-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card featured reveal" style="transition-delay:0.1s">
+        <div class="plan-badge badge-popular">Popular</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹51</div>
+        <div class="plan-name">Evening Shift – 15 Days</div>
+        <div class="plan-orig-price">₹400 for 15 days</div>
+        <div class="plan-price">₹350</div>
+        <div class="plan-period">15 days &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="15days-evening-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card reveal" style="transition-delay:0.15s">
+        <div class="plan-badge badge-value">Best Value</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹101</div>
+        <div class="plan-name">Full Day – 15 Days</div>
+        <div class="plan-orig-price">₹700 for 15 days</div>
+        <div class="plan-price">₹600</div>
+        <div class="plan-period">15 days &nbsp;•&nbsp; 24×7 Access</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="15days-fullday-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 15 Days</span></div>
+
+      <div class="plan-card reveal" style="transition-delay:0.2s">
+        <div class="plan-badge badge-prime">Prime</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹51</div>
+        <div class="plan-name">Prime Morning – 15 Days</div>
+        <div class="plan-orig-price">₹400 for 15 days</div>
+        <div class="plan-price">₹350</div>
+        <div class="plan-period">15 days &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="15days-morning-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card featured reveal" style="transition-delay:0.25s">
+        <div class="plan-badge badge-popular">Popular</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹51</div>
+        <div class="plan-name">Prime Evening – 15 Days</div>
+        <div class="plan-orig-price">₹450 for 15 days</div>
+        <div class="plan-price">₹400</div>
+        <div class="plan-period">15 days &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="15days-evening-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+    </div>
+
+    <!-- 3-MONTH PLANS -->
+    <div class="plans-grid" id="plans-threemonth">
+      <div class="plans-subheading"><span>Regular Section — 3 Months (Save ₹300 Extra)</span></div>
+
+      <div class="plan-card reveal">
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Morning Shift – 3 Months</div>
+        <div class="plan-orig-price">₹1800 for 3 months</div>
+        <div class="plan-price">₹1200</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="3month-morning-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card featured reveal" style="transition-delay:0.1s">
+        <div class="plan-badge badge-popular">Best Choice</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Evening Shift – 3 Months</div>
+        <div class="plan-orig-price">₹2100for 3 months</div>
+        <div class="plan-price">₹1500</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="3month-evening-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card reveal" style="transition-delay:0.15s">
+        <div class="plan-badge badge-value">Max Savings</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Full Day – 3 Months</div>
+        <div class="plan-orig-price">₹3600 for 3 months</div>
+        <div class="plan-price">₹2700</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 24×7 Access</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-check"></i> Dedicated Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Drinking Water</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="3month-fullday-regular" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 3 Months</span></div>
+
+      <div class="plan-card reveal" style="transition-delay:0.2s">
+        <div class="plan-badge badge-prime">Prime</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Prime Morning – 3 Months</div>
+        <div class="plan-orig-price">₹2100for for 3 months</div>
+        <div class="plan-price">₹1500</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="3month-morning-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+</a>
+        </a>
+      </div>
+
+      <div class="plan-card featured reveal" style="transition-delay:0.25s">
+        <div class="plan-badge badge-popular">Best Choice</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Prime Evening – 3 Months</div>
+        <div class="plan-orig-price">₹2400 for 3 months</div>
+        <div class="plan-price">₹1800</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 2:00 PM – 10:00 PM</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn plan-cta" data-plan-id="3month-evening-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+
+      <div class="plan-card reveal" style="transition-delay:0.3s">
+        <div class="plan-badge badge-value">Max Savings</div>
+        <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹300 + Monthly Discount</div>
+        <div class="plan-name">Prime Full Day – 3 Months</div>
+        <div class="plan-orig-price">₹3900 for 3 months</div>
+        <div class="plan-price">₹3300</div>
+        <div class="plan-period">3 months &nbsp;•&nbsp; 24×7 Access</div>
+        <div class="plan-divider"></div>
+        <div class="plan-features">
+          <div class="plan-feature"><i class="fas fa-star"></i> Fixed Reserved Seat</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Silent Environment</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> High-Speed WiFi</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Power Backup</div>
+          <div class="plan-feature"><i class="fas fa-check"></i> Priority Seating</div>
+        </div>
+        <a class="btn btn-primary plan-cta" data-plan-id="3month-fullday-prime" href="javascript:void(0)">
+  <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="reviews-section" id="reviews">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label" style="display:block;text-align:center;margin-bottom:0.75rem;">Testimonials</span>
+      <h2 class="section-title">What <span>Students Say</span></h2>
+      <p class="section-sub">Hear from real students who are achieving their dreams at Shiksha Library.</p>
+    </div>
+    <div class="reviews-grid">
+      <div class="review-card reveal" style="transition-delay:0.05s">
+        <div class="review-quote">"</div>
+        <div class="review-text">Shiksha Library has completely transformed my study routine. The peaceful environment here helps me focus for 10+ hours a day. The WiFi is fast and the seating is really comfortable. Best decision I made for my JEE prep!</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">RK</div>
+          <div>
+            <div class="review-name">Rajat Kumar</div>
+            <div class="review-exam">IIT JEE Aspirant</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card reveal" style="transition-delay:0.1s">
+        <div class="review-quote">"</div>
+        <div class="review-text">I was struggling to study at home due to distractions. Since joining Shiksha Library, my consistency has improved dramatically. The silent environment and the atmosphere of serious students around me keeps me motivated.</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">PS</div>
+          <div>
+            <div class="review-name">Priya Sharma</div>
+            <div class="review-exam">NEET Aspirant</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card reveal" style="transition-delay:0.15s">
+        <div class="review-quote">"</div>
+        <div class="review-text">The Prime Section with a fixed seat is a game-changer. I don't have to worry about finding a seat early morning. The library is open 24×7 which is perfect for my UPSC preparation schedule. Highly recommend to all aspirants!</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">AM</div>
+          <div>
+            <div class="review-name">Ankit Meena</div>
+            <div class="review-exam">UPSC CSE Aspirant</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card reveal" style="transition-delay:0.2s">
+        <div class="review-quote">"</div>
+        <div class="review-text">Amazing library! The pricing is very affordable compared to other libraries in Kota. The staff is courteous and the facilities are clean. Power backup ensures I never lose my study momentum. 5 stars without a doubt!</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">SJ</div>
+          <div>
+            <div class="review-name">Sneha Jain</div>
+            <div class="review-exam">SSC CGL Aspirant</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card reveal" style="transition-delay:0.25s">
+        <div class="review-quote">"</div>
+        <div class="review-text">I've tried multiple libraries in Kota but Shiksha Library stands out. The location is great, the environment is truly silent, and the monthly plans are very reasonable. My GATE preparation has improved significantly since joining here.</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">VT</div>
+          <div>
+            <div class="review-name">Vishal Tiwari</div>
+            <div class="review-exam">GATE Aspirant</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card reveal" style="transition-delay:0.3s">
+        <div class="review-quote">"</div>
+        <div class="review-text">Joined Shiksha Library for my board exam preparation and it worked wonders! The discipline that the library environment enforces is unmatched. I secured 94% in my 12th boards and I credit a big part of that to my study sessions here.</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-author">
+          <div class="review-avatar">KG</div>
+          <div>
+            <div class="review-name">Kavya Gupta</div>
+            <div class="review-exam">Class 12 Board Exam</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT SECTION -->
+<section class="contact-section" id="contact">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label" style="display:block;text-align:center;margin-bottom:0.75rem;">Get In Touch</span>
+      <h2 class="section-title">Contact <span>Us</span></h2>
+      <p class="section-sub">Visit us, call us, or WhatsApp us. We're happy to help you get started.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-info-card reveal-left">
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fas fa-phone"></i></div>
+          <div>
+            <div class="contact-label">Phone / WhatsApp</div>
+            <div class="contact-value">
+              <a href="tel:+917597474668">+91 75974 74668</a>
+            </div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+          <div>
+            <div class="contact-label">Address</div>
+            <div class="contact-value">1-TA-12, Behind Vigyan Nagar Thana,<br/>Dispensary Road, Kota – 324005,<br/>Rajasthan, India</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fas fa-clock"></i></div>
+          <div>
+            <div class="contact-label">Study Hours</div>
+            <div class="timing-cards" style="margin-top:8px;">
+              <div class="timing-card">
+                <span class="timing-shift"><i class="fas fa-sun" style="color:#f9a825;margin-right:6px;"></i>Morning Shift</span>
+                <span class="timing-hours">6:00 AM – 2:00 PM</span>
+              </div>
+              <div class="timing-card">
+                <span class="timing-shift"><i class="fas fa-moon" style="color:#1a73e8;margin-right:6px;"></i>Evening Shift</span>
+                <span class="timing-hours">2:00 PM – 10:00 PM</span>
+              </div>
+              <div class="timing-card" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color:white;">
+                <span class="timing-shift" style="color:white;"><i class="fas fa-infinity" style="color:var(--gold);margin-right:6px;"></i>Full Day (Prime)</span>
+                <span class="timing-hours" style="color:rgba(255,255,255,0.85);">Open 24×7</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+          <a href="tel:+917597474668" class="btn btn-primary" style="flex:1;justify-content:center;min-width:130px;">
+            <i class="fas fa-phone"></i> Call Now
+          </a>
+          <a href="https://wa.me/917597474668?text=Hi%20%F0%9F%91%8B%20I%27m%20interested%20in%20joining%20Shiksha%20Library.%20Please%20share%20the%20membership%20details." target="_blank" class="btn btn-gold" style="flex:1;justify-content:center;min-width:130px;">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div class="map-embed reveal-right">
+        <iframe
+          src="https://maps.google.com/maps?q=25.1498434,75.8567828&output=embed&z=17"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Shiksha Library Location on Google Maps"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:14px;">
+          <img src="assets/shiksha-library-logo.jpeg" alt="Shiksha Library Logo" class="logo-img">
+          <div>
+            <div class="logo-text"><span>Shiksha</span> Library</div>
+            <div class="logo-sub">Kota, Rajasthan</div>
+          </div>
+        </div>
+        <p class="footer-tagline">Your Success Starts Here</p>
+        <div class="footer-contact-item">
+          <i class="fas fa-phone"></i>
+          <a href="tel:+917597474668" style="color:rgba(255,255,255,0.8);">+91 75974 74668</a>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>1-TA-12, Behind Vigyan Nagar Thana, Dispensary Road, Kota – 324005</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-clock"></i>
+          <span>Open 24×7 — All Days</span>
+        </div>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <div class="footer-links">
+          <a href="#home">Home</a>
+          <a href="#about">About</a>
+          <a href="#facilities">Facilities</a>
+          <a href="#plans">Membership Plans</a>
+          <a href="#reviews">Reviews</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>We Cover All Exams</h4>
+        <div class="footer-links">
+          <a href="#plans">IIT JEE / NEET</a>
+          <a href="#plans">UPSC / SSC</a>
+          <a href="#plans">Banking / Railway</a>
+          <a href="#plans">GATE / CAT / CUET</a>
+          <a href="#plans">Rajasthan Govt Exams</a>
+          <a href="#plans">RTU / Board Exams</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Shiksha Library. All Rights Reserved.</span>
+      <span>Made with <span style="color:#e53935;">♥</span> by <strong style="color:rgba(255,255,255,0.8);">bhavya</strong></span>
+    </div>
+  </div>
+</footer>
+
+<!-- FLOATING BUTTONS -->
+<div class="float-btns">
+  <div class="float-btn-wrap">
+    <span class="float-btn-label">Call Now</span>
+    <a href="tel:+917597474668" class="float-btn float-call" aria-label="Call Shiksha Library">
+      <i class="fas fa-phone"></i>
+    </a>
+  </div>
+  <div class="float-btn-wrap">
+    <span class="float-btn-label">WhatsApp Us</span>
+    <a href="https://wa.me/917597474668?text=Hi%20%F0%9F%91%8B%20I%27m%20interested%20in%20joining%20Shiksha%20Library.%20Please%20share%20the%20membership%20details." target="_blank" class="float-btn float-wa" aria-label="WhatsApp Shiksha Library">
+      <i class="fab fa-whatsapp"></i>
+    </a>
+  </div>
+</div>
+
+<script>
+  // PAGE LOADER
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('pageLoader').classList.add('hidden');
+    }, 800);
+  });
+
+  // NAVBAR SCROLL
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  // HAMBURGER MENU
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobileMenu');
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    mobileMenu.classList.toggle('open');
+  });
+  function closeMobile() {
+    hamburger.classList.remove('active');
+    mobileMenu.classList.remove('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!navbar.contains(e.target) && !mobileMenu.contains(e.target)) {
+      closeMobile();
+    }
+  });
+
+  // PARTICLES
+  function createParticles() {
+    const container = document.getElementById('particles');
+    const count = 20;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 60 + 20;
+      p.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${Math.random() * 100}%;
+        animation-duration: ${Math.random() * 15 + 10}s;
+        animation-delay: ${Math.random() * 10}s;
+        opacity: ${Math.random() * 0.15 + 0.03};
+      `;
+      container.appendChild(p);
+    }
+  }
+  createParticles();
+
+  // EXAM TICKER
+  const exams = [
+    'IIT JEE', 'NEET', 'UPSC CSE', 'SSC CGL', 'SSC CHSL', 'Banking PO',
+    'Banking Clerk', 'Railway NTPC', 'Railway Group D', 'GATE',
+    'CAT', 'CUET', 'RPSC RAS', 'Rajasthan Police', 'Patwari',
+    'RTU Exams', 'Class 10 Board', 'Class 12 Board',
+    'College Semester', 'NDA', 'CDS', 'IBPS PO', 'SBI PO',
+    'LIC AAO', 'CLAT', 'NIFT', 'REET', 'RSMSSB'
+  ];
+  const track = document.getElementById('tickerTrack');
+  const doubled = [...exams, ...exams];
+  doubled.forEach(exam => {
+    const item = document.createElement('div');
+    item.className = 'ticker-item';
+    item.innerHTML = `<span class="ticker-dot"></span>${exam}`;
+    track.appendChild(item);
+  });
+
+  // PLANS TOGGLE
+  function showPlans(type) {
+    document.querySelectorAll('.plans-grid').forEach(g => g.classList.remove('active'));
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('plans-' + type).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // SCROLL REVEAL
+  const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => revealObserver.observe(el));
+
+  // ACTIVE NAV LINK ON SCROLL
+  const sections = document.querySelectorAll('section[id]');
+  const navAnchors = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      if (window.scrollY >= section.offsetTop - 100) {
+        current = section.getAttribute('id');
+      }
+    });
+    navAnchors.forEach(a => {
+      a.style.fontWeight = a.getAttribute('href') === '#' + current ? '700' : '500';
+    });
+  });
+</script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/booking.js"></script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – Shiksha Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#0f172a;min-height:100vh;color:#1e293b}
+  header{background:#1e293b;color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:1.1rem;font-weight:700}header p{font-size:.75rem;opacity:.6;margin-top:2px}
+  .logout-btn{background:#dc2626;border:none;color:#fff;padding:.4rem .9rem;border-radius:7px;font-size:.85rem;font-weight:600;cursor:pointer}
+  .container{max-width:1100px;margin:0 auto;padding:1.5rem 1rem}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .stat{background:#1e293b;border-radius:12px;padding:1.25rem;color:#fff}
+  .stat-val{font-size:1.8rem;font-weight:800;color:#f59e0b}
+  .stat-label{font-size:.8rem;color:#94a3b8;margin-top:.2rem}
+  .card{background:#fff;border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .card-title{font-size:1rem;font-weight:700}
+  .tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+  .tab{padding:.5rem 1.1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;background:#1e293b;color:#94a3b8;border:none}
+  .tab.active{background:#f59e0b;color:#fff}
+  table{width:100%;border-collapse:collapse;font-size:.875rem}
+  th{text-align:left;padding:.6rem .75rem;background:#f8fafc;color:#64748b;font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+  td{padding:.7rem .75rem;border-bottom:1px solid #f1f5f9}
+  tr:hover td{background:#fafafa}
+  .badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.75rem;font-weight:600}
+  .badge-active{background:#dcfce7;color:#15803d}
+  .badge-expired{background:#fee2e2;color:#dc2626}
+  .badge-prime{background:#fef3c7;color:#92400e}
+  .edit-btn{background:#f1f5f9;border:none;padding:.3rem .7rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:500}
+  .save-btn{background:#f59e0b;border:none;color:#fff;padding:.3rem .7rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:600}
+  .price-input{width:80px;padding:.3rem .5rem;border:1.5px solid #e2e8f0;border-radius:6px;font-size:.85rem;font-weight:600;text-align:center}
+  .price-input:focus{border-color:#f59e0b;outline:none}
+  .empty{text-align:center;padding:2rem;color:#94a3b8}
+  .login-overlay{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:999}
+  .login-box{background:#1e293b;border-radius:16px;padding:2rem;width:320px;color:#fff}
+  .login-box h2{font-size:1.2rem;font-weight:700;margin-bottom:.25rem}
+  .login-box p{color:#94a3b8;font-size:.85rem;margin-bottom:1.5rem}
+  .login-box input{width:100%;padding:.65rem .9rem;background:#0f172a;border:1.5px solid #334155;border-radius:8px;color:#fff;font-size:.9rem;margin-bottom:.75rem;font-family:inherit;outline:none}
+  .login-box input:focus{border-color:#f59e0b}
+  .login-box button{width:100%;padding:.75rem;background:#f59e0b;border:none;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
+  .error{color:#f87171;font-size:.8rem;margin-bottom:.75rem;display:none}
+  .search-input{padding:.5rem .9rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;width:220px}
+  .search-input:focus{border-color:#f59e0b}
+  .spinner{width:32px;height:32px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <p>Shiksha Library — Owner Access Only</p>
+    <input type="email" id="a-email" placeholder="Admin email">
+    <input type="password" id="a-pwd" placeholder="Password">
+    <div class="error" id="a-error"></div>
+    <button onclick="adminLogin()">Login</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1>⚡ Shiksha Library Admin</h1>
+    <p>Owner Dashboard</p>
+  </div>
+  <button class="logout-btn" onclick="adminLogout()">Logout</button>
+</header>
+
+<div class="container">
+  <div id="admin-loader" style="text-align:center;padding:3rem;color:#94a3b8"><div class="spinner"></div></div>
+  <div id="admin-content" style="display:none">
+
+    <!-- Stats Row -->
+    <div class="grid4">
+      <div class="stat"><div class="stat-val" id="s-students">—</div><div class="stat-label">Total Students</div></div>
+      <div class="stat"><div class="stat-val" id="s-active">—</div><div class="stat-label">Active Memberships</div></div>
+      <div class="stat"><div class="stat-val" id="s-revenue">—</div><div class="stat-label">Total Revenue</div></div>
+      <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Joined This Month</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showSection('students')">👥 Students</button>
+      <button class="tab" onclick="showSection('memberships')">🎫 Memberships</button>
+      <button class="tab" onclick="showSection('payments')">💰 Payments</button>
+      <button class="tab" onclick="showSection('prices')">✏️ Update Prices</button>
+    </div>
+
+    <!-- STUDENTS -->
+    <div id="sec-students" class="card">
+      <div class="card-header">
+        <span class="card-title">All Students</span>
+        <input type="text" class="search-input" placeholder="Search name / email..." oninput="filterTable('students-table', this.value)">
+      </div>
+      <div style="overflow-x:auto">
+        <table id="students-table">
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Joined</th></tr></thead>
+          <tbody id="students-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MEMBERSHIPS -->
+    <div id="sec-memberships" class="card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">All Memberships</span>
+        <input type="text" class="search-input" placeholder="Search..." oninput="filterTable('memberships-table', this.value)">
+      </div>
+      <div style="overflow-x:auto">
+        <table id="memberships-table">
+          <thead><tr><th>Student</th><th>Plan</th><th>Duration</th><th>Section</th><th>Fixed Seat</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="memberships-body"><tr><td colspan="9" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div id="sec-payments" class="card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">Payment Log</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Date</th><th>Student</th><th>Plan</th><th>Amount</th><th>Razorpay ID</th><th>Status</th></tr></thead>
+          <tbody id="payments-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRICES -->
+    <div id="sec-prices" class="card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">✏️ Update Membership Prices</span>
+      </div>
+      <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem">Edit any price and click Save. Changes reflect on website immediately.</p>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Plan</th><th>Duration</th><th>Section</th><th>Shift</th><th>Current Price (₹)</th><th>Action</th></tr></thead>
+          <tbody id="prices-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = "https://ojmxqckunnpthgftwbkq.supabase.co
+";
+const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS
+";
+const ADMIN_EMAIL       = "namangalav230@gmail.com"; // Set this to your email
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function fmt(d){if(!d)return"—";return new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}
+
+async function adminLogin() {
+  const email = document.getElementById("a-email").value.trim();
+  const pwd   = document.getElementById("a-pwd").value;
+  const err   = document.getElementById("a-error");
+  err.style.display = "none";
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error || data.user.email !== ADMIN_EMAIL) {
+    await sb.auth.signOut();
+    err.textContent = "Invalid credentials or not an admin account.";
+    err.style.display = "block";
+  } else {
+    document.getElementById("login-overlay").style.display = "none";
+    loadAll();
+  }
+}
+
+async function adminLogout() {
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user.email === ADMIN_EMAIL) {
+    document.getElementById("login-overlay").style.display = "none";
+    loadAll();
+  } else {
+    document.getElementById("admin-loader").style.display = "none";
+  }
+}
+
+async function loadAll() {
+  document.getElementById("admin-loader").style.display = "none";
+  document.getElementById("admin-content").style.display = "block";
+
+  const [{ data: students }, { data: memberships }, { data: payments }, { data: plans }] = await Promise.all([
+    sb.from("students").select("*").order("created_at", { ascending: false }),
+    sb.from("memberships").select("*, students(full_name,email), plans(name,duration,shift,section)").order("created_at", { ascending: false }),
+    sb.from("payments").select("*, students(full_name,email)").order("created_at", { ascending: false }),
+    sb.from("plans").select("*").order("id"),
+  ]);
+
+  // Stats
+  const active = memberships?.filter(m => m.status === "active" && new Date(m.end_date) >= new Date());
+  const revenue = payments?.filter(p=>p.status==="success").reduce((s,p)=>s+p.amount,0) || 0;
+  const thisMonth = students?.filter(s => new Date(s.created_at).getMonth() === new Date().getMonth()).length || 0;
+  document.getElementById("s-students").textContent = students?.length || 0;
+  document.getElementById("s-active").textContent = active?.length || 0;
+  document.getElementById("s-revenue").textContent = "₹" + revenue.toLocaleString();
+  document.getElementById("s-today").textContent = thisMonth;
+
+  // Students table
+  document.getElementById("students-body").innerHTML = students?.length
+    ? students.map((s,i)=>`<tr><td>${i+1}</td><td>${s.full_name}</td><td>${s.email}</td><td>${s.phone}</td><td>${s.exam_target||"—"}</td><td>${fmt(s.created_at)}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">No students yet.</td></tr>`;
+
+  // Memberships table
+  document.getElementById("memberships-body").innerHTML = memberships?.length
+    ? memberships.map(m=>`<tr>
+        <td>${m.students?.full_name||"—"}</td>
+        <td>${m.plans?.name||"—"}</td>
+        <td>${m.plans?.duration||"—"}</td>
+        <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
+        <td>${m.fixed_seat?"✅ Yes":"No"}</td>
+        <td>${fmt(m.start_date)}</td>
+        <td>${fmt(m.end_date)}</td>
+        <td>₹${m.amount_paid.toLocaleString()}</td>
+        <td><span class="badge ${new Date(m.end_date)>=new Date()?"badge-active":"badge-expired"}">${new Date(m.end_date)>=new Date()?"Active":"Expired"}</span></td>
+      </tr>`).join("")
+    : `<tr><td colspan="9" class="empty">No memberships yet.</td></tr>`;
+
+  // Payments table
+  document.getElementById("payments-body").innerHTML = payments?.length
+    ? payments.map(p=>`<tr>
+        <td>${fmt(p.created_at)}</td>
+        <td>${p.students?.full_name||"—"}</td>
+        <td style="font-size:.8rem;color:#64748b">${p.plan_id||"—"}</td>
+        <td style="font-weight:700;color:#15803d">₹${p.amount.toLocaleString()}</td>
+        <td style="font-size:.78rem;color:#94a3b8">${p.razorpay_payment_id||"—"}</td>
+        <td><span class="badge ${p.status==="success"?"badge-active":"badge-expired"}">${p.status}</span></td>
+      </tr>`).join("")
+    : `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
+
+  // Prices table
+  document.getElementById("prices-body").innerHTML = plans?.length
+    ? plans.map(p=>`<tr>
+        <td style="font-weight:600">${p.name}</td>
+        <td>${p.duration}</td>
+        <td>${p.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
+        <td>${p.shift}</td>
+        <td><input class="price-input" id="price-${p.id}" type="number" value="${p.price}" min="0"></td>
+        <td><button class="save-btn" onclick="savePrice('${p.id}')">Save</button></td>
+      </tr>`).join("")
+    : `<tr><td colspan="6" class="empty">No plans found.</td></tr>`;
+}
+
+async function savePrice(planId) {
+  const val = parseInt(document.getElementById("price-" + planId).value);
+  if (isNaN(val)||val<0) { alert("Enter a valid price."); return; }
+  const { error } = await sb.from("plans").update({ price: val }).eq("id", planId);
+  if (error) alert("Error: " + error.message);
+  else alert("✅ Price updated to ₹" + val);
+}
+
+function showSection(sec) {
+  ["students","memberships","payments","prices"].forEach(s => {
+    document.getElementById("sec-" + s).style.display = s === sec ? "block" : "none";
+  });
+  document.querySelectorAll(".tab").forEach((t,i) => {
+    t.classList.toggle("active", ["students","memberships","payments","prices"][i] === sec);
+  });
+}
+
+function filterTable(tableId, query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll("#" + tableId + " tbody tr").forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+checkSession();
+</script>
+</body>
+</html>

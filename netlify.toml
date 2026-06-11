@@ -1,0 +1,12 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+  command = "cd netlify/functions && npm install"
+
+[functions]
+  node_bundler = "esbuild"
+  directory = "netlify/functions"
+
+[build.environment]
+  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"

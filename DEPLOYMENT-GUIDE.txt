@@ -1,0 +1,244 @@
+# ============================================================
+# SHIKSHA LIBRARY — COMPLETE DEPLOYMENT GUIDE
+# Follow every step in order. Takes ~45 minutes total.
+# ============================================================
+
+## WHAT YOU'RE DEPLOYING
+- Registration form + Razorpay payment on your existing site
+- Student login & dashboard (dashboard.html)
+- Admin dashboard (admin.html)
+- 2 Netlify serverless functions (create-order, verify-payment)
+- Supabase database (students, memberships, payments, plans)
+
+---
+
+## STEP 1 — SET UP SUPABASE (Free Database + Auth)
+Time: ~10 minutes
+
+1. Go to https://supabase.com → Click "Start your project"
+2. Sign up with GitHub or email
+3. Click "New Project" → Fill in:
+   - Project name: shiksha-library
+   - Database Password: (save this somewhere safe)
+   - Region: South Asia (ap-south-1)
+4. Wait ~2 minutes for project to be ready
+5. In left sidebar → Click "SQL Editor"
+6. Click "New Query"
+7. Open the file: supabase-setup.sql
+8. Copy ALL the text → Paste in the SQL editor
+9. Click "Run" (green button)
+10. You should see: "Success. No rows returned"
+
+11. Now get your keys:
+    - Left sidebar → Settings → API
+    - Copy "Project URL" → save as SUPABASE_URL
+    - Copy "anon public" key → save as SUPABASE_ANON_KEY
+    - Copy "service_role secret" key → save as SUPABASE_SERVICE_ROLE_KEY
+    ⚠️ NEVER share the service_role key publicly
+
+---
+
+## STEP 2 — SET UP RAZORPAY (Free Payment Gateway)
+Time: ~10 minutes
+
+1. Go to https://razorpay.com → Sign Up
+2. Fill business details:
+   - Business type: Individual / Proprietorship
+   - Use your own PAN / Aadhaar
+3. Go to Settings → API Keys → Generate Test Key
+4. Copy:
+   - Key ID → save as RAZORPAY_KEY_ID
+   - Key Secret → save as RAZORPAY_KEY_SECRET
+5. ⚠️ Test mode first! After everything works, switch to Live keys.
+
+---
+
+## STEP 3 — ADD FILES TO YOUR EXISTING GITHUB REPO
+Time: ~10 minutes
+
+Your existing site is on Netlify connected to a GitHub repo.
+Open that repo folder on your computer.
+
+Add these NEW files/folders to it:
+
+YOUR-SITE-FOLDER/
+├── netlify/
+│   └── functions/
+│       ├── create-order.js      ← copy from this package
+│       ├── verify-payment.js    ← copy from this package
+│       └── package.json         ← copy from this package
+├── js/
+│   └── booking.js               ← copy from this package
+├── login.html                   ← copy from this package
+├── dashboard.html               ← copy from this package
+├── admin.html                   ← copy from this package
+└── netlify.toml                 ← copy from this package (or create if not exists)
+
+---
+
+## STEP 4 — ADD YOUR KEYS TO ALL FILES
+Time: ~5 minutes
+
+You need to replace placeholder text in 5 files:
+
+### In js/booking.js (lines 10-12):
+  RAZORPAY_KEY_ID    = "YOUR_RAZORPAY_KEY_ID"    → replace with your Razorpay Key ID
+  SUPABASE_URL       = "YOUR_SUPABASE_PROJECT_URL" → replace with Supabase URL
+  SUPABASE_ANON_KEY  = "YOUR_SUPABASE_ANON_KEY"   → replace with Supabase anon key
+
+### In login.html (bottom script section):
+  SUPABASE_URL       = "YOUR_SUPABASE_PROJECT_URL"
+  SUPABASE_ANON_KEY  = "YOUR_SUPABASE_ANON_KEY"
+
+### In dashboard.html (bottom script section):
+  SUPABASE_URL       = "YOUR_SUPABASE_PROJECT_URL"
+  SUPABASE_ANON_KEY  = "YOUR_SUPABASE_ANON_KEY"
+
+### In admin.html (bottom script section):
+  SUPABASE_URL       = "YOUR_SUPABASE_PROJECT_URL"
+  SUPABASE_ANON_KEY  = "YOUR_SUPABASE_ANON_KEY"
+  ADMIN_EMAIL        = "YOUR_ADMIN_EMAIL"  ← put your own email here
+
+---
+
+## STEP 5 — ADD ENVIRONMENT VARIABLES TO NETLIFY
+Time: ~3 minutes
+(This is for the backend functions — keeps secret keys safe)
+
+1. Go to https://app.netlify.com → Your site
+2. Site configuration → Environment variables → Add variable
+
+Add these 4 variables:
+  Name: RAZORPAY_KEY_ID       Value: (your Razorpay key ID)
+  Name: RAZORPAY_KEY_SECRET   Value: (your Razorpay key secret)
+  Name: SUPABASE_URL          Value: (your Supabase URL)
+  Name: SUPABASE_SERVICE_ROLE_KEY  Value: (your Supabase service role key)
+
+Click Save.
+
+---
+
+## STEP 6 — ADD SCRIPTS TO YOUR index.html
+Time: ~5 minutes
+
+Open your existing index.html file.
+Find the </body> tag near the bottom.
+Just BEFORE </body>, add these 3 lines:
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/booking.js"></script>
+
+That's it! The booking system attaches automatically to all "Book Now" buttons.
+
+---
+
+## STEP 7 — PUSH TO GITHUB → AUTO DEPLOYS
+Time: ~3 minutes
+
+In your terminal / Git client:
+  git add .
+  git commit -m "Add payment, login, dashboard system"
+  git push
+
+Netlify will auto-detect the push and deploy in ~2 minutes.
+Watch the deploy log in Netlify dashboard.
+
+---
+
+## STEP 8 — TEST EVERYTHING
+Time: ~5 minutes
+
+1. Go to your site → Click any "Book Now" button
+   → Registration modal should open ✅
+
+2. Fill the form → Click "Proceed to Pay"
+   → Razorpay payment window should open ✅
+
+3. Use Razorpay TEST card: 4111 1111 1111 1111 / Any expiry / Any CVV
+   → Payment should succeed ✅
+
+4. After payment → Success modal should appear ✅
+
+5. Go to your-site.netlify.app/login.html
+   → Login with the email + phone number used in step 2
+   → Should redirect to dashboard.html ✅
+
+6. Go to your-site.netlify.app/admin.html
+   → Login with your admin email + password
+   → Should see the student's data ✅
+
+---
+
+## STEP 9 — GO LIVE WITH REAL PAYMENTS
+When you're happy with testing:
+
+1. Go to Razorpay dashboard → Switch to "Live Mode"
+2. Generate Live API Keys
+3. Replace test keys with live keys in:
+   - Netlify environment variables (RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET)
+   - js/booking.js (RAZORPAY_KEY_ID at top)
+4. Push to GitHub again
+
+---
+
+## ADMIN USAGE GUIDE (For Library Owner)
+
+### To see all students:
+  → Go to yoursite.netlify.app/admin.html → Students tab
+
+### To see all payments:
+  → Admin dashboard → Payments tab
+
+### To UPDATE PRICES (seasonal changes):
+  → Admin dashboard → "Update Prices" tab
+  → Type new price → Click Save
+  → Price updates immediately in database
+  ⚠️ Note: The price on the website HTML is separate from DB prices.
+     The booking modal ALWAYS uses the DB price, so always update here.
+     For the displayed price cards on the homepage, edit index.html too.
+
+### To see active memberships:
+  → Admin dashboard → Memberships tab
+
+---
+
+## TOTAL COST SUMMARY
+  Netlify hosting:       FREE forever
+  Netlify subdomain:     FREE (yoursite.netlify.app)
+  Supabase database:     FREE (500MB — handles 10,000+ students)
+  Supabase auth:         FREE (up to 50,000 users)
+  Razorpay:              FREE setup, 2% per transaction
+  Everything else:       FREE
+
+  ONE-TIME COST: ₹0 (if using Netlify subdomain)
+  If you want custom domain (.in): ~₹500-700/year
+
+---
+
+## COMMON ISSUES & FIXES
+
+Q: "Book Now" button still opens WhatsApp
+A: Check that booking.js script tag is added before </body> in index.html
+
+Q: Payment window doesn't open
+A: Check Razorpay key in booking.js is correct. Check browser console for errors.
+
+Q: "Verification failed" after payment
+A: Check Netlify environment variables are set correctly (Step 5)
+
+Q: Can't login to dashboard
+A: Default password = phone number entered during registration
+
+Q: Admin dashboard shows no data
+A: Make sure ADMIN_EMAIL in admin.html matches your Supabase login email exactly
+
+---
+
+## SUPPORT
+If stuck, WhatsApp: +91 7597474668 (your own library number 😄)
+Or check Netlify docs: docs.netlify.com
+Supabase docs: supabase.com/docs
+Razorpay docs: razorpay.com/docs
+
+============================================================
