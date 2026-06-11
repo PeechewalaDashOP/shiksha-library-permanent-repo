@@ -91,6 +91,7 @@
       <button class="tab" onclick="showSection('payments')">💰 Payments</button>
       <button class="tab" onclick="showSection('prices')">✏️ Update Prices</button>
       <button class="tab" onclick="showSection('cash')">🏦 Cash Approvals</button>
+      <button class="tab" onclick="showSection('report')">📊 Daily Report</button>
     </div>
 
     <!-- STUDENTS -->
@@ -144,6 +145,30 @@
           <thead><tr><th>Student</th><th>Plan</th><th>Amount</th><th>Registered On</th><th>Status</th><th>Action</th></tr></thead>
           <tbody id="cash-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
         </table>
+      </div>
+    </div>
+    <!-- DAILY REPORT -->
+    <div id="sec-report" class="card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">📊 Daily Collection Report</span>
+        <button class="save-btn" onclick="exportCSV()" style="background:#1e293b;padding:.4rem 1rem">⬇ Export CSV</button>
+      </div>
+      <p style="color:#64748b;font-size:.875rem;margin-bottom:1.25rem">Date-wise breakdown of all registrations and payments received.</p>
+      <div id="report-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem"></div>
+      <div style="overflow-x:auto">
+        <table id="report-table">
+          <thead><tr><th>Date</th><th>Students</th><th>Online Collected</th><th>Cash Collected</th><th>Cash Pending</th><th>Total</th></tr></thead>
+          <tbody id="report-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="card-title" style="margin-bottom:1rem">All Registrations Detail</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Date</th><th>Student</th><th>Plan</th><th>Amount</th><th>Mode</th><th>Status</th></tr></thead>
+            <tbody id="detail-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
     <!-- PRICES -->
@@ -283,16 +308,33 @@ async function loadAll() {
   }
 async function approveCash(membershipId) {
   if (!confirm("Confirm cash received and activate this membership?")) return;
+  const btn = document.querySelector(`button[onclick="approveCash('${membershipId}')"]`);
+  if (btn) { btn.textContent = "Processing..."; btn.disabled = true; }
   const { error } = await sb.from("memberships").update({ status: "active" }).eq("id", membershipId);
-  if (error) alert("Error: " + error.message);
-  else { alert("✅ Membership activated!"); loadAll(); }
+  if (error) { alert("Error: " + error.message); if (btn) { btn.textContent = "✅ Approve"; btn.disabled = false; } }
+  else {
+    const row = btn?.closest("tr");
+    if (row) {
+      row.cells[4].innerHTML = '<span class="badge badge-active">✅ Active</span>';
+      row.cells[5].innerHTML = '<span style="color:#15803d;font-weight:600">Cash Collected ✓</span>';
+    }
+    document.getElementById("s-active").textContent = parseInt(document.getElementById("s-active").textContent || 0) + 1;
+  }
 }
 
 async function rejectCash(membershipId) {
   if (!confirm("Reject this cash registration?")) return;
+  const btn = document.querySelector(`button[onclick="rejectCash('${membershipId}')"]`);
+  if (btn) { btn.textContent = "Processing..."; btn.disabled = true; }
   const { error } = await sb.from("memberships").update({ status: "rejected" }).eq("id", membershipId);
-  if (error) alert("Error: " + error.message);
-  else { alert("Registration rejected."); loadAll(); }
+  if (error) { alert("Error: " + error.message); if (btn) { btn.textContent = "❌ Reject"; btn.disabled = false; } }
+  else {
+    const row = btn?.closest("tr");
+    if (row) {
+      row.cells[4].innerHTML = '<span class="badge badge-expired">❌ Rejected</span>';
+      row.cells[5].innerHTML = '<span style="color:#dc2626;font-weight:600">Rejected</span>';
+    }
+  }
 }
 
 async function savePrice(planId) {
@@ -304,12 +346,13 @@ async function savePrice(planId) {
 }
 
 function showSection(sec) {
-  ["students","memberships","payments","prices","cash"].forEach(s => {
+  ["students","memberships","payments","prices","cash","report"].forEach(s => {
     document.getElementById("sec-" + s).style.display = s === sec ? "block" : "none";
   });
   document.querySelectorAll(".tab").forEach((t,i) => {
-    t.classList.toggle("active", ["students","memberships","payments","prices","cash"][i] === sec);
+    t.classList.toggle("active", ["students","memberships","payments","prices","cash","report"][i] === sec);
   });
+  if (sec === "report") buildReport();
 }
 
 function filterTable(tableId, query) {
@@ -318,7 +361,90 @@ function filterTable(tableId, query) {
     row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
   });
 }
+let allPaymentsData = [];
 
+async function buildReport() {
+  const { data: payments } = await sb
+    .from("payments")
+    .select("*, students(full_name, email, phone)")
+    .order("created_at", { ascending: false });
+
+  if (!payments?.length) {
+    document.getElementById("report-body").innerHTML = `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
+    document.getElementById("detail-body").innerHTML = `<tr><td colspan="6" class="empty">No data yet.</td></tr>`;
+    return;
+  }
+
+  allPaymentsData = payments;
+
+  // Group by date
+  const byDate = {};
+  payments.forEach(p => {
+    const date = new Date(p.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    if (!byDate[date]) byDate[date] = { students: 0, online: 0, cashCollected: 0, cashPending: 0 };
+    byDate[date].students++;
+    if (p.payment_mode === "cash" && p.status === "success") byDate[date].cashCollected += p.amount;
+    else if (p.payment_mode === "cash" && p.status === "pending") byDate[date].cashPending += p.amount;
+    else if (p.status === "success") byDate[date].online += p.amount;
+  });
+
+  // Summary cards
+  const totalOnline = payments.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p) => s+p.amount, 0);
+  const totalCash   = payments.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p) => s+p.amount, 0);
+  const totalPending = payments.filter(p => p.status === "pending").reduce((s,p) => s+p.amount, 0);
+  document.getElementById("report-summary").innerHTML = `
+    <div class="stat"><div class="stat-val">₹${totalOnline.toLocaleString()}</div><div class="stat-label">Total Online Received</div></div>
+    <div class="stat"><div class="stat-val">₹${totalCash.toLocaleString()}</div><div class="stat-label">Total Cash Received</div></div>
+    <div class="stat"><div class="stat-val" style="color:#f87171">₹${totalPending.toLocaleString()}</div><div class="stat-label">Cash Pending Collection</div></div>
+    <div class="stat"><div class="stat-val">₹${(totalOnline+totalCash).toLocaleString()}</div><div class="stat-label">Grand Total Collected</div></div>
+  `;
+
+  // Date-wise table
+  document.getElementById("report-body").innerHTML = Object.entries(byDate).map(([date, d]) => `
+    <tr>
+      <td style="font-weight:600">${date}</td>
+      <td>${d.students}</td>
+      <td style="color:#15803d;font-weight:600">${d.online ? "₹" + d.online.toLocaleString() : "—"}</td>
+      <td style="color:#15803d;font-weight:600">${d.cashCollected ? "₹" + d.cashCollected.toLocaleString() : "—"}</td>
+      <td style="color:#f59e0b;font-weight:600">${d.cashPending ? "₹" + d.cashPending.toLocaleString() : "—"}</td>
+      <td style="font-weight:800;color:#1e293b">₹${(d.online + d.cashCollected + d.cashPending).toLocaleString()}</td>
+    </tr>
+  `).join("");
+
+  // Detail table
+  document.getElementById("detail-body").innerHTML = payments.map(p => `
+    <tr>
+      <td style="font-size:.8rem;color:#64748b">${fmt(p.created_at)}</td>
+      <td><div style="font-weight:600">${p.students?.full_name || "—"}</div><div style="font-size:.75rem;color:#94a3b8">${p.students?.phone || ""}</div></td>
+      <td style="font-size:.8rem">${p.plan_id?.replace(/-/g," ") || "—"}</td>
+      <td style="font-weight:700">₹${p.amount.toLocaleString()}</td>
+      <td><span class="badge" style="background:${p.payment_mode==="cash"?"#fef3c7":"#ede9fe"};color:${p.payment_mode==="cash"?"#92400e":"#6d28d9"}">${p.payment_mode==="cash"?"🏦 Cash":"💳 Online"}</span></td>
+      <td><span class="badge ${p.status==="success"?"badge-active":"badge-expired"}">${p.status}</span></td>
+    </tr>
+  `).join("");
+}
+
+function exportCSV() {
+  if (!allPaymentsData.length) { alert("No data to export."); return; }
+  const rows = [["Date","Student","Phone","Plan","Amount","Mode","Status"]];
+  allPaymentsData.forEach(p => {
+    rows.push([
+      fmt(p.created_at),
+      p.students?.full_name || "—",
+      p.students?.phone || "—",
+      p.plan_id || "—",
+      p.amount,
+      p.payment_mode || "online",
+      p.status,
+    ]);
+  });
+  const csv = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = "shiksha-library-payments.csv";
+  a.click(); URL.revokeObjectURL(url);
+}
 checkSession();
 </script>
 </body>
