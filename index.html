@@ -1384,7 +1384,7 @@
         <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹200</div>
         <div class="plan-name">Full Day</div>
         <div class="plan-orig-price">₹1200/month</div>
-        <div class="plan-price">₹1000</div>
+        <div class="plan-price" id="price-display-monthly-fullday-regular">₹1000</div>
         <div class="plan-period">per month &nbsp;•&nbsp; 24×7 Access</div>
         <div class="plan-divider"></div>
         <div class="plan-features">
@@ -1411,7 +1411,7 @@
         <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹100</div>
         <div class="plan-name">Prime Morning Shift</div>
         <div class="plan-orig-price">₹700/month</div>
-        <div class="plan-price">₹600</div>
+        <div class="plan-price" id="price-display-monthly-evening-regular">₹600</div>
         <div class="plan-period">per month &nbsp;•&nbsp; 6:00 AM – 2:00 PM</div>
         <div class="plan-divider"></div>
         <div class="plan-features">
@@ -1520,7 +1520,7 @@
         <div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹101</div>
         <div class="plan-name">Full Day – 15 Days</div>
         <div class="plan-orig-price">₹700 for 15 days</div>
-        <div class="plan-price">₹600</div>
+        <div class="plan-price" id="price-display-monthly-evening-regular">₹600</div>
         <div class="plan-period">15 days &nbsp;•&nbsp; 24×7 Access</div>
         <div class="plan-divider"></div>
         <div class="plan-features">
@@ -2046,5 +2046,26 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/booking.js"></script>
+<script>
+async function updateDisplayPrices() {
+  try {
+    const sb2 = window.supabase.createClient(
+      "https://ojmxqckunnpthgftwbkq.supabase.co",
+      "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS"
+    );
+    const { data: plans } = await sb2.from("plans").select("id, price");
+    if (!plans?.length) return;
+    plans.forEach(p => {
+      const el = document.querySelector(`[data-plan-id="${p.id}"]`);
+      if (!el) return;
+      const card = el.closest(".plan-card");
+      if (!card) return;
+      const priceEl = card.querySelector(".plan-price");
+      if (priceEl) priceEl.textContent = "₹" + p.price.toLocaleString("en-IN");
+    });
+  } catch(e) { console.log("Price sync error:", e); }
+}
+document.addEventListener("DOMContentLoaded", updateDisplayPrices);
+</script>
 </body>
 </html>
