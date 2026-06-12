@@ -353,6 +353,7 @@ function showSection(sec) {
     t.classList.toggle("active", ["students","memberships","payments","prices","cash","report"][i] === sec);
   });
   if (sec === "report") buildReport();
+  if (sec === "cash") loadCashPending();
 }
 
 function filterTable(tableId, query) {
@@ -360,6 +361,73 @@ function filterTable(tableId, query) {
   document.querySelectorAll("#" + tableId + " tbody tr").forEach(row => {
     row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
   });
+}
+async function loadCashPending() {
+  const { data, error } = await sb
+    .from("memberships")
+    .select("*, students(full_name, email, phone)")
+    .eq("status", "pending")
+    .eq("payment_mode", "cash")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("cash-body").innerHTML = `<tr><td colspan="8" class="empty">Error: ${error.message}</td></tr>`;
+    return;
+  }
+
+  const count = data?.length || 0;
+  document.getElementById("cash-count").textContent = count + " pending";
+
+  document.getElementById("cash-body").innerHTML = count
+    ? data.map(m => `<tr>
+        <td><strong>${m.students?.full_name || "—"}</strong><br><small style="color:#64748b">${m.students?.email || ""}</small></td>
+        <td>${m.students?.phone || "—"}</td>
+        <td style="font-size:.82rem;color:#64748b">${m.plan_id}</td>
+        <td style="font-weight:700;color:#15803d">₹${m.amount_paid.toLocaleString()}</td>
+        <td>${m.fixed_seat ? "✅ Yes" : "No"}</td>
+        <td>${m.locker ? "✅ Yes" : "No"}</td>
+        <td style="font-size:.8rem">${fmt(m.created_at)}</td>
+        <td>
+          <button class="save-btn" onclick="approveCash('${m.id}', this)" style="background:#15803d">✅ Approve</button><br>
+          <button class="edit-btn" onclick="rejectCash('${m.id}', this)" style="margin-top:4px;background:#fee2e2;color:#dc2626">❌ Reject</button>
+        </td>
+      </tr>`).join("")
+    : `<tr><td colspan="8" class="empty">No pending cash payments 🎉</td></tr>`;
+}
+
+async function approveCash(membershipId, btn) {
+  if (!confirm("Cash received? This will activate the membership.")) return;
+  btn.textContent = "Activating...";
+  btn.disabled = true;
+  const { error } = await sb
+    .from("memberships")
+    .update({ status: "active" })
+    .eq("id", membershipId);
+  if (error) {
+    alert("Error: " + error.message);
+    btn.textContent = "✅ Approve";
+    btn.disabled = false;
+  } else {
+    loadCashPending();
+    loadAll();
+  }
+}
+
+async function rejectCash(membershipId, btn) {
+  if (!confirm("Reject this cash registration? This cannot be undone.")) return;
+  btn.textContent = "Rejecting...";
+  btn.disabled = true;
+  const { error } = await sb
+    .from("memberships")
+    .update({ status: "rejected" })
+    .eq("id", membershipId);
+  if (error) {
+    alert("Error: " + error.message);
+    btn.textContent = "❌ Reject";
+    btn.disabled = false;
+  } else {
+    loadCashPending();
+  }
 }
 let allPaymentsData = [];
 
