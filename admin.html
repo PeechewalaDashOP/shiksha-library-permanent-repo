@@ -376,7 +376,6 @@ async function loadCashPending() {
   }
 
   const count = data?.length || 0;
-  document.getElementById("cash-count").textContent = count + " pending";
 
   document.getElementById("cash-body").innerHTML = count
     ? data.map(m => `<tr>
