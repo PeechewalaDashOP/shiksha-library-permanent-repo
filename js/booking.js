@@ -99,10 +99,20 @@ function updateTotalPrice() {
   const base      = parseInt(document.getElementById("sl-plan-base-price").value) || 0;
   const fixedSeat = document.getElementById("sl-fixed-seat").checked;
   const locker    = document.getElementById("sl-locker").checked;
-  const total     = base + (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
+  const subtotal  = base + (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
+  const payMode   = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
+  const gatewayFee = payMode === "online" ? Math.round(subtotal * 0.0236) : 0;
+  const total = subtotal + gatewayFee;
+
+  currentPlan.subtotal   = subtotal;
+  currentPlan.gatewayFee = gatewayFee;
   currentPlan.finalPrice = total;
   currentPlan.fixedSeat  = fixedSeat;
   currentPlan.locker     = locker;
+
+  document.getElementById("sl-subtotal").textContent     = "₹" + subtotal.toLocaleString();
+  document.getElementById("sl-gateway-row").style.display = payMode === "online" ? "flex" : "none";
+  document.getElementById("sl-gateway-fee").textContent  = "₹" + gatewayFee.toLocaleString();
   document.getElementById("sl-total-price").textContent  = "₹" + total.toLocaleString();
   document.getElementById("sl-submit-price").textContent = "₹" + total.toLocaleString();
 }
@@ -199,6 +209,7 @@ async function handleBookingSubmit(e) {
 function showFormError(msg) { document.getElementById("sl-form-error").textContent = msg; }
 
 function updatePayBtn() {
+  updateTotalPrice();
   const mode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value;
   const btn  = document.getElementById("sl-submit-btn");
   const price = "₹" + (currentPlan.finalPrice || 0).toLocaleString();
@@ -335,9 +346,20 @@ function getModalHTML() {
       <button class="sl-close" onclick="closeBookingModal()">×</button>
       <p class="sl-title">Complete Your Registration</p>
       <div class="sl-badge" id="sl-modal-plan-name">Plan</div>
-      <div class="sl-price-row">
-        <span class="sl-price-label">Total Amount</span>
-        <span class="sl-price-total" id="sl-total-price">₹0</span>
+      <div class="sl-price-row" style="flex-direction:column;gap:6px;align-items:stretch">
+        <div style="display:flex;justify-content:space-between;font-size:.85rem;color:#64748b">
+          <span>Membership Fee</span>
+          <span id="sl-subtotal">₹0</span>
+        </div>
+        <div id="sl-gateway-row" style="display:flex;justify-content:space-between;font-size:.85rem;color:#64748b">
+          <span>Platform Gateway Fee (2.36%)</span>
+          <span id="sl-gateway-fee">₹0</span>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:2px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="sl-price-label">Total Amount</span>
+          <span class="sl-price-total" id="sl-total-price">₹0</span>
+        </div>
       </div>
       <form id="sl-booking-form" onsubmit="handleBookingSubmit(event)">
         <input type="hidden" id="sl-plan-id-hidden">
