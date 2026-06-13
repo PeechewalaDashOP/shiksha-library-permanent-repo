@@ -363,12 +363,13 @@ function filterTable(tableId, query) {
   });
 }
 async function loadCashPending() {
+  console.log("loadCashPending called");
   const { data, error } = await sb
-    .from("memberships")
-    .select("*, students(full_name, email, phone)")
-    .eq("status", "pending")
-    .eq("payment_mode", "cash")
-    .order("created_at", { ascending: false });
+  .from("memberships")
+  .select("*, students!memberships_student_id_fkey(full_name, email, phone)")
+  .eq("status", "pending")
+  .eq("payment_mode", "cash")
+  .order("created_at", { ascending: false });
 
   if (error) {
     document.getElementById("cash-body").innerHTML = `<tr><td colspan="8" class="empty">Error: ${error.message}</td></tr>`;
