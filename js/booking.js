@@ -101,7 +101,8 @@ function updateTotalPrice() {
   const locker    = document.getElementById("sl-locker").checked;
   const subtotal  = base + (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
   const payMode   = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
-  const gatewayFee = payMode === "online" ? Math.round(subtotal * 0.0236) : 0;
+  // Gateway fee (2.36%) applies ONLY to the base plan price, not on locker/fixed-seat add-ons
+  const gatewayFee = payMode === "online" ? Math.round(base * 0.0236) : 0;
   const total = subtotal + gatewayFee;
 
   currentPlan.subtotal   = subtotal;
@@ -143,7 +144,7 @@ async function handleBookingSubmit(e) {
     fullName   : document.getElementById("sl-name").value.trim(),
     fatherName : document.getElementById("sl-father").value.trim(),
     gender     : document.querySelector('input[name="sl-gender"]:checked')?.value || "",
-    email      : document.getElementById("sl-email").value.trim(),
+    email      : document.getElementById("sl-email").value.trim().toLowerCase(),
     phone      : document.getElementById("sl-phone").value.trim(),
     aadhar     : document.getElementById("sl-aadhar").value.trim(),
     address    : document.getElementById("sl-address").value.trim(),
