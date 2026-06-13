@@ -18,7 +18,7 @@
   .stat-val{font-size:1.8rem;font-weight:800;color:#f59e0b}
   .stat-label{font-size:.8rem;color:#94a3b8;margin-top:.2rem}
   .card{background:#fff;border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
   .card-title{font-size:1rem;font-weight:700}
   .tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
   .tab{padding:.5rem 1.1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;background:#1e293b;color:#94a3b8;border:none}
@@ -31,6 +31,8 @@
   .badge-active{background:#dcfce7;color:#15803d}
   .badge-expired{background:#fee2e2;color:#dc2626}
   .badge-prime{background:#fef3c7;color:#92400e}
+  .badge-cash{background:#fef3c7;color:#92400e}
+  .badge-online{background:#ede9fe;color:#6d28d9}
   .edit-btn{background:#f1f5f9;border:none;padding:.3rem .7rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:500}
   .save-btn{background:#f59e0b;border:none;color:#fff;padding:.3rem .7rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:600}
   .price-input{width:80px;padding:.3rem .5rem;border:1.5px solid #e2e8f0;border-radius:6px;font-size:.85rem;font-weight:600;text-align:center}
@@ -46,8 +48,14 @@
   .error{color:#f87171;font-size:.8rem;margin-bottom:.75rem;display:none}
   .search-input{padding:.5rem .9rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;width:220px}
   .search-input:focus{border-color:#f59e0b}
+  .date-input{padding:.5rem .9rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;font-family:inherit}
+  .date-input:focus{border-color:#f59e0b}
   .spinner{width:32px;height:32px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto}
   @keyframes spin{to{transform:rotate(360deg)}}
+  .subtab{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+  .subtab button{padding:.4rem .9rem;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;background:#f1f5f9;color:#64748b;border:none}
+  .subtab button.active{background:#1e293b;color:#fff}
+  .clear-btn{background:#f1f5f9;border:none;padding:.5rem .9rem;border-radius:8px;font-size:.85rem;cursor:pointer;font-weight:500;color:#64748b}
 </style>
 </head>
 <body>
@@ -91,7 +99,7 @@
       <button class="tab" onclick="showSection('payments')">💰 Payments</button>
       <button class="tab" onclick="showSection('prices')">✏️ Update Prices</button>
       <button class="tab" onclick="showSection('cash')">🏦 Cash Approvals</button>
-      <button class="tab" onclick="showSection('report')">📊 Daily Report</button>
+      <button class="tab" onclick="showSection('report')">📊 Collection Report</button>
     </div>
 
     <!-- STUDENTS -->
@@ -102,8 +110,8 @@
       </div>
       <div style="overflow-x:auto">
         <table id="students-table">
-          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Joined</th></tr></thead>
-          <tbody id="students-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Payment Mode</th><th>Amount Paid</th><th>Joined</th></tr></thead>
+          <tbody id="students-body"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -116,8 +124,8 @@
       </div>
       <div style="overflow-x:auto">
         <table id="memberships-table">
-          <thead><tr><th>Student</th><th>Plan</th><th>Duration</th><th>Section</th><th>Fixed Seat</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody id="memberships-body"><tr><td colspan="9" class="empty">Loading...</td></tr></tbody>
+          <thead><tr><th>Student</th><th>Plan</th><th>Duration</th><th>Section</th><th>Fixed Seat</th><th>Payment Mode</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="memberships-body"><tr><td colspan="10" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -126,15 +134,17 @@
     <div id="sec-payments" class="card" style="display:none">
       <div class="card-header">
         <span class="card-title">Payment Log</span>
+        <input type="text" class="search-input" placeholder="Search..." oninput="filterTable('payments-table', this.value)">
       </div>
       <div style="overflow-x:auto">
-        <table>
-          <thead><tr><th>Date</th><th>Student</th><th>Plan</th><th>Amount</th><th>Razorpay ID</th><th>Status</th></tr></thead>
-          <tbody id="payments-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        <table id="payments-table">
+          <thead><tr><th>Date</th><th>Student</th><th>Plan</th><th>Amount</th><th>Mode</th><th>Razorpay ID</th><th>Status</th></tr></thead>
+          <tbody id="payments-body"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
-<!-- CASH APPROVALS -->
+
+    <!-- CASH APPROVALS -->
     <div id="sec-cash" class="card" style="display:none">
       <div class="card-header">
         <span class="card-title">🏦 Cash Payment Approvals</span>
@@ -147,22 +157,69 @@
         </table>
       </div>
     </div>
-    <!-- DAILY REPORT -->
+
+    <!-- COLLECTION REPORT -->
     <div id="sec-report" class="card" style="display:none">
       <div class="card-header">
-        <span class="card-title">📊 Daily Collection Report</span>
-        <button class="save-btn" onclick="exportCSV()" style="background:#1e293b;padding:.4rem 1rem">⬇ Export CSV</button>
+        <span class="card-title">📊 Collection Report</span>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <input type="date" class="date-input" id="report-date-filter" onchange="renderDetailTable()">
+          <button class="clear-btn" onclick="clearDateFilter()">Clear filter</button>
+          <button class="save-btn" onclick="exportCSV()" style="background:#1e293b;padding:.5rem 1rem">⬇ Export CSV</button>
+        </div>
       </div>
-      <p style="color:#64748b;font-size:.875rem;margin-bottom:1.25rem">Date-wise breakdown of all registrations and payments received.</p>
-      <div id="report-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem"></div>
-      <div style="overflow-x:auto">
-        <table id="report-table">
-          <thead><tr><th>Date</th><th>Students</th><th>Online Collected</th><th>Cash Collected</th><th>Cash Pending</th><th>Total</th></tr></thead>
-          <tbody id="report-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
-        </table>
+
+      <!-- This month summary -->
+      <div style="margin-bottom:1.5rem">
+        <div class="card-title" style="margin-bottom:.75rem;font-size:.9rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">This Month</div>
+        <div id="report-month-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem"></div>
       </div>
-      <div style="margin-top:1.5rem">
-        <div class="card-title" style="margin-bottom:1rem">All Registrations Detail</div>
+
+      <!-- All-time summary -->
+      <div style="margin-bottom:1.5rem">
+        <div class="card-title" style="margin-bottom:.75rem;font-size:.9rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">All Time</div>
+        <div id="report-alltime-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem"></div>
+      </div>
+
+      <!-- Cash vs Online breakdown -->
+      <div style="margin-bottom:1.5rem">
+        <div class="card-title" style="margin-bottom:.75rem">Cash vs Online Breakdown</div>
+        <div style="overflow-x:auto">
+          <table id="breakdown-table">
+            <thead><tr><th>Period</th><th>Online Collected</th><th>Cash Collected</th><th>Cash Pending</th><th>Total</th></tr></thead>
+            <tbody id="breakdown-body"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Last 6 months cash history -->
+      <div style="margin-bottom:1.5rem">
+        <div class="card-title" style="margin-bottom:.75rem">Cash Collection — Last 6 Months</div>
+        <div style="overflow-x:auto">
+          <table id="cash-history-table">
+            <thead><tr><th>Month</th><th>Cash Collected</th><th>Cash Pending</th><th>Registrations</th></tr></thead>
+            <tbody id="cash-history-body"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Daily breakdown table -->
+      <div style="margin-bottom:1.5rem">
+        <div class="card-title" style="margin-bottom:.75rem">Daily Breakdown</div>
+        <div style="overflow-x:auto">
+          <table id="report-table">
+            <thead><tr><th>Date</th><th>Students</th><th>Online Collected</th><th>Cash Collected</th><th>Cash Pending</th><th>Total</th></tr></thead>
+            <tbody id="report-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All registrations detail -->
+      <div>
+        <div class="card-title" style="margin-bottom:1rem">
+          All Registrations Detail
+          <span id="detail-filter-label" style="font-size:.78rem;color:#94a3b8;font-weight:500"></span>
+        </div>
         <div style="overflow-x:auto">
           <table>
             <thead><tr><th>Date</th><th>Student</th><th>Plan</th><th>Amount</th><th>Mode</th><th>Status</th></tr></thead>
@@ -171,6 +228,7 @@
         </div>
       </div>
     </div>
+
     <!-- PRICES -->
     <div id="sec-prices" class="card" style="display:none">
       <div class="card-header">
@@ -195,6 +253,7 @@ const ADMIN_EMAIL       = "namangalav230@gmail.com"; // Set this to your email
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function fmt(d){if(!d)return"—";return new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}
+function fmtMonth(d){return new Date(d).toLocaleDateString("en-IN",{month:"short",year:"numeric"})}
 
 async function adminLogin() {
   const email = document.getElementById("a-email").value.trim();
@@ -227,60 +286,155 @@ async function checkSession() {
   }
 }
 
+// ── GLOBAL CACHE ──────────────────────────────────────────────
+let allMembershipsData = [];
+let allPaymentsData = [];
+let allStudentsData = [];
+
+// ── MAIN LOAD ─────────────────────────────────────────────────
 async function loadAll() {
   document.getElementById("admin-loader").style.display = "none";
   document.getElementById("admin-content").style.display = "block";
 
-  const [{ data: students }, { data: memberships }, { data: payments }, { data: plans }, { data: cashPending }] = await Promise.all([
+  const [{ data: students }, { data: memberships }, { data: payments }, { data: plans }] = await Promise.all([
     sb.from("students").select("*").order("created_at", { ascending: false }),
-    sb.from("memberships").select("*, students(full_name,email), plans(name,duration,shift,section)").order("created_at", { ascending: false }),
-    sb.from("payments").select("*, students(full_name,email)").order("created_at", { ascending: false }),
+    sb.from("memberships").select("*, students(full_name,email,phone), plans(name,duration,shift,section)").order("created_at", { ascending: false }),
+    sb.from("payments").select("*, students(full_name,email,phone)").order("created_at", { ascending: false }),
     sb.from("plans").select("*").order("id"),
-    sb.from("memberships").select("*, students(full_name,email,phone), plans(name,duration)").eq("payment_mode","cash").eq("status","pending").order("created_at", { ascending: false }),
   ]);
 
-  // Stats
-  const active = memberships?.filter(m => m.status === "active" && new Date(m.end_date) >= new Date());
-  const revenue = payments?.filter(p=>p.status==="success").reduce((s,p)=>s+p.amount,0) || 0;
-  const thisMonth = students?.filter(s => new Date(s.created_at).getMonth() === new Date().getMonth()).length || 0;
-  document.getElementById("s-students").textContent = students?.length || 0;
-  document.getElementById("s-active").textContent = active?.length || 0;
+  allMembershipsData = memberships || [];
+  allPaymentsData    = payments    || [];
+  allStudentsData    = students    || [];
+
+  renderStats();
+  renderStudentsTable();
+  renderMembershipsTable();
+  renderPaymentsTable();
+  renderPricesTable(plans);
+
+  // If cash or report tab is currently active, refresh them too
+  const activeTab = document.querySelector(".tab.active");
+  if (activeTab) {
+    const idx = Array.from(document.querySelectorAll(".tab")).indexOf(activeTab);
+    const sections = ["students","memberships","payments","prices","cash","report"];
+    if (sections[idx] === "cash") loadCashPending();
+    if (sections[idx] === "report") buildReport();
+  }
+}
+
+// ── STATS (live, derived from cached data) ──────────────────────
+function renderStats() {
+  const active = allMembershipsData.filter(m => m.status === "active" && new Date(m.end_date) >= new Date());
+  const revenue = allPaymentsData.filter(p => p.status === "success").reduce((s,p) => s + p.amount, 0);
+  const thisMonth = allStudentsData.filter(s => {
+    const d = new Date(s.created_at);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  document.getElementById("s-students").textContent = allStudentsData.length || 0;
+  document.getElementById("s-active").textContent = active.length || 0;
   document.getElementById("s-revenue").textContent = "₹" + revenue.toLocaleString();
   document.getElementById("s-today").textContent = thisMonth;
+}
 
-  // Students table
-  document.getElementById("students-body").innerHTML = students?.length
-    ? students.map((s,i)=>`<tr><td>${i+1}</td><td>${s.full_name}</td><td>${s.email}</td><td>${s.phone}</td><td>${s.exam_target||"—"}</td><td>${fmt(s.created_at)}</td></tr>`).join("")
-    : `<tr><td colspan="6" class="empty">No students yet.</td></tr>`;
+// ── STUDENTS TABLE (with payment mode + amount paid) ────────────
+function renderStudentsTable() {
+  // For each student, find their most relevant membership (latest one)
+  const studentMemberships = {};
+  allMembershipsData.forEach(m => {
+    if (!m.student_id) return;
+    if (!studentMemberships[m.student_id]) studentMemberships[m.student_id] = [];
+    studentMemberships[m.student_id].push(m);
+  });
 
-  // Memberships table
-  document.getElementById("memberships-body").innerHTML = memberships?.length
-    ? memberships.map(m=>`<tr>
-        <td>${m.students?.full_name||"—"}</td>
-        <td>${m.plans?.name||"—"}</td>
-        <td>${m.plans?.duration||"—"}</td>
-        <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
-        <td>${m.fixed_seat?"✅ Yes":"No"}</td>
-        <td>${fmt(m.start_date)}</td>
-        <td>${fmt(m.end_date)}</td>
-        <td>₹${m.amount_paid.toLocaleString()}</td>
-        <td><span class="badge ${new Date(m.end_date)>=new Date()?"badge-active":"badge-expired"}">${new Date(m.end_date)>=new Date()?"Active":"Expired"}</span></td>
-      </tr>`).join("")
-    : `<tr><td colspan="9" class="empty">No memberships yet.</td></tr>`;
+  document.getElementById("students-body").innerHTML = allStudentsData.length
+    ? allStudentsData.map((s,i) => {
+        const ms = studentMemberships[s.id] || [];
+        // Most recent membership
+        const latest = ms.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+        const mode = latest?.payment_mode || "—";
+        const amount = latest ? "₹" + latest.amount_paid.toLocaleString() : "—";
+        const modeBadge = mode === "cash"
+          ? '<span class="badge badge-cash">🏦 Cash</span>'
+          : mode === "online"
+          ? '<span class="badge badge-online">💳 Online</span>'
+          : "—";
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${s.full_name}</td>
+          <td>${s.email}</td>
+          <td>${s.phone}</td>
+          <td>${s.exam_target||"—"}</td>
+          <td>${modeBadge}</td>
+          <td style="font-weight:700;color:#15803d">${amount}</td>
+          <td>${fmt(s.created_at)}</td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="8" class="empty">No students yet.</td></tr>`;
+}
 
-  // Payments table
-  document.getElementById("payments-body").innerHTML = payments?.length
-    ? payments.map(p=>`<tr>
-        <td>${fmt(p.created_at)}</td>
-        <td>${p.students?.full_name||"—"}</td>
-        <td style="font-size:.8rem;color:#64748b">${p.plan_id||"—"}</td>
-        <td style="font-weight:700;color:#15803d">₹${p.amount.toLocaleString()}</td>
-        <td style="font-size:.78rem;color:#94a3b8">${p.razorpay_payment_id||"—"}</td>
-        <td><span class="badge ${p.status==="success"?"badge-active":"badge-expired"}">${p.status}</span></td>
-      </tr>`).join("")
-    : `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
+// ── MEMBERSHIPS TABLE (sorted recent first, with payment mode) ──
+function renderMembershipsTable() {
+  const sorted = [...allMembershipsData].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // Prices table
+  document.getElementById("memberships-body").innerHTML = sorted.length
+    ? sorted.map(m => {
+        const modeBadge = m.payment_mode === "cash"
+          ? '<span class="badge badge-cash">🏦 Cash</span>'
+          : '<span class="badge badge-online">💳 Online</span>';
+        const isActive = m.status === "active" && new Date(m.end_date) >= new Date();
+        const statusBadge = m.status === "pending"
+          ? '<span class="badge" style="background:#fef3c7;color:#92400e">Pending</span>'
+          : m.status === "rejected"
+          ? '<span class="badge badge-expired">Rejected</span>'
+          : `<span class="badge ${isActive ? "badge-active" : "badge-expired"}">${isActive ? "Active" : "Expired"}</span>`;
+        return `<tr>
+          <td>${m.students?.full_name||"—"}</td>
+          <td>${m.plans?.name||"—"}</td>
+          <td>${m.plans?.duration||"—"}</td>
+          <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
+          <td>${m.fixed_seat?"✅ Yes":"No"}</td>
+          <td>${modeBadge}</td>
+          <td>${fmt(m.start_date)}</td>
+          <td>${fmt(m.end_date)}</td>
+          <td>₹${m.amount_paid.toLocaleString()}</td>
+          <td>${statusBadge}</td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="10" class="empty">No memberships yet.</td></tr>`;
+}
+
+// ── PAYMENTS TABLE (live, with mode column) ─────────────────────
+function renderPaymentsTable() {
+  const sorted = [...allPaymentsData].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  document.getElementById("payments-body").innerHTML = sorted.length
+    ? sorted.map(p => {
+        const modeBadge = p.payment_mode === "cash"
+          ? '<span class="badge badge-cash">🏦 Cash</span>'
+          : '<span class="badge badge-online">💳 Online</span>';
+        const statusBadge = p.status === "success"
+          ? '<span class="badge badge-active">success</span>'
+          : p.status === "pending"
+          ? '<span class="badge" style="background:#fef3c7;color:#92400e">pending</span>'
+          : '<span class="badge badge-expired">failed</span>';
+        return `<tr>
+          <td>${fmt(p.created_at)}</td>
+          <td>${p.students?.full_name||"—"}</td>
+          <td style="font-size:.8rem;color:#64748b">${p.plan_id||"—"}</td>
+          <td style="font-weight:700;color:#15803d">₹${p.amount.toLocaleString()}</td>
+          <td>${modeBadge}</td>
+          <td style="font-size:.78rem;color:#94a3b8">${p.razorpay_payment_id||"—"}</td>
+          <td>${statusBadge}</td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="7" class="empty">No payments yet.</td></tr>`;
+}
+
+// ── PRICES TABLE ─────────────────────────────────────────────────
+function renderPricesTable(plans) {
   document.getElementById("prices-body").innerHTML = plans?.length
     ? plans.map(p=>`<tr>
         <td style="font-weight:600">${p.name}</td>
@@ -291,50 +445,6 @@ async function loadAll() {
         <td><button class="save-btn" onclick="savePrice('${p.id}')">Save</button></td>
       </tr>`).join("")
     : `<tr><td colspan="6" class="empty">No plans found.</td></tr>`;
-// Cash approvals table
-  document.getElementById("cash-body").innerHTML = cashPending?.length
-    ? cashPending.map(m => `<tr>
-        <td><div style="font-weight:600">${m.students?.full_name||"—"}</div><div style="font-size:.78rem;color:#64748b">${m.students?.phone||""}</div></td>
-        <td>${m.plans?.name||"—"} · ${m.plans?.duration||"—"}</td>
-        <td style="font-weight:700">₹${m.amount_paid.toLocaleString()}</td>
-        <td style="font-size:.8rem;color:#64748b">${fmt(m.created_at)}</td>
-        <td><span class="badge" style="background:#fef3c7;color:#92400e">Pending Cash</span></td>
-        <td>
-          <button class="save-btn" style="background:#16a34a" onclick="approveCash('${m.id}')">✅ Approve</button>
-          <button class="save-btn" style="background:#dc2626;margin-left:.4rem" onclick="rejectCash('${m.id}')">❌ Reject</button>
-        </td>
-      </tr>`).join("")
-    : `<tr><td colspan="6" class="empty">No pending cash registrations.</td></tr>`;
-  }
-async function approveCash(membershipId) {
-  if (!confirm("Confirm cash received and activate this membership?")) return;
-  const btn = document.querySelector(`button[onclick="approveCash('${membershipId}')"]`);
-  if (btn) { btn.textContent = "Processing..."; btn.disabled = true; }
-  const { error } = await sb.from("memberships").update({ status: "active" }).eq("id", membershipId);
-  if (error) { alert("Error: " + error.message); if (btn) { btn.textContent = "✅ Approve"; btn.disabled = false; } }
-  else {
-    const row = btn?.closest("tr");
-    if (row) {
-      row.cells[4].innerHTML = '<span class="badge badge-active">✅ Active</span>';
-      row.cells[5].innerHTML = '<span style="color:#15803d;font-weight:600">Cash Collected ✓</span>';
-    }
-    document.getElementById("s-active").textContent = parseInt(document.getElementById("s-active").textContent || 0) + 1;
-  }
-}
-
-async function rejectCash(membershipId) {
-  if (!confirm("Reject this cash registration?")) return;
-  const btn = document.querySelector(`button[onclick="rejectCash('${membershipId}')"]`);
-  if (btn) { btn.textContent = "Processing..."; btn.disabled = true; }
-  const { error } = await sb.from("memberships").update({ status: "rejected" }).eq("id", membershipId);
-  if (error) { alert("Error: " + error.message); if (btn) { btn.textContent = "❌ Reject"; btn.disabled = false; } }
-  else {
-    const row = btn?.closest("tr");
-    if (row) {
-      row.cells[4].innerHTML = '<span class="badge badge-expired">❌ Rejected</span>';
-      row.cells[5].innerHTML = '<span style="color:#dc2626;font-weight:600">Rejected</span>';
-    }
-  }
 }
 
 async function savePrice(planId) {
@@ -345,6 +455,7 @@ async function savePrice(planId) {
   else alert("✅ Price updated to ₹" + val);
 }
 
+// ── SECTION SWITCHING ────────────────────────────────────────────
 function showSection(sec) {
   ["students","memberships","payments","prices","cash","report"].forEach(s => {
     document.getElementById("sec-" + s).style.display = s === sec ? "block" : "none";
@@ -354,6 +465,10 @@ function showSection(sec) {
   });
   if (sec === "report") buildReport();
   if (sec === "cash") loadCashPending();
+  // Always refresh live data when switching tabs
+  if (sec === "students") renderStudentsTable();
+  if (sec === "memberships") renderMembershipsTable();
+  if (sec === "payments") renderPaymentsTable();
 }
 
 function filterTable(tableId, query) {
@@ -362,17 +477,15 @@ function filterTable(tableId, query) {
     row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
   });
 }
+
+// ── CASH APPROVALS ────────────────────────────────────────────────
 async function loadCashPending() {
-console.log("loadCashPending called");
   const { data, error } = await sb
     .from("memberships")
     .select("*, students(full_name, email, phone)")
     .eq("status", "pending")
     .eq("payment_mode", "cash")
     .order("created_at", { ascending: false });
-
-  console.log("CASH DATA:", data);
-  console.log("CASH ERROR:", error);
 
   if (error) {
     document.getElementById("cash-body").innerHTML = `<tr><td colspan="6" class="empty">Error: ${error.message}</td></tr>`;
@@ -400,18 +513,30 @@ async function approveCash(membershipId, btn) {
   if (!confirm("Cash received? This will activate the membership.")) return;
   btn.textContent = "Activating...";
   btn.disabled = true;
-  const { error } = await sb
+
+  // 1. Activate the membership
+  const { error: memErr } = await sb
     .from("memberships")
     .update({ status: "active" })
     .eq("id", membershipId);
-  if (error) {
-    alert("Error: " + error.message);
+
+  if (memErr) {
+    alert("Error: " + memErr.message);
     btn.textContent = "✅ Approve";
     btn.disabled = false;
-  } else {
-    loadCashPending();
-    loadAll();
+    return;
   }
+
+  // 2. Mark the corresponding payment record as success (so dashboard/report update live)
+  await sb
+    .from("payments")
+    .update({ status: "success" })
+    .eq("membership_id", membershipId)
+    .eq("payment_mode", "cash");
+
+  // 3. Refresh all cached data + visible sections live
+  await loadAll();
+  loadCashPending();
 }
 
 async function rejectCash(membershipId, btn) {
@@ -422,54 +547,113 @@ async function rejectCash(membershipId, btn) {
     .from("memberships")
     .update({ status: "rejected" })
     .eq("id", membershipId);
+
   if (error) {
     alert("Error: " + error.message);
     btn.textContent = "❌ Reject";
     btn.disabled = false;
   } else {
+    await loadAll();
     loadCashPending();
   }
 }
-let allPaymentsData = [];
 
-async function buildReport() {
-  const { data: payments } = await sb
-    .from("payments")
-    .select("*, students(full_name, email, phone)")
-    .order("created_at", { ascending: false });
+// ── COLLECTION REPORT ─────────────────────────────────────────────
+function clearDateFilter() {
+  document.getElementById("report-date-filter").value = "";
+  renderDetailTable();
+}
 
-  if (!payments?.length) {
+function buildReport() {
+  if (!allPaymentsData.length) {
+    document.getElementById("report-month-summary").innerHTML = `<div class="empty">No data yet.</div>`;
+    document.getElementById("report-alltime-summary").innerHTML = "";
+    document.getElementById("breakdown-body").innerHTML = `<tr><td colspan="5" class="empty">No data yet.</td></tr>`;
+    document.getElementById("cash-history-body").innerHTML = `<tr><td colspan="4" class="empty">No data yet.</td></tr>`;
     document.getElementById("report-body").innerHTML = `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
     document.getElementById("detail-body").innerHTML = `<tr><td colspan="6" class="empty">No data yet.</td></tr>`;
     return;
   }
 
-  allPaymentsData = payments;
-
-  // Group by date
-  const byDate = {};
-  payments.forEach(p => {
-    const date = new Date(p.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-    if (!byDate[date]) byDate[date] = { students: 0, online: 0, cashCollected: 0, cashPending: 0 };
-    byDate[date].students++;
-    if (p.payment_mode === "cash" && p.status === "success") byDate[date].cashCollected += p.amount;
-    else if (p.payment_mode === "cash" && p.status === "pending") byDate[date].cashPending += p.amount;
-    else if (p.status === "success") byDate[date].online += p.amount;
+  const now = new Date();
+  const thisMonthPayments = allPaymentsData.filter(p => {
+    const d = new Date(p.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  // Summary cards
-  const totalOnline = payments.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p) => s+p.amount, 0);
-  const totalCash   = payments.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p) => s+p.amount, 0);
-  const totalPending = payments.filter(p => p.status === "pending").reduce((s,p) => s+p.amount, 0);
-  document.getElementById("report-summary").innerHTML = `
+  // ── THIS MONTH SUMMARY ──
+  const monthOnline = thisMonthPayments.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p)=>s+p.amount,0);
+  const monthCash   = thisMonthPayments.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p)=>s+p.amount,0);
+  const monthPending= thisMonthPayments.filter(p => p.status === "pending").reduce((s,p)=>s+p.amount,0);
+  document.getElementById("report-month-summary").innerHTML = `
+    <div class="stat"><div class="stat-val">₹${monthOnline.toLocaleString()}</div><div class="stat-label">Online Collected</div></div>
+    <div class="stat"><div class="stat-val">₹${monthCash.toLocaleString()}</div><div class="stat-label">Cash Collected</div></div>
+    <div class="stat"><div class="stat-val" style="color:#f87171">₹${monthPending.toLocaleString()}</div><div class="stat-label">Cash Pending</div></div>
+    <div class="stat"><div class="stat-val">₹${(monthOnline+monthCash).toLocaleString()}</div><div class="stat-label">Total This Month</div></div>
+  `;
+
+  // ── ALL TIME SUMMARY ──
+  const totalOnline  = allPaymentsData.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p) => s+p.amount, 0);
+  const totalCash    = allPaymentsData.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p) => s+p.amount, 0);
+  const totalPending = allPaymentsData.filter(p => p.status === "pending").reduce((s,p) => s+p.amount, 0);
+  document.getElementById("report-alltime-summary").innerHTML = `
     <div class="stat"><div class="stat-val">₹${totalOnline.toLocaleString()}</div><div class="stat-label">Total Online Received</div></div>
     <div class="stat"><div class="stat-val">₹${totalCash.toLocaleString()}</div><div class="stat-label">Total Cash Received</div></div>
     <div class="stat"><div class="stat-val" style="color:#f87171">₹${totalPending.toLocaleString()}</div><div class="stat-label">Cash Pending Collection</div></div>
     <div class="stat"><div class="stat-val">₹${(totalOnline+totalCash).toLocaleString()}</div><div class="stat-label">Grand Total Collected</div></div>
   `;
 
-  // Date-wise table
-  document.getElementById("report-body").innerHTML = Object.entries(byDate).map(([date, d]) => `
+  // ── CASH VS ONLINE BREAKDOWN TABLE (This Month vs All Time) ──
+  document.getElementById("breakdown-body").innerHTML = `
+    <tr>
+      <td style="font-weight:600">This Month</td>
+      <td style="color:#15803d;font-weight:600">₹${monthOnline.toLocaleString()}</td>
+      <td style="color:#15803d;font-weight:600">₹${monthCash.toLocaleString()}</td>
+      <td style="color:#f59e0b;font-weight:600">₹${monthPending.toLocaleString()}</td>
+      <td style="font-weight:800">₹${(monthOnline+monthCash).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">All Time</td>
+      <td style="color:#15803d;font-weight:600">₹${totalOnline.toLocaleString()}</td>
+      <td style="color:#15803d;font-weight:600">₹${totalCash.toLocaleString()}</td>
+      <td style="color:#f59e0b;font-weight:600">₹${totalPending.toLocaleString()}</td>
+      <td style="font-weight:800">₹${(totalOnline+totalCash).toLocaleString()}</td>
+    </tr>
+  `;
+
+  // ── LAST 6 MONTHS CASH HISTORY ──
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: d.getFullYear() + "-" + d.getMonth(), label: fmtMonth(d), year: d.getFullYear(), month: d.getMonth() });
+  }
+  document.getElementById("cash-history-body").innerHTML = months.map(mo => {
+    const inMonth = allPaymentsData.filter(p => {
+      const d = new Date(p.created_at);
+      return p.payment_mode === "cash" && d.getFullYear() === mo.year && d.getMonth() === mo.month;
+    });
+    const collected = inMonth.filter(p => p.status === "success").reduce((s,p)=>s+p.amount,0);
+    const pending   = inMonth.filter(p => p.status === "pending").reduce((s,p)=>s+p.amount,0);
+    return `<tr>
+      <td style="font-weight:600">${mo.label}</td>
+      <td style="color:#15803d;font-weight:600">${collected ? "₹"+collected.toLocaleString() : "—"}</td>
+      <td style="color:#f59e0b;font-weight:600">${pending ? "₹"+pending.toLocaleString() : "—"}</td>
+      <td>${inMonth.length}</td>
+    </tr>`;
+  }).join("");
+
+  // ── DAILY BREAKDOWN TABLE ──
+  const byDate = {};
+  allPaymentsData.forEach(p => {
+    const date = fmt(p.created_at);
+    if (!byDate[date]) byDate[date] = { students: 0, online: 0, cashCollected: 0, cashPending: 0, sortKey: new Date(p.created_at) };
+    byDate[date].students++;
+    if (p.payment_mode === "cash" && p.status === "success") byDate[date].cashCollected += p.amount;
+    else if (p.payment_mode === "cash" && p.status === "pending") byDate[date].cashPending += p.amount;
+    else if (p.status === "success") byDate[date].online += p.amount;
+  });
+  const sortedDates = Object.entries(byDate).sort((a,b) => b[1].sortKey - a[1].sortKey);
+  document.getElementById("report-body").innerHTML = sortedDates.map(([date, d]) => `
     <tr>
       <td style="font-weight:600">${date}</td>
       <td>${d.students}</td>
@@ -478,19 +662,42 @@ async function buildReport() {
       <td style="color:#f59e0b;font-weight:600">${d.cashPending ? "₹" + d.cashPending.toLocaleString() : "—"}</td>
       <td style="font-weight:800;color:#1e293b">₹${(d.online + d.cashCollected + d.cashPending).toLocaleString()}</td>
     </tr>
-  `).join("");
+  `).join("") || `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
 
-  // Detail table
-  document.getElementById("detail-body").innerHTML = payments.map(p => `
+  // ── DETAIL TABLE (with date filter) ──
+  renderDetailTable();
+}
+
+function renderDetailTable() {
+  const filterVal = document.getElementById("report-date-filter")?.value;
+  const label = document.getElementById("detail-filter-label");
+
+  let filtered = allPaymentsData;
+  if (filterVal) {
+    filtered = allPaymentsData.filter(p => {
+      const d = new Date(p.created_at);
+      const localDate = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      return localDate === filterVal;
+    });
+    label.textContent = `— showing ${fmt(filterVal)} (${filtered.length} record${filtered.length===1?"":"s"})`;
+  } else {
+    label.textContent = `— showing all (${filtered.length} records)`;
+  }
+
+  const sorted = [...filtered].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  document.getElementById("detail-body").innerHTML = sorted.length
+    ? sorted.map(p => `
     <tr>
       <td style="font-size:.8rem;color:#64748b">${fmt(p.created_at)}</td>
       <td><div style="font-weight:600">${p.students?.full_name || "—"}</div><div style="font-size:.75rem;color:#94a3b8">${p.students?.phone || ""}</div></td>
       <td style="font-size:.8rem">${p.plan_id?.replace(/-/g," ") || "—"}</td>
       <td style="font-weight:700">₹${p.amount.toLocaleString()}</td>
-      <td><span class="badge" style="background:${p.payment_mode==="cash"?"#fef3c7":"#ede9fe"};color:${p.payment_mode==="cash"?"#92400e":"#6d28d9"}">${p.payment_mode==="cash"?"🏦 Cash":"💳 Online"}</span></td>
-      <td><span class="badge ${p.status==="success"?"badge-active":"badge-expired"}">${p.status}</span></td>
+      <td><span class="badge ${p.payment_mode==="cash"?"badge-cash":"badge-online"}">${p.payment_mode==="cash"?"🏦 Cash":"💳 Online"}</span></td>
+      <td><span class="badge ${p.status==="success"?"badge-active":p.status==="pending"?"":"badge-expired"}" ${p.status==="pending"?'style="background:#fef3c7;color:#92400e"':""}>${p.status}</span></td>
     </tr>
-  `).join("");
+  `).join("")
+    : `<tr><td colspan="6" class="empty">No records for this date.</td></tr>`;
 }
 
 function exportCSV() {
@@ -514,6 +721,7 @@ function exportCSV() {
   a.href = url; a.download = "shiksha-library-payments.csv";
   a.click(); URL.revokeObjectURL(url);
 }
+
 checkSession();
 </script>
 </body>
