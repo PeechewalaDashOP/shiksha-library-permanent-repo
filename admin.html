@@ -110,8 +110,8 @@
       </div>
       <div style="overflow-x:auto">
         <table id="students-table">
-          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Payment Mode</th><th>Amount Paid</th><th>Joined</th></tr></thead>
-          <tbody id="students-body"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Payment Mode</th><th>Amount Paid</th><th>Joined</th><th>Details</th></tr></thead>
+          <tbody id="students-body"><tr><td colspan="9" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -120,7 +120,18 @@
     <div id="sec-memberships" class="card" style="display:none">
       <div class="card-header">
         <span class="card-title">All Memberships</span>
-        <input type="text" class="search-input" placeholder="Search..." oninput="filterTable('memberships-table', this.value)">
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <select class="date-input" id="memb-status-filter" onchange="renderMembershipsTable()">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <input type="date" class="date-input" id="memb-date-filter" onchange="renderMembershipsTable()" title="Filter by start date">
+          <button class="clear-btn" onclick="clearMembFilters()">Clear</button>
+          <input type="text" class="search-input" placeholder="Search name..." oninput="filterTable('memberships-table', this.value)">
+        </div>
       </div>
       <div style="overflow-x:auto">
         <table id="memberships-table">
@@ -243,6 +254,15 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div id="student-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.75);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeStudentModal()">
+  <div style="background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 25px 60px rgba(0,0,0,0.35)">
+    <button onclick="closeStudentModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.6rem;cursor:pointer;color:#94a3b8;line-height:1">×</button>
+    <div style="font-size:1.05rem;font-weight:800;color:#1e293b;margin-bottom:1.25rem">Student Details</div>
+    <div id="student-modal-body"></div>
   </div>
 </div>
 
@@ -413,14 +433,148 @@ function renderStudentsTable() {
           <td>${modeBadge}</td>
           <td style="font-weight:700;color:#15803d">${amount}</td>
           <td>${fmt(s.created_at)}</td>
+          <td><button class="edit-btn" style="background:#1e293b;color:#fff" onclick="viewStudent('${s.id}')">👁 View</button></td>
         </tr>`;
       }).join("")
-    : `<tr><td colspan="8" class="empty">No students yet.</td></tr>`;
+    : `<tr><td colspan="9" class="empty">No students yet.</td></tr>`;
 }
 
-// ── MEMBERSHIPS TABLE (sorted recent first, with payment mode) ──
+// ── STUDENT DETAIL MODAL ────────────────────────────────────────
+async function viewStudent(studentId) {
+  const s = allStudentsData.find(x => x.id === studentId);
+  if (!s) return;
+
+  // Find this student's memberships (newest first), prefer active for the headline plan
+  const ms = allMembershipsData
+    .filter(m => m.student_id === studentId)
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  const activeM = ms.find(m => m.status === "active");
+  const m = activeM || ms[0] || null;
+
+  const overlay = document.getElementById("student-modal");
+  const body    = document.getElementById("student-modal-body");
+
+  const sectionLabel = m?.plans?.section === "Prime"
+    ? '<span class="badge badge-prime">Prime</span>'
+    : (m ? "Regular" : "—");
+  const statusLabel = !m ? "—"
+    : m.status === "pending" ? '<span class="badge" style="background:#fef3c7;color:#92400e">Pending</span>'
+    : m.status === "rejected" ? '<span class="badge badge-expired">Rejected</span>'
+    : (new Date(m.end_date) >= new Date()
+        ? '<span class="badge badge-active">Active</span>'
+        : '<span class="badge badge-expired">Expired</span>');
+  const modeLabel = !m ? "—"
+    : m.payment_mode === "cash" ? '<span class="badge badge-cash">🏦 Cash</span>'
+    : '<span class="badge badge-online">💳 Online</span>';
+
+  // Build the detail rows
+  body.innerHTML = `
+    <div style="display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap">
+      <div id="student-photo-box" style="width:120px;height:120px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.78rem;text-align:center;flex-shrink:0;overflow:hidden;border:1.5px solid #e2e8f0">
+        Loading photo…
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:1.2rem;font-weight:800;color:#1e293b">${s.full_name}</div>
+        <div style="color:#64748b;font-size:.85rem;margin-top:2px">${s.email}</div>
+        <div style="color:#64748b;font-size:.85rem">${s.phone}</div>
+        <div style="margin-top:8px">${statusLabel} ${modeLabel}</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.5rem">
+      ${detailRow("Father's Name", s.father_name)}
+      ${detailRow("Gender", s.gender)}
+      ${detailRow("Aadhar Number", s.aadhar)}
+      ${detailRow("Exam Target", s.exam_target)}
+      ${detailRow("Address", s.address)}
+      ${detailRow("Joined", fmt(s.created_at))}
+    </div>
+
+    <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
+      <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Current Membership</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.5rem">
+        ${detailRow("Plan", m?.plans?.name)}
+        ${detailRow("Duration", m?.plans?.duration)}
+        ${detailRow("Section", sectionLabel, true)}
+        ${detailRow("Shift", m?.plans?.shift)}
+        ${detailRow("Fixed Seat", m ? (m.fixed_seat ? "✅ Yes" : "No") : "—")}
+        ${detailRow("Locker", m ? (m.locker ? "✅ Yes" : "No") : "—")}
+        ${detailRow("Start Date", m ? fmt(m.start_date) : "—")}
+        ${detailRow("End Date", m ? fmt(m.end_date) : "—")}
+        ${detailRow("Amount Paid", m ? "₹" + m.amount_paid.toLocaleString() : "—")}
+      </div>
+    </div>
+  `;
+
+  overlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Load photo via signed URL (private bucket). Fallback gracefully if none.
+  const photoBox = document.getElementById("student-photo-box");
+  if (s.photo_url) {
+    try {
+      const { data, error } = await sb.storage
+        .from("student-photos")
+        .createSignedUrl(s.photo_url, 3600);
+      if (!error && data?.signedUrl) {
+        photoBox.innerHTML = `<a href="${data.signedUrl}" target="_blank" title="Open full photo" style="display:block;width:100%;height:100%">
+            <img src="${data.signedUrl}" alt="Student photo" style="width:100%;height:100%;object-fit:cover">
+          </a>`;
+      } else {
+        photoBox.textContent = "Photo unavailable";
+      }
+    } catch (e) {
+      photoBox.textContent = "Photo unavailable";
+    }
+  } else {
+    photoBox.textContent = "No photo";
+  }
+}
+
+function detailRow(label, value, isHtml) {
+  const val = (value === undefined || value === null || value === "") ? "—" : value;
+  return `<div>
+    <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">${label}</div>
+    <div style="font-size:.9rem;color:#1e293b;font-weight:600;margin-top:1px">${isHtml ? val : String(val)}</div>
+  </div>`;
+}
+
+function closeStudentModal() {
+  document.getElementById("student-modal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+// ── MEMBERSHIPS TABLE (sorted recent first, with payment mode + filters) ──
 function renderMembershipsTable() {
-  const sorted = [...allMembershipsData].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  const statusFilter = document.getElementById("memb-status-filter")?.value || "all";
+  const dateFilter   = document.getElementById("memb-date-filter")?.value || "";
+
+  let list = [...allMembershipsData];
+
+  // Status filter
+  if (statusFilter !== "all") {
+    list = list.filter(m => {
+      const isActive  = m.status === "active" && new Date(m.end_date) >= new Date();
+      const isExpired = m.status === "active" && new Date(m.end_date) < new Date();
+      if (statusFilter === "active")   return isActive;
+      if (statusFilter === "expired")  return isExpired;
+      if (statusFilter === "pending")  return m.status === "pending";
+      if (statusFilter === "rejected") return m.status === "rejected";
+      return true;
+    });
+  }
+
+  // Start-date filter (exact day)
+  if (dateFilter) {
+    list = list.filter(m => {
+      if (!m.start_date) return false;
+      const d = new Date(m.start_date);
+      const local = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      return local === dateFilter;
+    });
+  }
+
+  const sorted = list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
   document.getElementById("memberships-body").innerHTML = sorted.length
     ? sorted.map(m => {
@@ -519,6 +673,14 @@ function filterTable(tableId, query) {
   document.querySelectorAll("#" + tableId + " tbody tr").forEach(row => {
     row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
   });
+}
+
+function clearMembFilters() {
+  const sf = document.getElementById("memb-status-filter");
+  const df = document.getElementById("memb-date-filter");
+  if (sf) sf.value = "all";
+  if (df) df.value = "";
+  renderMembershipsTable();
 }
 
 // ── CASH APPROVALS ────────────────────────────────────────────────
