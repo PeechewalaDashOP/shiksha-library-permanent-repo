@@ -73,9 +73,12 @@
 </div>
 
 <header>
-  <div>
-    <h1>⚡ Shiksha Library Admin</h1>
-    <p>Owner Dashboard</p>
+  <div style="display:flex;align-items:center;gap:.85rem">
+    <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">⚡</div>
+    <div>
+      <h1>Shiksha Library Admin</h1>
+      <p id="admin-greeting">Owner Dashboard</p>
+    </div>
   </div>
   <button class="logout-btn" onclick="adminLogout()">Logout</button>
 </header>
@@ -90,6 +93,26 @@
       <div class="stat"><div class="stat-val" id="s-active">—</div><div class="stat-label">Active Memberships</div></div>
       <div class="stat"><div class="stat-val" id="s-revenue">—</div><div class="stat-label">Total Revenue</div></div>
       <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Joined This Month</div></div>
+    </div>
+
+    <!-- Today's Activity Summary -->
+    <div id="today-summary" style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:1.25rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <div style="font-size:.95rem;font-weight:600">📅 Today</div>
+      <div id="today-summary-text" style="font-size:.9rem;color:#cbd5e1">Loading…</div>
+    </div>
+
+    <!-- Expiring Soon Alerts -->
+    <div id="expiring-alert" style="display:none;background:#fef3c7;border:1.5px solid #fde68a;border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
+        <div style="font-weight:700;color:#92400e;font-size:.95rem">🔔 Memberships Expiring Soon (next 7 days)</div>
+        <span id="expiring-count" style="background:#f59e0b;color:#fff;padding:.15rem .6rem;border-radius:999px;font-size:.78rem;font-weight:700"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Student</th><th>Plan</th><th>Expires</th><th>Days Left</th><th>Phone</th><th>Remind</th></tr></thead>
+          <tbody id="expiring-body"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Tabs -->
@@ -174,10 +197,39 @@
       <div class="card-header">
         <span class="card-title">📊 Collection Report</span>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-          <input type="date" class="date-input" id="report-date-filter" onchange="renderDetailTable()">
+          <input type="date" class="date-input" id="report-date-filter" onchange="renderDetailTable()" title="View a particular date">
           <button class="clear-btn" onclick="clearDateFilter()">Clear filter</button>
           <button class="save-btn" onclick="exportCSV()" style="background:#1e293b;padding:.5rem 1rem">⬇ Export CSV</button>
         </div>
+      </div>
+
+      <!-- Particular date result (shows when a single date is picked) -->
+      <div id="single-date-result" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
+        <div style="font-weight:700;color:#1e40af;margin-bottom:.6rem" id="single-date-title">Collection on —</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem">
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Online</div><div style="font-size:1.15rem;font-weight:800;color:#15803d" id="single-online">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Cash</div><div style="font-size:1.15rem;font-weight:800;color:#15803d" id="single-cash">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Cash Pending</div><div style="font-size:1.15rem;font-weight:800;color:#f59e0b" id="single-pending">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Total Collected</div><div style="font-size:1.15rem;font-weight:800;color:#1e293b" id="single-total">₹0</div></div>
+        </div>
+      </div>
+
+      <!-- Date RANGE filter -->
+      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
+        <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">📈 Custom Date Range</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.85rem">
+          <div><label style="font-size:.72rem;color:#64748b;display:block;margin-bottom:2px">From</label><input type="date" class="date-input" id="range-from"></div>
+          <div><label style="font-size:.72rem;color:#64748b;display:block;margin-bottom:2px">To</label><input type="date" class="date-input" id="range-to"></div>
+          <button class="save-btn" onclick="calcRange()" style="align-self:flex-end;padding:.5rem 1.1rem">Calculate</button>
+          <button class="clear-btn" onclick="clearRange()" style="align-self:flex-end">Clear</button>
+        </div>
+        <div id="range-result" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem">
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Online</div><div style="font-size:1.15rem;font-weight:800;color:#15803d" id="range-online">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Cash</div><div style="font-size:1.15rem;font-weight:800;color:#15803d" id="range-cash">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Cash Pending</div><div style="font-size:1.15rem;font-weight:800;color:#f59e0b" id="range-pending">₹0</div></div>
+          <div><div style="font-size:.72rem;color:#64748b;text-transform:uppercase">Total Collected</div><div style="font-size:1.15rem;font-weight:800;color:#1e293b" id="range-total">₹0</div></div>
+        </div>
+        <div id="range-empty" style="display:none;color:#94a3b8;font-size:.85rem">No records in this range.</div>
       </div>
 
       <!-- This month summary -->
@@ -203,13 +255,13 @@
         </div>
       </div>
 
-      <!-- Last 6 months cash history -->
+      <!-- Last 6 months collection history -->
       <div style="margin-bottom:1.5rem">
-        <div class="card-title" style="margin-bottom:.75rem">Cash Collection — Last 6 Months</div>
+        <div class="card-title" style="margin-bottom:.75rem">Collection — Last 6 Months</div>
         <div style="overflow-x:auto">
           <table id="cash-history-table">
-            <thead><tr><th>Month</th><th>Cash Collected</th><th>Cash Pending</th><th>Registrations</th></tr></thead>
-            <tbody id="cash-history-body"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
+            <thead><tr><th>Month</th><th>Online Collected</th><th>Cash Collected</th><th>Cash Pending</th><th>Total</th><th>Registrations</th></tr></thead>
+            <tbody id="cash-history-body"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -367,6 +419,8 @@ async function loadAll() {
   allStudentsData    = students    || [];
 
   renderStats();
+  renderTodaySummary();
+  renderExpiringSoon();
   renderStudentsTable();
   renderMembershipsTable();
   renderPaymentsTable();
@@ -397,6 +451,85 @@ function renderStats() {
   document.getElementById("s-active").textContent = active.length || 0;
   document.getElementById("s-revenue").textContent = "₹" + revenue.toLocaleString();
   document.getElementById("s-today").textContent = thisMonth;
+}
+
+// ── TODAY'S ACTIVITY SUMMARY ────────────────────────────────────
+function renderTodaySummary() {
+  const el = document.getElementById("today-summary-text");
+  if (!el) return;
+  const now = new Date();
+  const isToday = (d) => {
+    const x = new Date(d);
+    return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth() && x.getDate() === now.getDate();
+  };
+  const pay = activePayments();
+  const todayPays = pay.filter(p => isToday(p.created_at));
+  const newRegs   = todayPays.length;
+  const collected = todayPays.filter(p => p.status === "success").reduce((s,p) => s + p.amount, 0);
+  const pendingCash = allMembershipsData.filter(m => m.status === "pending" && m.payment_mode === "cash").length;
+
+  el.innerHTML =
+    `<strong style="color:#fff">${newRegs}</strong> new registration${newRegs===1?"":"s"} &nbsp;·&nbsp; ` +
+    `<strong style="color:#4ade80">₹${collected.toLocaleString()}</strong> collected today &nbsp;·&nbsp; ` +
+    `<strong style="color:#fbbf24">${pendingCash}</strong> cash approval${pendingCash===1?"":"s"} pending`;
+}
+
+// ── EXPIRING SOON (next 7 days) ─────────────────────────────────
+function renderExpiringSoon() {
+  const wrap  = document.getElementById("expiring-alert");
+  const body  = document.getElementById("expiring-body");
+  const count = document.getElementById("expiring-count");
+  if (!wrap || !body) return;
+
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const in7 = new Date(now);
+  in7.setDate(in7.getDate() + 7);
+
+  // Active memberships expiring within the next 7 days (today..+7)
+  const expiring = allMembershipsData.filter(m => {
+    if (m.status !== "active") return false;
+    const end = new Date(m.end_date);
+    end.setHours(0,0,0,0);
+    return end >= now && end <= in7;
+  }).sort((a,b) => new Date(a.end_date) - new Date(b.end_date));
+
+  if (!expiring.length) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  wrap.style.display = "block";
+  count.textContent = expiring.length + (expiring.length === 1 ? " membership" : " memberships");
+
+  body.innerHTML = expiring.map(m => {
+    const student = allStudentsData.find(s => s.id === m.student_id);
+    const phone = student?.phone || "";
+    const name  = m.students?.full_name || student?.full_name || "—";
+    const end   = new Date(m.end_date);
+    end.setHours(0,0,0,0);
+    const daysLeft = Math.round((end - now) / (1000*60*60*24));
+    const daysLabel = daysLeft === 0 ? "Today" : daysLeft === 1 ? "1 day" : daysLeft + " days";
+    const planName = m.plans?.name || m.plan_id || "—";
+
+    // Pre-filled WhatsApp reminder (owner just taps send)
+    const waMsg = encodeURIComponent(
+      `Hello ${name}, your Shiksha Library membership (${planName}) is expiring on ${fmt(m.end_date)}. Please visit us to renew and continue your studies without interruption. — Shiksha Library, Kota`
+    );
+    const waLink = phone ? `https://wa.me/91${phone.replace(/\D/g,"").slice(-10)}?text=${waMsg}` : null;
+    const remindBtn = waLink
+      ? `<a href="${waLink}" target="_blank" class="save-btn" style="background:#25d366;text-decoration:none">💬 Remind</a>`
+      : `<span style="color:#94a3b8;font-size:.8rem">No phone</span>`;
+
+    return `<tr>
+      <td style="font-weight:600">${name}</td>
+      <td>${planName}</td>
+      <td>${fmt(m.end_date)}</td>
+      <td><span class="badge" style="background:${daysLeft<=2?"#fee2e2":"#fef3c7"};color:${daysLeft<=2?"#dc2626":"#92400e"}">${daysLabel}</span></td>
+      <td style="font-size:.82rem;color:#64748b">${phone || "—"}</td>
+      <td>${remindBtn}</td>
+    </tr>`;
+  }).join("");
 }
 
 // ── STUDENTS TABLE (with payment mode + amount paid) ────────────
@@ -792,7 +925,51 @@ async function rejectCash(membershipId, btn) {
 // ── COLLECTION REPORT ─────────────────────────────────────────────
 function clearDateFilter() {
   document.getElementById("report-date-filter").value = "";
+  const singleBox = document.getElementById("single-date-result");
+  if (singleBox) singleBox.style.display = "none";
   renderDetailTable();
+}
+
+// ── CUSTOM DATE RANGE CALCULATION ───────────────────────────────
+function calcRange() {
+  const from = document.getElementById("range-from")?.value;
+  const to   = document.getElementById("range-to")?.value;
+  const result = document.getElementById("range-result");
+  const empty  = document.getElementById("range-empty");
+
+  if (!from || !to) { alert("Please pick both From and To dates."); return; }
+  if (from > to) { alert("From date cannot be after To date."); return; }
+
+  // Inclusive range: compare local YYYY-MM-DD strings
+  const inRange = activePayments().filter(p => {
+    const d = new Date(p.created_at);
+    const local = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    return local >= from && local <= to;
+  });
+
+  if (!inRange.length) {
+    result.style.display = "none";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  const online  = inRange.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p)=>s+p.amount,0);
+  const cash    = inRange.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p)=>s+p.amount,0);
+  const pending = inRange.filter(p => p.status === "pending").reduce((s,p)=>s+p.amount,0);
+
+  document.getElementById("range-online").textContent  = "₹" + online.toLocaleString();
+  document.getElementById("range-cash").textContent    = "₹" + cash.toLocaleString();
+  document.getElementById("range-pending").textContent = "₹" + pending.toLocaleString();
+  document.getElementById("range-total").textContent   = "₹" + (online + cash).toLocaleString();
+  result.style.display = "grid";
+}
+
+function clearRange() {
+  document.getElementById("range-from").value = "";
+  document.getElementById("range-to").value = "";
+  document.getElementById("range-result").style.display = "none";
+  document.getElementById("range-empty").style.display = "none";
 }
 
 function buildReport() {
@@ -801,7 +978,7 @@ function buildReport() {
     document.getElementById("report-month-summary").innerHTML = `<div class="empty">No data yet.</div>`;
     document.getElementById("report-alltime-summary").innerHTML = "";
     document.getElementById("breakdown-body").innerHTML = `<tr><td colspan="5" class="empty">No data yet.</td></tr>`;
-    document.getElementById("cash-history-body").innerHTML = `<tr><td colspan="4" class="empty">No data yet.</td></tr>`;
+    document.getElementById("cash-history-body").innerHTML = `<tr><td colspan="6" class="empty">No data yet.</td></tr>`;
     document.getElementById("report-body").innerHTML = `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
     document.getElementById("detail-body").innerHTML = `<tr><td colspan="6" class="empty">No data yet.</td></tr>`;
     return;
@@ -853,7 +1030,7 @@ function buildReport() {
     </tr>
   `;
 
-  // ── LAST 6 MONTHS CASH HISTORY ──
+  // ── LAST 6 MONTHS COLLECTION HISTORY (online primary, then cash) ──
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -862,14 +1039,18 @@ function buildReport() {
   document.getElementById("cash-history-body").innerHTML = months.map(mo => {
     const inMonth = reportPayments.filter(p => {
       const d = new Date(p.created_at);
-      return p.payment_mode === "cash" && d.getFullYear() === mo.year && d.getMonth() === mo.month;
+      return d.getFullYear() === mo.year && d.getMonth() === mo.month;
     });
-    const collected = inMonth.filter(p => p.status === "success").reduce((s,p)=>s+p.amount,0);
-    const pending   = inMonth.filter(p => p.status === "pending").reduce((s,p)=>s+p.amount,0);
+    const online      = inMonth.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p)=>s+p.amount,0);
+    const cashColl     = inMonth.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p)=>s+p.amount,0);
+    const cashPending  = inMonth.filter(p => p.status === "pending" && p.payment_mode === "cash").reduce((s,p)=>s+p.amount,0);
+    const total        = online + cashColl;
     return `<tr>
       <td style="font-weight:600">${mo.label}</td>
-      <td style="color:#15803d;font-weight:600">${collected ? "₹"+collected.toLocaleString() : "—"}</td>
-      <td style="color:#f59e0b;font-weight:600">${pending ? "₹"+pending.toLocaleString() : "—"}</td>
+      <td style="color:#15803d;font-weight:600">${online ? "₹"+online.toLocaleString() : "—"}</td>
+      <td style="color:#15803d;font-weight:600">${cashColl ? "₹"+cashColl.toLocaleString() : "—"}</td>
+      <td style="color:#f59e0b;font-weight:600">${cashPending ? "₹"+cashPending.toLocaleString() : "—"}</td>
+      <td style="font-weight:800">${total ? "₹"+total.toLocaleString() : "—"}</td>
       <td>${inMonth.length}</td>
     </tr>`;
   }).join("");
@@ -903,6 +1084,7 @@ function buildReport() {
 function renderDetailTable() {
   const filterVal = document.getElementById("report-date-filter")?.value;
   const label = document.getElementById("detail-filter-label");
+  const singleBox = document.getElementById("single-date-result");
 
   const basePayments = activePayments(); // excludes rejected memberships' payments
   let filtered = basePayments;
@@ -913,8 +1095,22 @@ function renderDetailTable() {
       return localDate === filterVal;
     });
     label.textContent = `— showing ${fmt(filterVal)} (${filtered.length} record${filtered.length===1?"":"s"})`;
+
+    // Show the particular-date collection summary box
+    if (singleBox) {
+      const online  = filtered.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p)=>s+p.amount,0);
+      const cash    = filtered.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p)=>s+p.amount,0);
+      const pending = filtered.filter(p => p.status === "pending").reduce((s,p)=>s+p.amount,0);
+      document.getElementById("single-date-title").textContent = "Collection on " + fmt(filterVal);
+      document.getElementById("single-online").textContent  = "₹" + online.toLocaleString();
+      document.getElementById("single-cash").textContent    = "₹" + cash.toLocaleString();
+      document.getElementById("single-pending").textContent = "₹" + pending.toLocaleString();
+      document.getElementById("single-total").textContent   = "₹" + (online + cash).toLocaleString();
+      singleBox.style.display = "block";
+    }
   } else {
     label.textContent = `— showing all (${filtered.length} records)`;
+    if (singleBox) singleBox.style.display = "none";
   }
 
   const sorted = [...filtered].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
