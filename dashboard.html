@@ -47,6 +47,7 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
 .payment-row:last-child{border-bottom:none}
 .payment-date{color:#64748b;font-size:.78rem;margin-top:.15rem}
 .payment-amount{font-weight:700;color:#15803d}
+.receipt-btn{background:#1a73e8;color:#fff;border:none;padding:.4rem .85rem;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;margin-top:.4rem;font-family:inherit}
 .action-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem}
 .btn-primary{display:inline-block;background:#f59e0b;color:#fff;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer}
 .btn-outline{background:#fff;color:#f59e0b;border:2px solid #f59e0b;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none}
@@ -115,6 +116,8 @@ const SUPABASE_URL = "https://ojmxqckunnpthgftwbkq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let STUDENT = null; // cached for receipt generation
+
 // LIVE CLOCK
 function startClock() {
   function tick() {
@@ -149,6 +152,83 @@ function pct(start, end) {
   return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
 }
 
+// ── RECEIPT GENERATOR (print-friendly) — same design as admin ──
+function generateReceipt(p) {
+  const dateObj = new Date(p.date);
+  const yr = dateObj.getFullYear();
+  const shortId = (p.id || "").replace(/-/g, "").slice(-6).toUpperCase();
+  const receiptNo = "SL-" + yr + "-" + (shortId || Math.floor(Math.random()*900000+100000));
+  const planLabel = (p.plan || "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  const modeLabel = p.mode === "cash" ? "Cash (Paid at Library)" : "Online (Razorpay)";
+  const dateLabel = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const amountLabel = "₹" + Number(p.amount).toLocaleString("en-IN");
+
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt ' + receiptNo + '</title>' +
+  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+  '<style>' +
+  '*{margin:0;padding:0;box-sizing:border-box}' +
+  "body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;padding:20px;color:#1e293b}" +
+  '.receipt{max-width:600px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.1)}' +
+  '.r-head{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}' +
+  '.r-head h1{font-size:1.4rem;font-weight:800}' +
+  '.r-head .sub{font-size:.82rem;opacity:.85;margin-top:2px}' +
+  '.r-head .paid{background:#16a34a;color:#fff;padding:6px 16px;border-radius:999px;font-size:.8rem;font-weight:700;letter-spacing:1px}' +
+  '.r-body{padding:28px 32px}' +
+  '.r-no{display:flex;justify-content:space-between;font-size:.85rem;color:#64748b;margin-bottom:20px;padding-bottom:16px;border-bottom:2px dashed #e2e8f0;flex-wrap:wrap;gap:6px}' +
+  '.r-no b{color:#1e293b}' +
+  '.r-row{display:flex;justify-content:space-between;padding:9px 0;font-size:.92rem;border-bottom:1px solid #f1f5f9}' +
+  '.r-row .k{color:#64748b}' +
+  '.r-row .v{font-weight:600;text-align:right}' +
+  '.r-total{display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-top:20px}' +
+  '.r-total .k{font-size:.95rem;font-weight:700;color:#15803d}' +
+  '.r-total .v{font-size:1.6rem;font-weight:900;color:#15803d}' +
+  '.r-foot{text-align:center;padding:20px 32px 28px;color:#94a3b8;font-size:.78rem;line-height:1.6}' +
+  '.r-foot .thanks{color:#1e293b;font-weight:700;font-size:.95rem;margin-bottom:6px}' +
+  '.r-actions{max-width:600px;margin:18px auto 0;display:flex;gap:10px;justify-content:center}' +
+  '.r-actions button{padding:10px 24px;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}' +
+  '.r-print{background:#1a73e8;color:#fff}' +
+  '.r-close{background:#e2e8f0;color:#1e293b}' +
+  '@media print{body{background:#fff;padding:0}.receipt{box-shadow:none;border-radius:0;max-width:100%}.r-actions{display:none}}' +
+  '</style></head><body>' +
+    '<div class="receipt">' +
+      '<div class="r-head">' +
+        '<div>' +
+          '<h1>Shiksha Library</h1>' +
+          '<div class="sub">Vigyan Nagar, Kota, Rajasthan — 324005</div>' +
+          '<div class="sub">+91 75974 74668</div>' +
+        '</div>' +
+        '<div class="paid">✓ PAID</div>' +
+      '</div>' +
+      '<div class="r-body">' +
+        '<div class="r-no">' +
+          '<span>Receipt No: <b>' + receiptNo + '</b></span>' +
+          '<span>Date: <b>' + dateLabel + '</b></span>' +
+        '</div>' +
+        '<div class="r-row"><span class="k">Student Name</span><span class="v">' + p.name + '</span></div>' +
+        (p.phone ? '<div class="r-row"><span class="k">Phone</span><span class="v">' + p.phone + '</span></div>' : "") +
+        '<div class="r-row"><span class="k">Membership Plan</span><span class="v">' + planLabel + '</span></div>' +
+        '<div class="r-row"><span class="k">Payment Mode</span><span class="v">' + modeLabel + '</span></div>' +
+        (p.rzp ? '<div class="r-row"><span class="k">Transaction ID</span><span class="v" style="font-size:.8rem">' + p.rzp + '</span></div>' : "") +
+        '<div class="r-total"><span class="k">Amount Paid</span><span class="v">' + amountLabel + '</span></div>' +
+      '</div>' +
+      '<div class="r-foot">' +
+        '<div class="thanks">Thank you for choosing Shiksha Library!</div>' +
+        'This is a computer-generated receipt and does not require a signature.<br>' +
+        'For any queries, contact +91 75974 74668.' +
+      '</div>' +
+    '</div>' +
+    '<div class="r-actions">' +
+      '<button class="r-print" onclick="window.print()">🖨 Print / Save PDF</button>' +
+      '<button class="r-close" onclick="window.close()">Close</button>' +
+    '</div>' +
+  '</body></html>';
+
+  const w = window.open("", "_blank");
+  if (!w) { alert("Please allow pop-ups to view the receipt."); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
 async function loadDashboard() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = "login.html"; return; }
@@ -158,6 +238,7 @@ async function loadDashboard() {
     document.getElementById("loading").innerHTML = "<p style='text-align:center;color:#94a3b8;padding:2rem'>Profile not found. Please contact the library.</p>";
     return;
   }
+  STUDENT = student;
 
   const { data: memberships } = await sb.from("memberships")
     .select("*, plans(name,duration,shift,section)")
@@ -269,13 +350,27 @@ async function loadDashboard() {
     <div class="info-row"><span class="info-key">Member Since</span><span class="info-val">${fmt(student.created_at)}</span></div>
   `;
 
-  // Payments
+  // Payments — with receipt button for paid (success) payments
   if (payments?.length) {
-    document.getElementById("payment-content").innerHTML = payments.map(p => `
+    document.getElementById("payment-content").innerHTML = payments.map(p => {
+      const receiptBtn = p.status === "success"
+        ? `<button class="receipt-btn" onclick='generateReceipt(${JSON.stringify({
+            id: p.id,
+            name: student.full_name,
+            phone: student.phone || "",
+            plan: p.plan_id || "—",
+            amount: p.amount,
+            mode: p.payment_mode || "online",
+            date: p.created_at,
+            rzp: p.razorpay_payment_id || ""
+          }).replace(/'/g,"&#39;")})'>🧾 Download Receipt</button>`
+        : "";
+      return `
       <div class="payment-row">
         <div>
           <div style="font-weight:600">${p.plan_id?.replace(/-/g," ")||"Membership"}</div>
           <div class="payment-date">${fmt(p.created_at)}</div>
+          ${receiptBtn}
         </div>
         <div style="text-align:right">
           <div class="payment-amount">₹${p.amount.toLocaleString()}</div>
@@ -285,7 +380,8 @@ async function loadDashboard() {
           </div>
         </div>
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 }
 
