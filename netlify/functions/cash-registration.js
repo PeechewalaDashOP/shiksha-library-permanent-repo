@@ -13,7 +13,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "Method Not Allowed" };
 
   try {
-    const { studentData, planId, amount, fixedSeat, locker, startDate, endDate } = JSON.parse(event.body);
+    const { studentData, planId, amount, fixedSeat, locker, startDate, endDate, photoBase64 } = JSON.parse(event.body);
 
     const supabase = createClient(
       process.env.SUPABASE_URL,
@@ -55,6 +55,19 @@ exports.handler = async (event) => {
       .single();
 
     if (studentError) throw new Error("Failed to save student: " + studentError.message);
+
+    // Upload student photo to Supabase Storage (if provided), then save URL on the student row.
+    // This is wrapped so a photo failure never breaks registration.
+    if (photoBase64) {
+      try {
+        const photoUrl = await uploadStudentPhoto(supabase, student.id, photoBase64);
+        if (photoUrl) {
+          await supabase.from("students").update({ photo_url: photoUrl }).eq("id", student.id);
+        }
+      } catch (photoErr) {
+        console.error("Photo upload failed (registration continued):", photoErr.message);
+      }
+    }
 
     // Create membership with status pending + payment_mode cash
     const { data: membership, error: membershipError } = await supabase
@@ -100,3 +113,23 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+// ── Helper: upload a base64 data URL to the student-photos bucket ──
+async function uploadStudentPhoto(supabase, studentId, photoBase64) {
+  // photoBase64 looks like "data:image/jpeg;base64,/9j/4AAQ..."
+  const match = /^data:(image\/\w+);base64,(.+)$/.exec(photoBase64 || "");
+  if (!match) return null;
+  const contentType = match[1];
+  const ext = contentType.split("/")[1] === "png" ? "png" : "jpg";
+  const buffer = Buffer.from(match[2], "base64");
+  const filePath = `${studentId}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("student-photos")
+    .upload(filePath, buffer, { contentType, upsert: true });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  // Bucket is private — store the storage path; admin can fetch via signed URL.
+  return filePath;
+}

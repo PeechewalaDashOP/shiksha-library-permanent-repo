@@ -291,6 +291,42 @@ let allMembershipsData = [];
 let allPaymentsData = [];
 let allStudentsData = [];
 
+// ── REJECTED-FILTERING HELPERS ────────────────────────────────
+// A rejected membership's data should appear ONLY in the Memberships tab.
+// Everywhere else (Students, Payments, Collection Report) it is hidden.
+
+// Returns true if the given payment belongs to a rejected membership.
+function isRejectedPayment(p) {
+  return allMembershipsData.some(m => {
+    if (m.status !== "rejected") return false;
+    // Primary match: membership_id link
+    if (p.membership_id && m.id === p.membership_id) return true;
+    // Fallback match (legacy rows without membership_id): same student + amount + mode
+    if (!p.membership_id &&
+        m.student_id === p.student_id &&
+        m.amount_paid === p.amount &&
+        m.payment_mode === p.payment_mode) return true;
+    return false;
+  });
+}
+
+// Payments excluding those tied to a rejected membership.
+function activePayments() {
+  return allPaymentsData.filter(p => !isRejectedPayment(p));
+}
+
+// Returns true if a student has at least one non-rejected membership.
+function studentHasNonRejected(studentId) {
+  const ms = allMembershipsData.filter(m => m.student_id === studentId);
+  if (!ms.length) return true; // no memberships at all → keep (edge case)
+  return ms.some(m => m.status !== "rejected");
+}
+
+// Students excluding those whose only membership(s) are rejected.
+function activeStudents() {
+  return allStudentsData.filter(s => studentHasNonRejected(s.id));
+}
+
 // ── MAIN LOAD ─────────────────────────────────────────────────
 async function loadAll() {
   document.getElementById("admin-loader").style.display = "none";
@@ -325,15 +361,16 @@ async function loadAll() {
 
 // ── STATS (live, derived from cached data) ──────────────────────
 function renderStats() {
+  const visibleStudents = activeStudents();
   const active = allMembershipsData.filter(m => m.status === "active" && new Date(m.end_date) >= new Date());
-  const revenue = allPaymentsData.filter(p => p.status === "success").reduce((s,p) => s + p.amount, 0);
-  const thisMonth = allStudentsData.filter(s => {
+  const revenue = activePayments().filter(p => p.status === "success").reduce((s,p) => s + p.amount, 0);
+  const thisMonth = visibleStudents.filter(s => {
     const d = new Date(s.created_at);
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  document.getElementById("s-students").textContent = allStudentsData.length || 0;
+  document.getElementById("s-students").textContent = visibleStudents.length || 0;
   document.getElementById("s-active").textContent = active.length || 0;
   document.getElementById("s-revenue").textContent = "₹" + revenue.toLocaleString();
   document.getElementById("s-today").textContent = thisMonth;
@@ -349,10 +386,12 @@ function renderStudentsTable() {
     studentMemberships[m.student_id].push(m);
   });
 
-  document.getElementById("students-body").innerHTML = allStudentsData.length
-    ? allStudentsData.map((s,i) => {
-        const ms = studentMemberships[s.id] || [];
-        // Most recent membership
+  const visibleStudents = activeStudents();
+
+  document.getElementById("students-body").innerHTML = visibleStudents.length
+    ? visibleStudents.map((s,i) => {
+        const ms = (studentMemberships[s.id] || []).filter(m => m.status !== "rejected");
+        // Most recent non-rejected membership
         const latest = ms.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
         const mode = latest?.payment_mode || "—";
         const amount = latest ? "₹" + latest.amount_paid.toLocaleString() : "—";
@@ -408,7 +447,7 @@ function renderMembershipsTable() {
 
 // ── PAYMENTS TABLE (live, with mode column) ─────────────────────
 function renderPaymentsTable() {
-  const sorted = [...allPaymentsData].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  const sorted = [...activePayments()].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
   document.getElementById("payments-body").innerHTML = sorted.length
     ? sorted.map(p => {
@@ -514,6 +553,20 @@ async function approveCash(membershipId, btn) {
   btn.textContent = "Activating...";
   btn.disabled = true;
 
+  // Fetch the membership first so we know student_id + amount (used to find the matching payment row)
+  const { data: membership, error: fetchErr } = await sb
+    .from("memberships")
+    .select("student_id, amount_paid")
+    .eq("id", membershipId)
+    .single();
+
+  if (fetchErr || !membership) {
+    alert("Error fetching membership: " + (fetchErr?.message || "not found"));
+    btn.textContent = "✅ Approve";
+    btn.disabled = false;
+    return;
+  }
+
   // 1. Activate the membership
   const { error: memErr } = await sb
     .from("memberships")
@@ -527,12 +580,24 @@ async function approveCash(membershipId, btn) {
     return;
   }
 
-  // 2. Mark the corresponding payment record as success (so dashboard/report update live)
+  // 2. Mark the corresponding payment record as success.
+  // Match on membership_id first (works for new registrations where it's set),
+  // and also match on student_id + amount + cash + pending (covers legacy records
+  // where membership_id was never populated). Both run so either case is covered.
   await sb
     .from("payments")
     .update({ status: "success" })
     .eq("membership_id", membershipId)
-    .eq("payment_mode", "cash");
+    .eq("payment_mode", "cash")
+    .eq("status", "pending");
+
+  await sb
+    .from("payments")
+    .update({ status: "success" })
+    .eq("student_id", membership.student_id)
+    .eq("amount", membership.amount_paid)
+    .eq("payment_mode", "cash")
+    .eq("status", "pending");
 
   // 3. Refresh all cached data + visible sections live
   await loadAll();
@@ -565,7 +630,8 @@ function clearDateFilter() {
 }
 
 function buildReport() {
-  if (!allPaymentsData.length) {
+  const reportPayments = activePayments(); // excludes rejected memberships' payments
+  if (!reportPayments.length) {
     document.getElementById("report-month-summary").innerHTML = `<div class="empty">No data yet.</div>`;
     document.getElementById("report-alltime-summary").innerHTML = "";
     document.getElementById("breakdown-body").innerHTML = `<tr><td colspan="5" class="empty">No data yet.</td></tr>`;
@@ -576,7 +642,7 @@ function buildReport() {
   }
 
   const now = new Date();
-  const thisMonthPayments = allPaymentsData.filter(p => {
+  const thisMonthPayments = reportPayments.filter(p => {
     const d = new Date(p.created_at);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
@@ -593,9 +659,9 @@ function buildReport() {
   `;
 
   // ── ALL TIME SUMMARY ──
-  const totalOnline  = allPaymentsData.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p) => s+p.amount, 0);
-  const totalCash    = allPaymentsData.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p) => s+p.amount, 0);
-  const totalPending = allPaymentsData.filter(p => p.status === "pending").reduce((s,p) => s+p.amount, 0);
+  const totalOnline  = reportPayments.filter(p => p.status === "success" && p.payment_mode !== "cash").reduce((s,p) => s+p.amount, 0);
+  const totalCash    = reportPayments.filter(p => p.status === "success" && p.payment_mode === "cash").reduce((s,p) => s+p.amount, 0);
+  const totalPending = reportPayments.filter(p => p.status === "pending").reduce((s,p) => s+p.amount, 0);
   document.getElementById("report-alltime-summary").innerHTML = `
     <div class="stat"><div class="stat-val">₹${totalOnline.toLocaleString()}</div><div class="stat-label">Total Online Received</div></div>
     <div class="stat"><div class="stat-val">₹${totalCash.toLocaleString()}</div><div class="stat-label">Total Cash Received</div></div>
@@ -628,7 +694,7 @@ function buildReport() {
     months.push({ key: d.getFullYear() + "-" + d.getMonth(), label: fmtMonth(d), year: d.getFullYear(), month: d.getMonth() });
   }
   document.getElementById("cash-history-body").innerHTML = months.map(mo => {
-    const inMonth = allPaymentsData.filter(p => {
+    const inMonth = reportPayments.filter(p => {
       const d = new Date(p.created_at);
       return p.payment_mode === "cash" && d.getFullYear() === mo.year && d.getMonth() === mo.month;
     });
@@ -644,7 +710,7 @@ function buildReport() {
 
   // ── DAILY BREAKDOWN TABLE ──
   const byDate = {};
-  allPaymentsData.forEach(p => {
+  reportPayments.forEach(p => {
     const date = fmt(p.created_at);
     if (!byDate[date]) byDate[date] = { students: 0, online: 0, cashCollected: 0, cashPending: 0, sortKey: new Date(p.created_at) };
     byDate[date].students++;
@@ -672,9 +738,10 @@ function renderDetailTable() {
   const filterVal = document.getElementById("report-date-filter")?.value;
   const label = document.getElementById("detail-filter-label");
 
-  let filtered = allPaymentsData;
+  const basePayments = activePayments(); // excludes rejected memberships' payments
+  let filtered = basePayments;
   if (filterVal) {
-    filtered = allPaymentsData.filter(p => {
+    filtered = basePayments.filter(p => {
       const d = new Date(p.created_at);
       const localDate = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
       return localDate === filterVal;
@@ -701,9 +768,10 @@ function renderDetailTable() {
 }
 
 function exportCSV() {
-  if (!allPaymentsData.length) { alert("No data to export."); return; }
+  const exportPayments = activePayments(); // excludes rejected memberships' payments
+  if (!exportPayments.length) { alert("No data to export."); return; }
   const rows = [["Date","Student","Phone","Plan","Amount","Mode","Status"]];
-  allPaymentsData.forEach(p => {
+  exportPayments.forEach(p => {
     rows.push([
       fmt(p.created_at),
       p.students?.full_name || "—",

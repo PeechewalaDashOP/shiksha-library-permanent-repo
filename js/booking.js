@@ -75,7 +75,7 @@ function attachBookingListeners() {
 
 let currentPlan = {};
 function openBookingModal(planId, planData) {
-  currentPlan = { planId, ...planData, fixedSeat: false, locker: false };
+  currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null };
   document.getElementById("sl-modal-plan-name").textContent = planData.name + " — " + planData.duration;
   document.getElementById("sl-plan-id-hidden").value  = planId;
   document.getElementById("sl-plan-base-price").value = planData.price;
@@ -84,6 +84,7 @@ function openBookingModal(planId, planData) {
   document.getElementById("sl-fixed-seat").checked    = false;
   document.getElementById("sl-locker").checked        = false;
   document.getElementById("sl-form-error").textContent = "";
+  resetPhotoUI();
   updateMembershipDates();
   updateTotalPrice();
   document.getElementById("sl-booking-modal").style.display = "flex";
@@ -101,7 +102,6 @@ function updateTotalPrice() {
   const locker    = document.getElementById("sl-locker").checked;
   const subtotal  = base + (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
   const payMode   = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
-  // Gateway fee (2.36%) applies ONLY to the base plan price, not on locker/fixed-seat add-ons
   const gatewayFee = payMode === "online" ? Math.round(base * 0.0236) : 0;
   const total = subtotal + gatewayFee;
 
@@ -132,8 +132,64 @@ function updateMembershipDates() {
   currentPlan.endDate   = end.toISOString().split("T")[0];
 }
 
-async function handleBookingSubmit(e) {
-  e.preventDefault();
+// ── PHOTO CAPTURE + COMPRESSION ───────────────────────────────
+// Resets the photo input + preview to empty state.
+function resetPhotoUI() {
+  const input   = document.getElementById("sl-photo-input");
+  const preview = document.getElementById("sl-photo-preview");
+  const prompt  = document.getElementById("sl-photo-prompt");
+  if (input) input.value = "";
+  if (preview) { preview.src = ""; preview.style.display = "none"; }
+  if (prompt) prompt.style.display = "flex";
+  if (typeof currentPlan === "object") currentPlan.photoBase64 = null;
+}
+
+// Called when the user picks/takes a photo. Compresses to ~max 1000px and stores as JPEG base64.
+function handlePhotoSelected(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showFormError("Please select a valid image file.");
+    resetPhotoUI();
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      // Resize so the longest side is at most 1000px (keeps file small, quality fine for ID)
+      const MAX = 1000;
+      let { width, height } = img;
+      if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Compress to JPEG ~0.7 quality → typically 100–300KB
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      currentPlan.photoBase64 = dataUrl;
+
+      // Show preview
+      const preview = document.getElementById("sl-photo-preview");
+      const prompt  = document.getElementById("sl-photo-prompt");
+      if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
+      if (prompt) prompt.style.display = "none";
+      document.getElementById("sl-form-error").textContent = "";
+    };
+    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetPhotoUI(); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetPhotoUI(); };
+  reader.readAsDataURL(file);
+}
+
+async function handleBookingSubmit(e) {  e.preventDefault();
   const btn = document.getElementById("sl-submit-btn");
   const err = document.getElementById("sl-form-error");
   err.textContent = "";
@@ -153,6 +209,7 @@ async function handleBookingSubmit(e) {
 
   if (!studentData.gender) { showFormError("Please select gender."); resetBtn(btn); return; }
   if (studentData.aadhar.length !== 12) { showFormError("Please enter valid 12-digit Aadhar number."); resetBtn(btn); return; }
+  if (!currentPlan.photoBase64) { showFormError("Please upload your photo (selfie) to continue."); resetBtn(btn); return; }
 
   const payMode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
 
@@ -165,6 +222,7 @@ async function handleBookingSubmit(e) {
           studentData, planId: currentPlan.planId, amount: currentPlan.finalPrice,
           fixedSeat: currentPlan.fixedSeat, locker: currentPlan.locker,
           startDate: currentPlan.startDate, endDate: currentPlan.endDate,
+          photoBase64: currentPlan.photoBase64 || null,
         }),
       });
       const data = await res.json();
@@ -197,6 +255,14 @@ async function handleBookingSubmit(e) {
       prefill    : { name: studentData.fullName, email: studentData.email, contact: studentData.phone },
       theme      : { color: "#f59e0b" },
       handler    : async (response) => { await verifyAndSave(response, studentData, orderData.orderId); },
+      modal      : {
+        ondismiss: () => {
+          // User closed the Razorpay popup without paying — nothing is saved.
+          showFormError("Payment was cancelled. You can try again anytime.");
+          document.getElementById("sl-booking-modal").style.display = "flex";
+          document.body.style.overflow = "hidden";
+        },
+      },
     });
     rzp.open();
     closeBookingModal();
@@ -224,7 +290,15 @@ function updatePayBtn() {
 }
 function resetBtn(btn) {
   btn.disabled = false;
-  btn.innerHTML = 'Proceed to Pay <span id="sl-submit-price">₹' + (currentPlan.finalPrice || 0).toLocaleString() + '</span>';
+  const mode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value;
+  const price = "₹" + (currentPlan.finalPrice || 0).toLocaleString();
+  if (mode === "cash") {
+    btn.style.background = "#16a34a";
+    btn.innerHTML = 'Register & Pay Cash at Library <span id="sl-submit-price">' + price + '</span>';
+  } else {
+    btn.style.background = "#f59e0b";
+    btn.innerHTML = 'Proceed to Pay <span id="sl-submit-price">' + price + '</span>';
+  }
 }
 
 async function verifyAndSave(razorpayResponse, studentData, orderId) {
@@ -239,6 +313,8 @@ async function verifyAndSave(razorpayResponse, studentData, orderId) {
         razorpay_signature : razorpayResponse.razorpay_signature,
         studentData, planId: currentPlan.planId, amount: currentPlan.finalPrice,
         fixedSeat: currentPlan.fixedSeat, locker: currentPlan.locker,
+        startDate: currentPlan.startDate, endDate: currentPlan.endDate,
+        photoBase64: currentPlan.photoBase64 || null,
       }),
     });
     const data = await res.json();
@@ -378,6 +454,19 @@ function getModalHTML() {
         <div class="sl-fg"><label>Phone Number *</label><input type="tel" id="sl-phone" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}" required></div>
         <div class="sl-fg"><label>Aadhar Card Number *</label><input type="text" id="sl-aadhar" placeholder="12-digit Aadhar number" maxlength="12" pattern="[0-9]{12}" required></div>
         <div class="sl-fg"><label>Home Address *</label><input type="text" id="sl-address" placeholder="Full address" required></div>
+        <div class="sl-fg">
+          <label>Your Photo (Selfie) *</label>
+          <input type="file" id="sl-photo-input" accept="image/*" capture="user" style="display:none" onchange="handlePhotoSelected(this)">
+          <div id="sl-photo-wrap" onclick="document.getElementById('sl-photo-input').click()" style="cursor:pointer;border:1.5px dashed #f59e0b;border-radius:10px;padding:1rem;text-align:center;background:#fffbeb">
+            <div id="sl-photo-prompt" style="display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#92400e">
+              <span style="font-size:1.8rem">📷</span>
+              <span style="font-size:.85rem;font-weight:600">Tap to take a selfie / upload photo</span>
+              <span style="font-size:.72rem;color:#b45309">Required for verification</span>
+            </div>
+            <img id="sl-photo-preview" alt="Your photo" style="display:none;max-width:160px;max-height:160px;border-radius:10px;margin:0 auto;object-fit:cover">
+          </div>
+          <p style="font-size:.72rem;color:#94a3b8;margin-top:.35rem;text-align:center">Tap the box again to retake / change photo</p>
+        </div>
         <div class="sl-fg">
           <label>Exam Preparing For</label>
           <select id="sl-exam">

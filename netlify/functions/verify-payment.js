@@ -26,10 +26,14 @@ exports.handler = async (event) => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      studentData, // { fullName, email, phone, address, examTarget }
+      studentData, // { fullName, fatherName, gender, email, phone, aadhar, address, examTarget }
       planId,
       amount,
       fixedSeat,
+      locker,
+      startDate: startDateInput,
+      endDate: endDateInput,
+      photoBase64,
     } = JSON.parse(event.body);
 
     // 1. Verify Razorpay signature
@@ -76,8 +80,11 @@ exports.handler = async (event) => {
         {
           auth_user_id: authUserId,
           full_name: studentData.fullName,
+          father_name: studentData.fatherName,
+          gender: studentData.gender,
           email: studentData.email,
           phone: studentData.phone,
+          aadhar: studentData.aadhar,
           address: studentData.address || "",
           exam_target: studentData.examTarget || "",
         },
@@ -88,12 +95,34 @@ exports.handler = async (event) => {
 
     if (studentError) throw new Error("Failed to save student: " + studentError.message);
 
-    // 5. Calculate membership dates
-    const startDate = new Date();
-    const endDate = new Date();
-    if (planId.startsWith("monthly")) endDate.setMonth(endDate.getMonth() + 1);
-    else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 15);
-    else if (planId.startsWith("3month")) endDate.setMonth(endDate.getMonth() + 3);
+    // 4b. Upload student photo to Supabase Storage (if provided), then save URL on the student row.
+    // Wrapped so a photo failure never breaks a verified payment's registration.
+    if (photoBase64) {
+      try {
+        const photoUrl = await uploadStudentPhoto(supabase, student.id, photoBase64);
+        if (photoUrl) {
+          await supabase.from("students").update({ photo_url: photoUrl }).eq("id", student.id);
+        }
+      } catch (photoErr) {
+        console.error("Photo upload failed (registration continued):", photoErr.message);
+      }
+    }
+
+    // 5. Calculate membership dates.
+    // Prefer the dates the student picked on the form; fall back to server calculation.
+    let startStr, endStr;
+    if (startDateInput && endDateInput) {
+      startStr = startDateInput;
+      endStr   = endDateInput;
+    } else {
+      const startDate = new Date();
+      const endDate = new Date();
+      if (planId.startsWith("monthly")) endDate.setMonth(endDate.getMonth() + 1);
+      else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 15);
+      else if (planId.startsWith("3month")) endDate.setMonth(endDate.getMonth() + 3);
+      startStr = startDate.toISOString().split("T")[0];
+      endStr   = endDate.toISOString().split("T")[0];
+    }
 
     // 6. Create membership record
     const { data: membership, error: membershipError } = await supabase
@@ -102,10 +131,12 @@ exports.handler = async (event) => {
         student_id: student.id,
         plan_id: planId,
         fixed_seat: fixedSeat || false,
+        locker: locker || false,
         amount_paid: amount,
-        start_date: startDate.toISOString().split("T")[0],
-        end_date: endDate.toISOString().split("T")[0],
+        start_date: startStr,
+        end_date: endStr,
         status: "active",
+        payment_mode: "online",
         razorpay_order_id,
         razorpay_payment_id,
       })
@@ -124,6 +155,7 @@ exports.handler = async (event) => {
       amount,
       status: "success",
       plan_id: planId,
+      payment_mode: "online",
     });
 
     return {
@@ -136,7 +168,7 @@ exports.handler = async (event) => {
         success: true,
         studentId: student.id,
         membershipId: membership.id,
-        endDate: endDate.toISOString().split("T")[0],
+        endDate: endStr,
         isNewUser: !authError,
         defaultPassword: studentData.phone,
       }),
@@ -150,3 +182,23 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// ── Helper: upload a base64 data URL to the student-photos bucket ──
+async function uploadStudentPhoto(supabase, studentId, photoBase64) {
+  // photoBase64 looks like "data:image/jpeg;base64,/9j/4AAQ..."
+  const match = /^data:(image\/\w+);base64,(.+)$/.exec(photoBase64 || "");
+  if (!match) return null;
+  const contentType = match[1];
+  const ext = contentType.split("/")[1] === "png" ? "png" : "jpg";
+  const buffer = Buffer.from(match[2], "base64");
+  const filePath = `${studentId}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("student-photos")
+    .upload(filePath, buffer, { contentType, upsert: true });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  // Bucket is private — store the storage path; admin can fetch via signed URL.
+  return filePath;
+}
