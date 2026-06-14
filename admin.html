@@ -315,14 +315,17 @@ function activePayments() {
   return allPaymentsData.filter(p => !isRejectedPayment(p));
 }
 
-// Returns true if a student has at least one non-rejected membership.
+// Returns true if a student should appear in the "All Students" list.
+// Rule: the student must have at least ONE active membership.
+// This hides students whose only membership is still pending (e.g. cash not yet
+// approved) or rejected — they appear elsewhere (Cash Approvals / Memberships tab).
 function studentHasNonRejected(studentId) {
   const ms = allMembershipsData.filter(m => m.student_id === studentId);
   if (!ms.length) return true; // no memberships at all → keep (edge case)
-  return ms.some(m => m.status !== "rejected");
+  return ms.some(m => m.status === "active");
 }
 
-// Students excluding those whose only membership(s) are rejected.
+// Students who have at least one active membership.
 function activeStudents() {
   return allStudentsData.filter(s => studentHasNonRejected(s.id));
 }
@@ -390,8 +393,9 @@ function renderStudentsTable() {
 
   document.getElementById("students-body").innerHTML = visibleStudents.length
     ? visibleStudents.map((s,i) => {
-        const ms = (studentMemberships[s.id] || []).filter(m => m.status !== "rejected");
-        // Most recent non-rejected membership
+        // Prefer the most recent ACTIVE membership for the displayed mode/amount.
+        const activeMs = (studentMemberships[s.id] || []).filter(m => m.status === "active");
+        const ms = (activeMs.length ? activeMs : (studentMemberships[s.id] || []).filter(m => m.status !== "rejected"));
         const latest = ms.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
         const mode = latest?.payment_mode || "—";
         const amount = latest ? "₹" + latest.amount_paid.toLocaleString() : "—";
