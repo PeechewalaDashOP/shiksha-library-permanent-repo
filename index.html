@@ -983,38 +983,136 @@
       .highlight-chip { font-size: 0.75rem; padding: 6px 12px; }
     }
 
-    /* ===== LOADING STATE ===== */
+    /* ===== CINEMATIC BOOK LOADER ===== */
     .page-loader {
       position: fixed;
       inset: 0;
-      background: var(--primary-darker, var(--primary-dark));
+      background: radial-gradient(ellipse at center, #0d2452 0%, #071833 60%, #040d1f 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
+      z-index: 99999;
+      overflow: hidden;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
     }
     .page-loader.hidden { opacity: 0; visibility: hidden; }
-    .loader-content { text-align: center; color: white; }
-    .loader-ring {
-      width: 50px; height: 50px;
-      border: 3px solid rgba(255,255,255,0.2);
-      border-top-color: white;
+
+    /* floating particles */
+    .pl-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .pl-particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      background: rgba(249,168,37,0.6);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
+      bottom: -10px;
+      animation: pl-rise linear infinite;
+      box-shadow: 0 0 8px rgba(249,168,37,0.8);
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-text { font-size: 1.1rem; font-weight: 600; opacity: 0.8; }
+    @keyframes pl-rise {
+      0%   { transform: translateY(0) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.8; }
+      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+    }
+
+    .pl-stage { position: relative; text-align: center; z-index: 2; }
+
+    /* book */
+    .pl-book {
+      width: 90px; height: 120px;
+      position: relative;
+      margin: 0 auto 28px;
+      transform-style: preserve-3d;
+      perspective: 600px;
+      animation: pl-breathe 1.6s ease-in-out infinite;
+    }
+    @keyframes pl-breathe {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-8px); }
+    }
+    .pl-page-stack {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #fff 0%, #e8f0fe 100%);
+      border-radius: 4px 8px 8px 4px;
+      box-shadow: 0 0 30px rgba(120,170,255,0.5), inset -6px 0 12px rgba(0,0,0,0.06);
+    }
+    .pl-cover {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      border-radius: 4px 8px 8px 4px;
+      transform-origin: left center;
+      animation: pl-open 2.2s ease-in-out forwards;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pl-cover::after {
+      content: "📖";
+      font-size: 2rem;
+      animation: pl-fadeicon 1s ease forwards;
+    }
+    @keyframes pl-open {
+      0%   { transform: rotateY(0deg); }
+      55%  { transform: rotateY(0deg); }
+      100% { transform: rotateY(-150deg); }
+    }
+    @keyframes pl-fadeicon {
+      0%,40% { opacity: 1; }
+      100%   { opacity: 0; }
+    }
+    .pl-glow {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, transparent 70%);
+      opacity: 0;
+      animation: pl-burst 2.2s ease-in-out forwards;
+    }
+    @keyframes pl-burst {
+      0%,55% { opacity: 0; transform: scale(0.5); }
+      75%    { opacity: 0.9; transform: scale(1.6); }
+      100%   { opacity: 0; transform: scale(2.2); }
+    }
+
+    .pl-text {
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      opacity: 0;
+      animation: pl-textin 0.8s ease 0.6s forwards;
+    }
+    .pl-text span { color: var(--gold); }
+    .pl-sub {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 8px;
+      opacity: 0;
+      animation: pl-textin 0.8s ease 0.9s forwards;
+    }
+    @keyframes pl-textin {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
 <!-- PAGE LOADER -->
 <div class="page-loader" id="pageLoader">
-  <div class="loader-content">
-    <div class="loader-ring"></div>
-    <div class="loader-text">Shiksha Library</div>
+  <div class="pl-particles" id="plParticles"></div>
+  <div class="pl-stage">
+    <div class="pl-book">
+      <div class="pl-page-stack"></div>
+      <div class="pl-glow"></div>
+      <div class="pl-cover"></div>
+    </div>
+    <div class="pl-text">Shiksha <span>Library</span></div>
+    <div class="pl-sub">Opening Knowledge…</div>
   </div>
 </div>
 
@@ -1939,12 +2037,34 @@
 </div>
 
 <script>
-  // PAGE LOADER
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('pageLoader').classList.add('hidden');
-    }, 800);
-  });
+  // PAGE LOADER — cinematic book opening
+  (function () {
+    const plParticles = document.getElementById('plParticles');
+    if (plParticles) {
+      for (let i = 0; i < 14; i++) {
+        const p = document.createElement('div');
+        p.className = 'pl-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
+        p.style.animationDelay = (Math.random() * 1.2) + 's';
+        const size = Math.random() * 5 + 3;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        plParticles.appendChild(p);
+      }
+    }
+  })();
+  function hidePageLoader() {
+    const loader = document.getElementById('pageLoader');
+    if (loader) loader.classList.add('hidden');
+  }
+  // Hide after animation (~2.5s) or once page fully loads, whichever is later
+  let plLoaded = false, plMinTimePassed = false;
+  function maybeHideLoader() { if (plLoaded && plMinTimePassed) hidePageLoader(); }
+  window.addEventListener('load', () => { plLoaded = true; maybeHideLoader(); });
+  setTimeout(() => { plMinTimePassed = true; maybeHideLoader(); }, 2500);
+  // Safety fallback: never let loader stick beyond 5s
+  setTimeout(hidePageLoader, 5000);
 
   // NAVBAR SCROLL
   const navbar = document.getElementById('navbar');
