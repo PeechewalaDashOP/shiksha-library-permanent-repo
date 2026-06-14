@@ -743,60 +743,6 @@
       height: 1px;
       background: rgba(26,115,232,0.15);
     }
-    /* ===== PRIME INFO TOOLTIP ===== */
-    .prime-info {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px; height: 18px;
-      background: var(--primary);
-      color: white;
-      border-radius: 50%;
-      font-size: 0.7rem;
-      font-weight: 700;
-      cursor: pointer;
-      position: relative;
-      margin-left: 6px;
-      flex-shrink: 0;
-      vertical-align: middle;
-      user-select: none;
-    }
-    .prime-info .prime-tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1e293b;
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 400;
-      line-height: 1.5;
-      padding: 10px 14px;
-      border-radius: 10px;
-      white-space: normal;
-      width: 220px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-      pointer-events: none;
-      transition: opacity 0.2s ease, visibility 0.2s ease;
-      z-index: 100;
-      text-align: center;
-    }
-    .prime-info .prime-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: #1e293b;
-    }
-    .prime-info:hover .prime-tooltip,
-    .prime-info.active .prime-tooltip {
-      visibility: visible;
-      opacity: 1;
-    
     .plans-subheading span {
       background: var(--light-bg2);
       color: var(--primary);
@@ -1554,7 +1500,7 @@
 
       <!-- Prime Section -->
       <div class="plans-subheading">
-        <span>Prime Section — Fixed Reserved Seat <span class="prime-info" onclick="this.classList.toggle('active')">i<span class="prime-tooltip">Prime section is a premium study zone with a fixed reserved seat, comfortable seating and enhanced cooling for better focus.</span></span></span>
+        <span>Prime Section — Fixed Reserved Seat</span>
       </div>
 
       <!-- Prime Morning -->
@@ -1687,7 +1633,7 @@
         </a>
       </div>
 
-      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 15 Days <span class="prime-info" onclick="this.classList.toggle('active')">i<span class="prime-tooltip">Prime section is a premium study zone with a fixed reserved seat, comfortable seating and enhanced cooling for better focus.</span></span></span></div>
+      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 15 Days</span></div>
 
       <div class="plan-card reveal" style="transition-delay:0.2s">
         <div class="plan-badge badge-prime">Prime</div>
@@ -1793,7 +1739,7 @@
         </a>
       </div>
 
-      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 3 Months <span class="prime-info" onclick="this.classList.toggle('active')">i<span class="prime-tooltip">Prime section is a premium study zone with a fixed reserved seat, comfortable seating and enhanced cooling for better focus.</span></span></span></div>
+      <div class="plans-subheading"><span>Prime Section — Fixed Seat — 3 Months</span></div>
 
       <div class="plan-card reveal" style="transition-delay:0.2s">
         <div class="plan-badge badge-prime">Prime</div>
@@ -2091,34 +2037,12 @@
 </div>
 
 <script>
-  // PAGE LOADER — cinematic book opening
-  (function () {
-    const plParticles = document.getElementById('plParticles');
-    if (plParticles) {
-      for (let i = 0; i < 14; i++) {
-        const p = document.createElement('div');
-        p.className = 'pl-particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
-        p.style.animationDelay = (Math.random() * 1.2) + 's';
-        const size = Math.random() * 5 + 3;
-        p.style.width = size + 'px';
-        p.style.height = size + 'px';
-        plParticles.appendChild(p);
-      }
-    }
-  })();
-  function hidePageLoader() {
-    const loader = document.getElementById('pageLoader');
-    if (loader) loader.classList.add('hidden');
-  }
-  // Hide after animation (~2.5s) or once page fully loads, whichever is later
-  let plLoaded = false, plMinTimePassed = false;
-  function maybeHideLoader() { if (plLoaded && plMinTimePassed) hidePageLoader(); }
-  window.addEventListener('load', () => { plLoaded = true; maybeHideLoader(); });
-  setTimeout(() => { plMinTimePassed = true; maybeHideLoader(); }, 2500);
-  // Safety fallback: never let loader stick beyond 5s
-  setTimeout(hidePageLoader, 5000);
+  // PAGE LOADER
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('pageLoader').classList.add('hidden');
+    }, 800);
+  });
 
   // NAVBAR SCROLL
   const navbar = document.getElementById('navbar');
