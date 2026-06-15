@@ -93,6 +93,8 @@
       <div class="stat"><div class="stat-val" id="s-active">—</div><div class="stat-label">Active Memberships</div></div>
       <div class="stat"><div class="stat-val" id="s-revenue">—</div><div class="stat-label">Total Revenue</div></div>
       <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Joined This Month</div></div>
+      <div class="stat"><div class="stat-val" id="s-renewals">—</div><div class="stat-label">Total Renewals</div></div>
+      <div class="stat"><div class="stat-val" id="s-new">—</div><div class="stat-label">New Admissions</div></div>
     </div>
 
     <!-- Today's Activity Summary -->
@@ -133,8 +135,8 @@
       </div>
       <div style="overflow-x:auto">
         <table id="students-table">
-          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Payment Mode</th><th>Amount Paid</th><th>Joined</th><th>Details</th></tr></thead>
-          <tbody id="students-body"><tr><td colspan="9" class="empty">Loading...</td></tr></tbody>
+          <thead><tr><th>#</th><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Exam</th><th>Payment Mode</th><th>Amount Paid</th><th>Joined</th><th>Details</th></tr></thead>
+          <tbody id="students-body"><tr><td colspan="10" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -151,6 +153,11 @@
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
           </select>
+          <select class="date-input" id="memb-type-filter" onchange="renderMembershipsTable()">
+            <option value="all">All Types</option>
+            <option value="new">New Admissions</option>
+            <option value="renewal">Renewals</option>
+          </select>
           <input type="date" class="date-input" id="memb-date-filter" onchange="renderMembershipsTable()" title="Filter by start date">
           <button class="clear-btn" onclick="clearMembFilters()">Clear</button>
           <input type="text" class="search-input" placeholder="Search name..." oninput="filterTable('memberships-table', this.value)">
@@ -158,8 +165,8 @@
       </div>
       <div style="overflow-x:auto">
         <table id="memberships-table">
-          <thead><tr><th>Student</th><th>Plan</th><th>Duration</th><th>Section</th><th>Fixed Seat</th><th>Payment Mode</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody id="memberships-body"><tr><td colspan="10" class="empty">Loading...</td></tr></tbody>
+          <thead><tr><th>Student</th><th>Plan</th><th>Duration</th><th>Section</th><th>Fixed Seat</th><th>Payment Mode</th><th>Type</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="memberships-body"><tr><td colspan="11" class="empty">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -451,6 +458,14 @@ function renderStats() {
   document.getElementById("s-active").textContent = active.length || 0;
   document.getElementById("s-revenue").textContent = "₹" + revenue.toLocaleString();
   document.getElementById("s-today").textContent = thisMonth;
+
+  // Renewal vs new admission counts
+  const renewals = allMembershipsData.filter(m => m.registration_type === "renewal").length;
+  const newAdmissions = allMembershipsData.filter(m => (m.registration_type || "new") === "new").length;
+  const sRenewals = document.getElementById("s-renewals");
+  const sNew = document.getElementById("s-new");
+  if (sRenewals) sRenewals.textContent = renewals;
+  if (sNew) sNew.textContent = newAdmissions;
 }
 
 // ── TODAY'S ACTIVITY SUMMARY ────────────────────────────────────
@@ -559,6 +574,7 @@ function renderStudentsTable() {
           : "—";
         return `<tr>
           <td>${i+1}</td>
+          <td style="font-weight:700;color:#f59e0b;font-size:.82rem">${s.student_code||"—"}</td>
           <td>${s.full_name}</td>
           <td>${s.email}</td>
           <td>${s.phone}</td>
@@ -569,7 +585,7 @@ function renderStudentsTable() {
           <td><button class="edit-btn" style="background:#1e293b;color:#fff" onclick="viewStudent('${s.id}')">👁 View</button></td>
         </tr>`;
       }).join("")
-    : `<tr><td colspan="9" class="empty">No students yet.</td></tr>`;
+    : `<tr><td colspan="10" class="empty">No students yet.</td></tr>`;
 }
 
 // ── STUDENT DETAIL MODAL ────────────────────────────────────────
@@ -627,6 +643,7 @@ async function viewStudent(studentId) {
       </div>
       <div style="flex:1;min-width:200px">
         <div style="font-size:1.2rem;font-weight:800;color:#1e293b">${s.full_name}</div>
+        ${s.student_code ? `<div style="font-size:.8rem;font-weight:700;color:#f59e0b;margin-top:2px">ID: ${s.student_code}</div>` : ""}
         <div style="color:#64748b;font-size:.85rem;margin-top:2px">${s.email}</div>
         <div style="color:#64748b;font-size:.85rem">${s.phone}</div>
         <div style="margin-top:8px">${statusLabel} ${modeLabel}</div>
@@ -701,6 +718,7 @@ function closeStudentModal() {
 function renderMembershipsTable() {
   const statusFilter = document.getElementById("memb-status-filter")?.value || "all";
   const dateFilter   = document.getElementById("memb-date-filter")?.value || "";
+  const typeFilter   = document.getElementById("memb-type-filter")?.value || "all";
 
   let list = [...allMembershipsData];
 
@@ -717,7 +735,12 @@ function renderMembershipsTable() {
     });
   }
 
-  // Start-date filter (exact day)
+  // Type filter (new admission vs renewal)
+  if (typeFilter !== "all") {
+    list = list.filter(m => (m.registration_type || "new") === typeFilter);
+  }
+
+  // Start-date filter
   if (dateFilter) {
     list = list.filter(m => {
       if (!m.start_date) return false;
@@ -740,6 +763,9 @@ function renderMembershipsTable() {
           : m.status === "rejected"
           ? '<span class="badge badge-expired">Rejected</span>'
           : `<span class="badge ${isActive ? "badge-active" : "badge-expired"}">${isActive ? "Active" : "Expired"}</span>`;
+        const typeBadge = (m.registration_type || "new") === "renewal"
+          ? '<span class="badge" style="background:#ede9fe;color:#6d28d9">🔄 Renewal</span>'
+          : '<span class="badge" style="background:#e0f2fe;color:#0369a1">🆕 New</span>';
         return `<tr>
           <td>${m.students?.full_name||"—"}</td>
           <td>${m.plans?.name||"—"}</td>
@@ -747,13 +773,14 @@ function renderMembershipsTable() {
           <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
           <td>${m.fixed_seat?"✅ Yes":"No"}</td>
           <td>${modeBadge}</td>
+          <td>${typeBadge}</td>
           <td>${fmt(m.start_date)}</td>
           <td>${fmt(m.end_date)}</td>
           <td>₹${m.amount_paid.toLocaleString()}</td>
           <td>${statusBadge}</td>
         </tr>`;
       }).join("")
-    : `<tr><td colspan="10" class="empty">No memberships yet.</td></tr>`;
+    : `<tr><td colspan="11" class="empty">No memberships yet.</td></tr>`;
 }
 
 // ── PAYMENTS TABLE (live, with mode column) ─────────────────────
@@ -928,8 +955,10 @@ function filterTable(tableId, query) {
 function clearMembFilters() {
   const sf = document.getElementById("memb-status-filter");
   const df = document.getElementById("memb-date-filter");
+  const tf = document.getElementById("memb-type-filter");
   if (sf) sf.value = "all";
   if (df) df.value = "";
+  if (tf) tf.value = "all";
   renderMembershipsTable();
 }
 

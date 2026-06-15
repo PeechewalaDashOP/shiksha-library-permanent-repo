@@ -48,6 +48,39 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
 .payment-date{color:#64748b;font-size:.78rem;margin-top:.15rem}
 .payment-amount{font-weight:700;color:#15803d}
 .receipt-btn{background:#1a73e8;color:#fff;border:none;padding:.4rem .85rem;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;margin-top:.4rem;font-family:inherit}
+/* Renewal Modal */
+.rnl-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:1rem}
+.rnl-box{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative}
+.rnl-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.6rem;cursor:pointer;color:#94a3b8;line-height:1}
+.rnl-title{font-size:1.1rem;font-weight:800;color:#1e293b;margin-bottom:.25rem}
+.rnl-sub{font-size:.82rem;color:#64748b;margin-bottom:1.25rem}
+.rnl-info{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:.85rem 1rem;margin-bottom:1.25rem;font-size:.875rem;color:#15803d;font-weight:600}
+.rnl-plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1rem}
+.rnl-plan-btn{border:2px solid #e2e8f0;border-radius:10px;padding:.75rem;cursor:pointer;text-align:left;background:#fff;transition:all .2s;font-family:inherit}
+.rnl-plan-btn:hover{border-color:#f59e0b;background:#fffbeb}
+.rnl-plan-btn.selected{border-color:#f59e0b;background:#fffbeb}
+.rnl-plan-name{font-size:.82rem;font-weight:700;color:#1e293b}
+.rnl-plan-price{font-size:1.1rem;font-weight:800;color:#f59e0b;margin-top:2px}
+.rnl-plan-sub{font-size:.72rem;color:#64748b;margin-top:1px}
+.rnl-section-label{font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:.75rem 0 .4rem}
+.rnl-addons{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.rnl-addon{display:flex;align-items:center;gap:.65rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:.65rem .85rem;cursor:pointer}
+.rnl-addon input{width:16px;height:16px;accent-color:#f59e0b;cursor:pointer;flex-shrink:0}
+.rnl-addon-label{font-size:.85rem;color:#374151;font-weight:500}
+.rnl-addon-price{font-size:.8rem;font-weight:700;color:#d97706;margin-left:auto}
+.rnl-date-row{margin-bottom:1rem}
+.rnl-date-row label{font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:.3rem}
+.rnl-date-row input{width:100%;padding:.6rem .85rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none}
+.rnl-date-row input:focus{border-color:#f59e0b}
+.rnl-price-box{background:#f8fafc;border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem}
+.rnl-price-row{display:flex;justify-content:space-between;font-size:.85rem;color:#64748b;margin-bottom:.3rem}
+.rnl-price-total{display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:#1e293b;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #e2e8f0}
+.rnl-pay-modes{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.rnl-pay-mode{flex:1;border:2px solid #e2e8f0;border-radius:8px;padding:.7rem;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#64748b;background:#fff;font-family:inherit;min-width:120px}
+.rnl-pay-mode.selected{border-color:#f59e0b;background:#fffbeb;color:#92400e}
+.rnl-submit{width:100%;padding:.85rem;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:#f59e0b}
+.rnl-submit:disabled{background:#fcd34d;cursor:not-allowed}
+.rnl-err{color:#dc2626;font-size:.8rem;margin-top:.5rem;text-align:center;min-height:1.2em}
 .action-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem}
 .btn-primary{display:inline-block;background:#f59e0b;color:#fff;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer}
 .btn-outline{background:#fff;color:#f59e0b;border:2px solid #f59e0b;padding:.65rem 1.4rem;border-radius:9px;font-weight:600;font-size:.9rem;text-decoration:none}
@@ -105,9 +138,69 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
 
     <!-- ACTIONS -->
     <div class="action-row">
-      <a href="index.html#plans" class="btn-primary">🔄 Renew / Upgrade Plan</a>
+      <button class="btn-primary" id="renew-btn" onclick="openRenewalModal()" style="display:none">🔄 Renew / Upgrade Plan</button>
+      <a href="index.html#plans" class="btn-primary" id="new-plan-btn">📋 View Plans</a>
       <a href="index.html" class="btn-outline">← Back to Website</a>
     </div>
+  </div>
+</div>
+
+<!-- RAZORPAY -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<!-- RENEWAL MODAL -->
+<div class="rnl-overlay" id="rnl-modal" onclick="if(event.target===this)closeRenewalModal()">
+  <div class="rnl-box">
+    <button class="rnl-close" onclick="closeRenewalModal()">×</button>
+    <div class="rnl-title">🔄 Renew Your Membership</div>
+    <div class="rnl-sub">Your details are saved — just pick a plan and pay.</div>
+    <div class="rnl-info" id="rnl-student-info">Loading…</div>
+
+    <div class="rnl-section-label">Select Duration</div>
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap" id="rnl-duration-tabs">
+      <button class="rnl-pay-mode selected" onclick="selectDuration('monthly',this)">Monthly</button>
+      <button class="rnl-pay-mode" onclick="selectDuration('15days',this)">15 Days</button>
+      <button class="rnl-pay-mode" onclick="selectDuration('3month',this)">3 Months</button>
+    </div>
+
+    <div class="rnl-section-label">Select Plan</div>
+    <div class="rnl-plan-grid" id="rnl-plan-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="rnl-addons">
+      <label class="rnl-addon">
+        <input type="checkbox" id="rnl-fixed-seat" onchange="calcRenewalTotal()">
+        <span class="rnl-addon-label">📌 Fixed Seat Reservation</span>
+        <span class="rnl-addon-price">+₹100</span>
+      </label>
+      <label class="rnl-addon">
+        <input type="checkbox" id="rnl-locker" onchange="calcRenewalTotal()">
+        <span class="rnl-addon-label">🔒 Locker</span>
+        <span class="rnl-addon-price">+₹100</span>
+      </label>
+    </div>
+
+    <div class="rnl-date-row">
+      <label>Start Date (leave blank for today)</label>
+      <input type="date" id="rnl-start-date" onchange="calcRenewalTotal()" min="">
+    </div>
+
+    <div class="rnl-price-box">
+      <div class="rnl-price-row"><span>Membership Fee</span><span id="rnl-base-display">—</span></div>
+      <div class="rnl-price-row" id="rnl-gateway-row" style="display:none"><span>Gateway Fee (2.36%)</span><span id="rnl-gateway-display">—</span></div>
+      <div class="rnl-price-total"><span>Total</span><span id="rnl-total-display">—</span></div>
+    </div>
+
+    <div class="rnl-section-label">Payment Method</div>
+    <div class="rnl-pay-modes">
+      <button class="rnl-pay-mode selected" id="rnl-online-btn" onclick="selectPayMode('online')">💳 Pay Online</button>
+      <button class="rnl-pay-mode" id="rnl-cash-btn" onclick="selectPayMode('cash')">🏦 Pay at Library</button>
+    </div>
+
+    <p class="rnl-err" id="rnl-err"></p>
+    <button class="rnl-submit" id="rnl-submit" onclick="submitRenewal()">Select a plan first</button>
+    <p style="text-align:center;font-size:.72rem;color:#94a3b8;margin-top:.5rem">🔒 Online payments secured by Razorpay</p>
   </div>
 </div>
 
@@ -254,6 +347,9 @@ async function loadDashboard() {
   document.getElementById("content").style.display = "block";
   document.getElementById("student-name").textContent = student.full_name.split(" ")[0];
 
+  // Show renew button for any student (they can always renew or get a new plan)
+  document.getElementById("renew-btn").style.display = "inline-block";
+
   // Find latest membership
   const active  = memberships?.find(m => m.status === "active");
   const pending = memberships?.find(m => m.status === "pending");
@@ -382,6 +478,277 @@ async function loadDashboard() {
       </div>
     `;
     }).join("");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENEWAL SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const RAZORPAY_KEY = "rzp_live_T0jBbWu8yxxkgp";
+
+// Plans data for renewal modal (prices fetched live from DB)
+const PLAN_CATALOG = {
+  monthly: [
+    { id:"monthly-morning-regular", name:"Morning Shift", sub:"6AM–2PM · Regular", price:500 },
+    { id:"monthly-evening-regular", name:"Evening Shift", sub:"2PM–10PM · Regular", price:600 },
+    { id:"monthly-fullday-regular", name:"Full Day", sub:"24×7 · Regular", price:1000 },
+    { id:"monthly-morning-prime",   name:"Prime Morning", sub:"6AM–2PM · Prime Hall", price:600 },
+    { id:"monthly-evening-prime",   name:"Prime Evening", sub:"2PM–10PM · Prime Hall", price:700 },
+    { id:"monthly-fullday-prime",   name:"Prime Full Day", sub:"24×7 · Prime Hall", price:1200 },
+  ],
+  "15days": [
+    { id:"15days-morning-regular", name:"Morning Shift", sub:"6AM–2PM · Regular", price:300 },
+    { id:"15days-evening-regular", name:"Evening Shift", sub:"2PM–10PM · Regular", price:350 },
+    { id:"15days-fullday-regular", name:"Full Day", sub:"24×7 · Regular", price:600 },
+    { id:"15days-morning-prime",   name:"Prime Morning", sub:"6AM–2PM · Prime Hall", price:350 },
+    { id:"15days-evening-prime",   name:"Prime Evening", sub:"2PM–10PM · Prime Hall", price:400 },
+  ],
+  "3month": [
+    { id:"3month-morning-regular", name:"Morning Shift", sub:"6AM–2PM · Regular", price:1200 },
+    { id:"3month-evening-regular", name:"Evening Shift", sub:"2PM–10PM · Regular", price:1500 },
+    { id:"3month-fullday-regular", name:"Full Day", sub:"24×7 · Regular", price:2700 },
+    { id:"3month-morning-prime",   name:"Prime Morning", sub:"6AM–2PM · Prime Hall", price:1500 },
+    { id:"3month-evening-prime",   name:"Prime Evening", sub:"2PM–10PM · Prime Hall", price:1800 },
+    { id:"3month-fullday-prime",   name:"Prime Full Day", sub:"24×7 · Prime Hall", price:3300 },
+  ],
+};
+
+let rnlState = {
+  duration: "monthly",
+  selectedPlan: null,
+  payMode: "online",
+};
+
+async function openRenewalModal() {
+  if (!STUDENT) return;
+  rnlState = { duration:"monthly", selectedPlan:null, payMode:"online" };
+
+  // Show student info
+  document.getElementById("rnl-student-info").textContent =
+    `👤 ${STUDENT.full_name} · ${STUDENT.phone} · ${STUDENT.email}`;
+
+  // Set min date for start date
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("rnl-start-date").min = today;
+  document.getElementById("rnl-start-date").value = "";
+
+  // Reset checkboxes
+  document.getElementById("rnl-fixed-seat").checked = false;
+  document.getElementById("rnl-locker").checked = false;
+
+  // Fetch live prices
+  try {
+    const { data: livePlans } = await sb.from("plans").select("id, price");
+    if (livePlans?.length) {
+      Object.values(PLAN_CATALOG).flat().forEach(p => {
+        const live = livePlans.find(lp => lp.id === p.id);
+        if (live) p.price = live.price;
+      });
+    }
+  } catch(e) { /* use default prices */ }
+
+  renderPlanGrid("monthly");
+  calcRenewalTotal();
+
+  document.getElementById("rnl-modal").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+function closeRenewalModal() {
+  document.getElementById("rnl-modal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+function selectDuration(dur, btn) {
+  rnlState.duration = dur;
+  rnlState.selectedPlan = null;
+  document.querySelectorAll("#rnl-duration-tabs .rnl-pay-mode").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  renderPlanGrid(dur);
+  calcRenewalTotal();
+}
+
+function renderPlanGrid(dur) {
+  const plans = PLAN_CATALOG[dur] || [];
+  document.getElementById("rnl-plan-grid").innerHTML = plans.map(p => `
+    <button class="rnl-plan-btn" onclick="selectPlan('${p.id}', ${p.price}, this)">
+      <div class="rnl-plan-name">${p.name}</div>
+      <div class="rnl-plan-price">₹${p.price.toLocaleString()}</div>
+      <div class="rnl-plan-sub">${p.sub}</div>
+    </button>
+  `).join("");
+}
+
+function selectPlan(planId, basePrice, btn) {
+  rnlState.selectedPlan = { id: planId, price: basePrice };
+  document.querySelectorAll(".rnl-plan-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  calcRenewalTotal();
+}
+
+function selectPayMode(mode) {
+  rnlState.payMode = mode;
+  document.getElementById("rnl-online-btn").classList.toggle("selected", mode === "online");
+  document.getElementById("rnl-cash-btn").classList.toggle("selected", mode === "cash");
+  calcRenewalTotal();
+}
+
+function calcRenewalTotal() {
+  if (!rnlState.selectedPlan) {
+    document.getElementById("rnl-submit").textContent = "Select a plan first";
+    document.getElementById("rnl-submit").disabled = true;
+    return;
+  }
+  const base      = rnlState.selectedPlan.price;
+  const fixedSeat = document.getElementById("rnl-fixed-seat").checked;
+  const locker    = document.getElementById("rnl-locker").checked;
+  const addons    = (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
+  const subtotal  = base + addons;
+  const gateway   = rnlState.payMode === "online" ? Math.round(base * 0.0236) : 0;
+  const total     = subtotal + gateway;
+
+  rnlState.total    = total;
+  rnlState.subtotal = subtotal;
+  rnlState.gateway  = gateway;
+  rnlState.fixedSeat = fixedSeat;
+  rnlState.locker    = locker;
+
+  document.getElementById("rnl-base-display").textContent = "₹" + subtotal.toLocaleString();
+  document.getElementById("rnl-gateway-row").style.display = rnlState.payMode === "online" ? "flex" : "none";
+  document.getElementById("rnl-gateway-display").textContent = "₹" + gateway.toLocaleString();
+  document.getElementById("rnl-total-display").textContent = "₹" + total.toLocaleString();
+
+  const btn = document.getElementById("rnl-submit");
+  btn.disabled = false;
+  btn.style.background = rnlState.payMode === "cash" ? "#16a34a" : "#f59e0b";
+  btn.textContent = rnlState.payMode === "cash"
+    ? `Register Renewal — Pay ₹${total.toLocaleString()} at Library`
+    : `Pay ₹${total.toLocaleString()} Online`;
+}
+
+function calcDates(planId, startInput) {
+  const start = startInput ? new Date(startInput + "T00:00:00") : new Date();
+  const end   = new Date(start);
+  if (planId.startsWith("monthly"))     end.setMonth(end.getMonth() + 1);
+  else if (planId.startsWith("15days")) end.setDate(end.getDate() + 15);
+  else if (planId.startsWith("3month")) end.setMonth(end.getMonth() + 3);
+  return {
+    startDate: start.toISOString().split("T")[0],
+    endDate:   end.toISOString().split("T")[0],
+  };
+}
+
+async function submitRenewal() {
+  const err = document.getElementById("rnl-err");
+  err.textContent = "";
+  if (!rnlState.selectedPlan) { err.textContent = "Please select a plan."; return; }
+  if (!STUDENT) { err.textContent = "Student data not loaded."; return; }
+
+  const btn = document.getElementById("rnl-submit");
+  btn.disabled = true;
+  btn.textContent = "Processing…";
+
+  const startInput = document.getElementById("rnl-start-date").value;
+  const { startDate, endDate } = calcDates(rnlState.selectedPlan.id, startInput);
+
+  const payload = {
+    planId:           rnlState.selectedPlan.id,
+    amount:           rnlState.total,
+    fixedSeat:        rnlState.fixedSeat,
+    locker:           rnlState.locker,
+    startDate,
+    endDate,
+    isRenewal:        true,
+    existingStudentId: STUDENT.id,
+    studentData: {    // sent for completeness; backend uses existingStudentId
+      fullName:  STUDENT.full_name,
+      email:     STUDENT.email,
+      phone:     STUDENT.phone,
+      fatherName: STUDENT.father_name || "",
+      gender:    STUDENT.gender || "",
+      aadhar:    STUDENT.aadhar || "",
+      address:   STUDENT.address || "",
+      examTarget: STUDENT.exam_target || "",
+    },
+  };
+
+  if (rnlState.payMode === "cash") {
+    // Cash renewal
+    try {
+      const res  = await fetch("/.netlify/functions/cash-registration", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeRenewalModal();
+        alert(`✅ Renewal registered!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount: ₹${rnlState.total.toLocaleString()}\n\nPlease visit the library and pay ₹${rnlState.total.toLocaleString()} in cash to activate your renewed membership.`);
+        location.reload();
+      } else {
+        err.textContent = data.message || data.error || "Registration failed.";
+        btn.disabled = false;
+        calcRenewalTotal();
+      }
+    } catch(e) {
+      err.textContent = "Network error. Please try again.";
+      btn.disabled = false;
+      calcRenewalTotal();
+    }
+    return;
+  }
+
+  // Online renewal — create Razorpay order first
+  try {
+    const orderRes  = await fetch("/.netlify/functions/create-order", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: rnlState.total, planId: rnlState.selectedPlan.id, planName: rnlState.selectedPlan.id }),
+    });
+    const orderData = await orderRes.json();
+    if (!orderData.orderId) throw new Error("Could not create order. Try again.");
+
+    const rzp = new Razorpay({
+      key:         RAZORPAY_KEY,
+      amount:      orderData.amount,
+      currency:    "INR",
+      name:        "Shiksha Library",
+      description: "Membership Renewal — " + rnlState.selectedPlan.id,
+      order_id:    orderData.orderId,
+      prefill:     { name: STUDENT.full_name, email: STUDENT.email, contact: STUDENT.phone },
+      theme:       { color: "#f59e0b" },
+      handler: async (response) => {
+        // Verify and save renewal
+        const vRes  = await fetch("/.netlify/functions/verify-payment", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...payload,
+            razorpay_order_id:   orderData.orderId,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature:  response.razorpay_signature,
+          }),
+        });
+        const vData = await vRes.json();
+        if (vData.success) {
+          closeRenewalModal();
+          alert(`✅ Renewal Confirmed!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount Paid: ₹${rnlState.total.toLocaleString()}\nValid Until: ${endDate}`);
+          location.reload();
+        } else {
+          err.textContent = "Payment received but renewal failed. Contact library with payment ID: " + response.razorpay_payment_id;
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          err.textContent = "Payment cancelled. You can try again.";
+          btn.disabled = false;
+          calcRenewalTotal();
+        },
+      },
+    });
+    rzp.open();
+    closeRenewalModal();
+  } catch(e) {
+    err.textContent = e.message || "Something went wrong.";
+    btn.disabled = false;
+    calcRenewalTotal();
   }
 }
 
