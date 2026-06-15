@@ -210,6 +210,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let STUDENT = null; // cached for receipt generation
+let MEMBERSHIPS = null; // cached for renewal guard
 
 // LIVE CLOCK
 function startClock() {
@@ -337,6 +338,7 @@ async function loadDashboard() {
     .select("*, plans(name,duration,shift,section)")
     .eq("student_id", student.id)
     .order("created_at", { ascending: false });
+  MEMBERSHIPS = memberships;
 
   const { data: payments } = await sb.from("payments")
     .select("*")
@@ -521,6 +523,23 @@ let rnlState = {
 
 async function openRenewalModal() {
   if (!STUDENT) return;
+
+  // ── HARD BLOCK: prevent renewal if active membership exists ──
+  const today = new Date().toISOString().split("T")[0];
+  const activeMembership = MEMBERSHIPS?.find(
+    m => m.status === "active" && m.end_date >= today
+  );
+  if (activeMembership) {
+    alert(
+      "⛔ Renewal Not Allowed\n\n" +
+      "You already have an active membership valid until " +
+      fmt(activeMembership.end_date) + ".\n\n" +
+      "You can renew only after your current membership expires.\n" +
+      "For special cases, please contact the library."
+    );
+    return;
+  }
+
   rnlState = { duration:"monthly", selectedPlan:null, payMode:"online" };
 
   // Show student info
