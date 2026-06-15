@@ -475,7 +475,7 @@ function renderTodaySummary() {
   const now = new Date();
   const isToday = (d) => {
     if (!d) return false;
-    const x = new Date(d);
+    const x = new Date(new Date(d).getTime() + 5.5 * 60 * 60000);
     return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth() && x.getDate() === now.getDate();
   };
 
