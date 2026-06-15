@@ -164,7 +164,8 @@ function updateTotalPrice() {
 function updateMembershipDates() {
   const planId     = document.getElementById("sl-plan-id-hidden").value;
   const startInput = document.getElementById("sl-start-date").value;
-  const start      = startInput ? new Date(startInput + "T00:00:00") : new Date();
+  const nowIST = new Date(new Date().getTime() + 5.5*60*60000);
+  const start  = startInput ? new Date(startInput + "T00:00:00") : new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
   const end        = new Date(start);
   if (planId.startsWith("monthly"))     end.setMonth(end.getMonth() + 1);
   else if (planId.startsWith("15days")) end.setDate(end.getDate() + 15);
