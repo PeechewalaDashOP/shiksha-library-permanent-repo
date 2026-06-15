@@ -474,13 +474,37 @@ function renderTodaySummary() {
   if (!el) return;
   const now = new Date();
   const isToday = (d) => {
+    if (!d) return false;
     const x = new Date(d);
     return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth() && x.getDate() === now.getDate();
   };
+
+  // New registrations today = memberships created today
+  const newRegs = allMembershipsData.filter(m => isToday(m.created_at)).length;
+
+  // Collected today:
+  // Online: success payments created today
+  // Cash: success cash payments whose membership's start_date is today (approved today)
   const pay = activePayments();
-  const todayPays = pay.filter(p => isToday(p.created_at));
-  const newRegs   = todayPays.length;
-  const collected = todayPays.filter(p => p.status === "success").reduce((s,p) => s + p.amount, 0);
+
+  const onlineToday = pay
+    .filter(p => p.status === "success" && p.payment_mode !== "cash" && isToday(p.created_at))
+    .reduce((s, p) => s + p.amount, 0);
+
+  const cashToday = pay
+    .filter(p => {
+      if (p.status !== "success" || p.payment_mode !== "cash") return false;
+      const memb = allMembershipsData.find(m =>
+        m.id === p.membership_id ||
+        (!p.membership_id && m.student_id === p.student_id && m.amount_paid === p.amount && m.payment_mode === "cash")
+      );
+      return memb && isToday(memb.start_date);
+    })
+    .reduce((s, p) => s + p.amount, 0);
+
+  const collected = onlineToday + cashToday;
+
+  // Cash pending — unchanged
   const pendingCash = allMembershipsData.filter(m => m.status === "pending" && m.payment_mode === "cash").length;
 
   el.innerHTML =
