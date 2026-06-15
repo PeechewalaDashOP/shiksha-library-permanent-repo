@@ -74,6 +74,49 @@ function attachBookingListeners() {
 }
 
 let currentPlan = {};
+async function checkExistingActiveMembership(email, phone) {
+  try {
+    const today = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
+
+    const { data: byEmail } = await sbClient
+      .from("students")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (byEmail) {
+      const { data: active } = await sbClient
+        .from("memberships")
+        .select("end_date")
+        .eq("student_id", byEmail.id)
+        .eq("status", "active")
+        .gte("end_date", today)
+        .maybeSingle();
+      if (active) return active;
+    }
+
+    const { data: byPhone } = await sbClient
+      .from("students")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (byPhone) {
+      const { data: active } = await sbClient
+        .from("memberships")
+        .select("end_date")
+        .eq("student_id", byPhone.id)
+        .eq("status", "active")
+        .gte("end_date", today)
+        .maybeSingle();
+      if (active) return active;
+    }
+
+    return null;
+  } catch(e) {
+    return null;
+  }
+}
 function openBookingModal(planId, planData) {
   currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null };
   document.getElementById("sl-modal-plan-name").textContent = planData.name + " — " + planData.duration;
@@ -211,6 +254,14 @@ async function handleBookingSubmit(e) {  e.preventDefault();
   if (!studentData.gender) { showFormError("Please select gender."); resetBtn(btn); return; }
   if (studentData.aadhar.length !== 12) { showFormError("Please enter valid 12-digit Aadhar number."); resetBtn(btn); return; }
   if (!currentPlan.photoBase64) { showFormError("Please upload your photo (selfie) to continue."); resetBtn(btn); return; }
+
+  const existingActive = await checkExistingActiveMembership(studentData.email, studentData.phone);
+  if (existingActive) {
+    const expiry = new Date(existingActive.end_date).toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+    showFormError(`You already have an active membership valid until ${expiry}. Please renew from your dashboard after it expires.`);
+    resetBtn(btn);
+    return;
+  }
 
   const payMode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
 
