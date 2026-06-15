@@ -646,14 +646,19 @@ function calcRenewalTotal() {
 }
 
 function calcDates(planId, startInput) {
+  const toLocalIST = (d) => {
+    const offset = 5.5 * 60 * 60000; // IST = UTC+5:30
+    const local = new Date(d.getTime() + offset);
+    return local.toISOString().split("T")[0];
+  };
   const start = startInput ? new Date(startInput + "T00:00:00") : new Date();
   const end   = new Date(start);
   if (planId.startsWith("monthly"))     end.setMonth(end.getMonth() + 1);
   else if (planId.startsWith("15days")) end.setDate(end.getDate() + 15);
   else if (planId.startsWith("3month")) end.setMonth(end.getMonth() + 3);
   return {
-    startDate: start.toISOString().split("T")[0],
-    endDate:   end.toISOString().split("T")[0],
+    startDate: toLocalIST(start),
+    endDate:   toLocalIST(end),
   };
 }
 
