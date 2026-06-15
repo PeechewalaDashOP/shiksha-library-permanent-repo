@@ -128,8 +128,9 @@ function updateMembershipDates() {
   else if (planId.startsWith("3month")) end.setMonth(end.getMonth() + 3);
   const fmt = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   document.getElementById("sl-date-display").value = `From ${fmt(start)} to ${fmt(end)}`;
-  currentPlan.startDate = start.toISOString().split("T")[0];
-  currentPlan.endDate   = end.toISOString().split("T")[0];
+  const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };
+  currentPlan.startDate = toIST(start);
+  currentPlan.endDate   = toIST(end);
 }
 
 // ── PHOTO CAPTURE + COMPRESSION ───────────────────────────────
@@ -369,7 +370,8 @@ async function checkLoggedInUser() {
 }
 
 function getModalHTML() {
-  const today = new Date().toISOString().split('T')[0];
+  const _d = new Date(); _d.setTime(_d.getTime() + (5.5*60*60000));
+  const today = _d.toISOString().split('T')[0];
   return `
   <style>
     .sl-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;padding:1rem}
