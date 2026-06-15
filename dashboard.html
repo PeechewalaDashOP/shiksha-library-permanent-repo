@@ -525,9 +525,9 @@ async function openRenewalModal() {
   if (!STUDENT) return;
 
   // ── HARD BLOCK: prevent renewal if active membership exists ──
-  const today = new Date().toISOString().split("T")[0];
+  const blockToday = new Date().toISOString().split("T")[0];
   const activeMembership = MEMBERSHIPS?.find(
-    m => m.status === "active" && m.end_date >= today
+    m => m.status === "active" && m.end_date >= blockToday
   );
   if (activeMembership) {
     alert(
