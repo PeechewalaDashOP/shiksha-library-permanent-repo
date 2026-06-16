@@ -125,6 +125,7 @@
       <button class="tab" onclick="showSection('prices')">✏️ Update Prices</button>
       <button class="tab" onclick="showSection('cash')">🏦 Cash Approvals</button>
       <button class="tab" onclick="showSection('report')">📊 Collection Report</button>
+<button class="tab" onclick="showSection('phase4')">🪑 Seats & Revenue</button>
     </div>
 
     <!-- STUDENTS -->
@@ -315,6 +316,36 @@
 
   </div>
 </div>
+
+    <!-- PHASE 4: SEATS & REVENUE -->
+    <div id="sec-phase4" class="card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">🪑 Seat Availability & Revenue Comparison</span>
+      </div>
+      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="font-weight:700;color:#1e293b;margin-bottom:.75rem">⚙️ Seat Configuration</div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <div><label style="font-size:.75rem;color:#64748b;display:block;margin-bottom:3px">Morning Seats</label><input type="number" id="seats-morning" min="0" value="0" class="price-input" style="width:80px"></div>
+          <div><label style="font-size:.75rem;color:#64748b;display:block;margin-bottom:3px">Evening Seats</label><input type="number" id="seats-evening" min="0" value="0" class="price-input" style="width:80px"></div>
+          <div><label style="font-size:.75rem;color:#64748b;display:block;margin-bottom:3px">Full Day Seats</label><input type="number" id="seats-fullday" min="0" value="0" class="price-input" style="width:80px"></div>
+          <button class="save-btn" onclick="saveSeats()" style="align-self:flex-end">Save Seats</button>
+        </div>
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <div style="font-weight:700;color:#1e293b;margin-bottom:.75rem">🪑 Current Seat Availability</div>
+        <div id="phase4-seats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem"></div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#1e293b;margin-bottom:.75rem">📈 Monthly Revenue Comparison</div>
+        <div id="phase4-revenue" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1rem"></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Month</th><th>Online</th><th>Cash</th><th>Total</th><th>vs Previous</th></tr></thead>
+            <tbody id="phase4-revenue-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
 <!-- STUDENT DETAIL MODAL -->
 <div id="student-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.75);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeStudentModal()">
@@ -955,15 +986,15 @@ async function savePrice(planId) {
 
 // ── SECTION SWITCHING ────────────────────────────────────────────
 function showSection(sec) {
-  ["students","memberships","payments","prices","cash","report"].forEach(s => {
+  ["students","memberships","payments","prices","cash","report","phase4"].forEach(s => {
     document.getElementById("sec-" + s).style.display = s === sec ? "block" : "none";
   });
   document.querySelectorAll(".tab").forEach((t,i) => {
-    t.classList.toggle("active", ["students","memberships","payments","prices","cash","report"][i] === sec);
+    t.classList.toggle("active", ["students","memberships","payments","prices","cash","report","phase4"][i] === sec);
   });
   if (sec === "report") buildReport();
   if (sec === "cash") loadCashPending();
-  // Always refresh live data when switching tabs
+  if (sec === "phase4") renderPhase4();
   if (sec === "students") renderStudentsTable();
   if (sec === "memberships") renderMembershipsTable();
   if (sec === "payments") renderPaymentsTable();
@@ -1320,6 +1351,101 @@ function exportCSV() {
   const a    = document.createElement("a");
   a.href = url; a.download = "shiksha-library-payments.csv";
   a.click(); URL.revokeObjectURL(url);
+}
+
+// ── PHASE 4: SEATS & REVENUE ─────────────────────────────────
+function saveSeats() {
+  localStorage.setItem("sl_seats_morning", document.getElementById("seats-morning").value || "0");
+  localStorage.setItem("sl_seats_evening", document.getElementById("seats-evening").value || "0");
+  localStorage.setItem("sl_seats_fullday", document.getElementById("seats-fullday").value || "0");
+  alert("✅ Seat configuration saved.");
+  renderPhase4();
+}
+
+function renderPhase4() {
+  // Load saved seat config
+  const totalM = parseInt(localStorage.getItem("sl_seats_morning") || "0");
+  const totalE = parseInt(localStorage.getItem("sl_seats_evening") || "0");
+  const totalF = parseInt(localStorage.getItem("sl_seats_fullday") || "0");
+  document.getElementById("seats-morning").value = totalM;
+  document.getElementById("seats-evening").value = totalE;
+  document.getElementById("seats-fullday").value = totalF;
+
+  // Count occupied seats from active memberships
+  const active = allMembershipsData.filter(m => m.status === "active" && new Date(m.end_date) >= new Date());
+  const occM = active.filter(m => m.plan_id?.includes("morning")).length;
+  const occE = active.filter(m => m.plan_id?.includes("evening")).length;
+  const occF = active.filter(m => m.plan_id?.includes("fullday")).length;
+
+  const seatCard = (label, total, occ) => {
+    const avail = Math.max(0, total - occ);
+    const pct   = total > 0 ? Math.round((occ / total) * 100) : 0;
+    const color = pct >= 90 ? "#dc2626" : pct >= 70 ? "#f59e0b" : "#15803d";
+    return `
+      <div class="stat" style="background:#1e293b">
+        <div style="font-size:.8rem;color:#94a3b8;margin-bottom:.5rem">${label}</div>
+        <div style="font-size:1.5rem;font-weight:800;color:${color}">${avail}<span style="font-size:.9rem;color:#94a3b8"> / ${total}</span></div>
+        <div style="font-size:.75rem;color:#94a3b8;margin-top:.2rem">Available · ${occ} occupied</div>
+        <div style="background:#0f172a;border-radius:999px;height:6px;margin-top:.6rem;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;transition:width .5s"></div>
+        </div>
+      </div>`;
+  };
+
+  document.getElementById("phase4-seats").innerHTML =
+    seatCard("🌅 Morning Shift", totalM, occM) +
+    seatCard("🌆 Evening Shift", totalE, occE) +
+    seatCard("☀️ Full Day", totalF, occF);
+
+  // Monthly revenue comparison — last 4 months
+  const now = new Date();
+  const months = [];
+  for (let i = 3; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ label: d.toLocaleDateString("en-IN",{month:"short",year:"numeric"}), year: d.getFullYear(), month: d.getMonth() });
+  }
+
+  const pay = activePayments();
+  const monthData = months.map(mo => {
+    const inMonth = pay.filter(p => {
+      const d = new Date(p.created_at);
+      return d.getFullYear() === mo.year && d.getMonth() === mo.month;
+    });
+    const online = inMonth.filter(p => p.status==="success" && p.payment_mode!=="cash").reduce((s,p)=>s+p.amount,0);
+    const cash   = inMonth.filter(p => p.status==="success" && p.payment_mode==="cash").reduce((s,p)=>s+p.amount,0);
+    return { label: mo.label, online, cash, total: online + cash };
+  });
+
+  // Stat cards for this month vs last month
+  const cur  = monthData[3];
+  const prev = monthData[2];
+  const diff = cur.total - prev.total;
+  const diffPct = prev.total > 0 ? Math.round((diff / prev.total) * 100) : 0;
+  const diffColor = diff >= 0 ? "#15803d" : "#dc2626";
+  const diffSign  = diff >= 0 ? "▲" : "▼";
+
+  document.getElementById("phase4-revenue").innerHTML = `
+    <div class="stat"><div class="stat-val">₹${cur.total.toLocaleString()}</div><div class="stat-label">This Month Total</div></div>
+    <div class="stat"><div class="stat-val">₹${prev.total.toLocaleString()}</div><div class="stat-label">Last Month Total</div></div>
+    <div class="stat"><div class="stat-val" style="color:${diffColor}">${diffSign} ${Math.abs(diffPct)}%</div><div class="stat-label">vs Last Month</div></div>
+    <div class="stat"><div class="stat-val" style="color:${diffColor}">${diff>=0?"+":""}₹${Math.abs(diff).toLocaleString()}</div><div class="stat-label">Difference</div></div>
+  `;
+
+  // Table — last 4 months
+  document.getElementById("phase4-revenue-body").innerHTML = monthData.map((mo, i) => {
+    const prevTotal = i > 0 ? monthData[i-1].total : null;
+    const chg = prevTotal !== null ? mo.total - prevTotal : null;
+    const chgPct = (chg !== null && prevTotal > 0) ? Math.round((chg/prevTotal)*100) : null;
+    const chgLabel = chg === null ? "—"
+      : `<span style="color:${chg>=0?"#15803d":"#dc2626"};font-weight:700">${chg>=0?"▲":"▼"} ${Math.abs(chgPct)}%</span>`;
+    return `<tr>
+      <td style="font-weight:600">${mo.label}</td>
+      <td style="color:#15803d;font-weight:600">${mo.online ? "₹"+mo.online.toLocaleString() : "—"}</td>
+      <td style="color:#15803d;font-weight:600">${mo.cash ? "₹"+mo.cash.toLocaleString() : "—"}</td>
+      <td style="font-weight:800">₹${mo.total.toLocaleString()}</td>
+      <td>${chgLabel}</td>
+    </tr>`;
+  }).join("");
 }
 
 checkSession();
