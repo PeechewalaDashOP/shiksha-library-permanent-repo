@@ -525,7 +525,7 @@ async function openRenewalModal() {
   if (!STUDENT) return;
 
   // ── HARD BLOCK: prevent renewal if active membership exists ──
-  const blockToday = new Date().toISOString().split("T")[0];
+  const blockToday = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
   const activeMembership = MEMBERSHIPS?.find(
     m => m.status === "active" && m.end_date >= blockToday
   );
@@ -547,7 +547,7 @@ async function openRenewalModal() {
     `👤 ${STUDENT.full_name} · ${STUDENT.phone} · ${STUDENT.email}`;
 
   // Set min date for start date
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
   document.getElementById("rnl-start-date").min = today;
   document.getElementById("rnl-start-date").value = "";
 
