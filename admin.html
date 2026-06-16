@@ -1093,14 +1093,6 @@ async function approveCash(membershipId, btn) {
     .eq("payment_mode", "cash")
     .eq("status", "pending");
 
-  await sb
-    .from("payments")
-    .update({ status: "success" })
-    .eq("student_id", membership.student_id)
-    .eq("amount", membership.amount_paid)
-    .eq("payment_mode", "cash")
-    .eq("status", "pending");
-
   // 3. Refresh all cached data + visible sections live
   await loadAll();
   loadCashPending();
