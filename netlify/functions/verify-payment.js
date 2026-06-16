@@ -50,7 +50,7 @@ exports.handler = async (event) => {
         .from("students")
         .select("id")
         .eq("email", studentData.email.toLowerCase())
-        .single();
+        .maybeSingle();
 
       if (existingStudent) {
         const { data: activeMemb } = await supabase
@@ -59,7 +59,7 @@ exports.handler = async (event) => {
           .eq("student_id", existingStudent.id)
           .eq("status", "active")
           .gte("end_date", new Date().toISOString().split("T")[0])
-          .single();
+          .maybeSingle();
 
         if (activeMemb) {
           // Payment already happened via Razorpay — we can't block it here.
@@ -104,7 +104,7 @@ exports.handler = async (event) => {
         .from("students")
         .select("id, student_code")
         .eq("email", studentData.email.toLowerCase())
-        .single();
+        .maybeSingle();
 
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
@@ -151,13 +151,15 @@ exports.handler = async (event) => {
       startStr = startDateInput;
       endStr   = endDateInput;
     } else {
-      const startDate = new Date();
-      const endDate   = new Date();
+      const nowIST    = new Date(new Date().getTime() + 5.5*60*60000);
+      const startDate = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
+      const endDate   = new Date(startDate);
       if (planId.startsWith("monthly"))     endDate.setMonth(endDate.getMonth() + 1);
       else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 15);
       else if (planId.startsWith("3month")) endDate.setMonth(endDate.getMonth() + 3);
-      startStr = startDate.toISOString().split("T")[0];
-      endStr   = endDate.toISOString().split("T")[0];
+      const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };
+      startStr = toIST(startDate);
+      endStr   = toIST(endDate);
     }
 
     // 6. Membership insert

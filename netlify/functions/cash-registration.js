@@ -33,7 +33,7 @@ exports.handler = async (event) => {
         .from("students")
         .select("id")
         .eq("email", studentData.email.toLowerCase())
-        .single();
+        .maybeSingle();
 
       if (existingStudent) {
         const { data: activeMemb } = await supabase
@@ -42,7 +42,7 @@ exports.handler = async (event) => {
           .eq("student_id", existingStudent.id)
           .eq("status", "active")
           .gte("end_date", new Date().toISOString().split("T")[0])
-          .single();
+          .maybeSingle();
 
         if (activeMemb) {
           return {
