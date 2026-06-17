@@ -121,8 +121,10 @@ exports.handler = async (event) => {
           gender: studentData.gender,
           email: studentData.email.toLowerCase(),
           phone: studentData.phone,
+          parent_mobile: studentData.parentMobile || "",
           aadhar: studentData.aadhar,
           address: studentData.address || "",
+          permanent_address: studentData.permanentAddress || "",
           exam_target: studentData.examTarget || "",
           student_code: studentCode,
         }, { onConflict: "email", ignoreDuplicates: false })

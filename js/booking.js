@@ -247,12 +247,15 @@ async function handleBookingSubmit(e) {  e.preventDefault();
     gender     : document.querySelector('input[name="sl-gender"]:checked')?.value || "",
     email      : document.getElementById("sl-email").value.trim().toLowerCase(),
     phone      : document.getElementById("sl-phone").value.trim(),
+    parentMobile : document.getElementById("sl-parent-mobile").value.trim(),
     aadhar     : document.getElementById("sl-aadhar").value.trim(),
     address    : document.getElementById("sl-address").value.trim(),
+    permanentAddress : document.getElementById("sl-permanent-address").value.trim(),
     examTarget : document.getElementById("sl-exam").value.trim(),
   };
 
   if (!studentData.gender) { showFormError("Please select gender."); resetBtn(btn); return; }
+  if (!/^[0-9]{10}$/.test(studentData.parentMobile)) { showFormError("Please enter a valid 10-digit parent mobile number."); resetBtn(btn); return; }
   if (studentData.aadhar.length !== 12) { showFormError("Please enter valid 12-digit Aadhar number."); resetBtn(btn); return; }
   if (!currentPlan.photoBase64) { showFormError("Please upload your photo (selfie) to continue."); resetBtn(btn); return; }
 
@@ -506,8 +509,10 @@ function getModalHTML() {
         </div>
         <div class="sl-fg"><label>Email Address *</label><input type="email" id="sl-email" placeholder="your@email.com" required></div>
         <div class="sl-fg"><label>Phone Number *</label><input type="tel" id="sl-phone" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}" required></div>
+        <div class="sl-fg"><label>Parent's Mobile Number *</label><input type="tel" id="sl-parent-mobile" placeholder="10-digit parent mobile number" pattern="[0-9]{10}" maxlength="10" required title="Please enter a valid 10-digit mobile number"></div>
         <div class="sl-fg"><label>Aadhar Card Number *</label><input type="text" id="sl-aadhar" placeholder="12-digit Aadhar number" maxlength="12" pattern="[0-9]{12}" required></div>
-        <div class="sl-fg"><label>Home Address *</label><input type="text" id="sl-address" placeholder="Full address" required></div>
+        <div class="sl-fg"><label>Residential Address *</label><input type="text" id="sl-address" placeholder="Full address" required></div>
+        <div class="sl-fg"><label>Permanent Address *</label><textarea id="sl-permanent-address" placeholder="Permanent address" required rows="3"></textarea></div>
         <div class="sl-fg">
           <label>Your Photo (Selfie) *</label>
           <input type="file" id="sl-photo-input" accept="image/*" capture="user" style="display:none" onchange="handlePhotoSelected(this)">
