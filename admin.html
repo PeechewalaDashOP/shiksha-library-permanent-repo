@@ -664,7 +664,7 @@ async function viewStudent(studentId) {
 
   const sectionLabel = m?.plans?.section === "Prime"
     ? '<span class="badge badge-prime">Prime</span>'
-    : (m ? "Regular" : "—");
+    : (m ? (m.plans?.section || "—") : "—");
   const statusLabel = !m ? "—"
     : m.status === "pending" ? '<span class="badge" style="background:#fef3c7;color:#92400e">Pending</span>'
     : m.status === "rejected" ? '<span class="badge badge-expired">Rejected</span>'
@@ -887,7 +887,7 @@ function renderMembershipsTable() {
           <td>${m.students?.full_name||"—"}</td>
           <td>${m.plans?.name||"—"}</td>
           <td>${m.plans?.duration||"—"}</td>
-          <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
+          <td>${m.plans?.section==="Prime"?'<span class="badge badge-prime">Prime</span>':(m.plans?.section||"—")}</td>
           <td>${m.fixed_seat?"✅ Yes":"No"}</td>
           <td>${modeBadge}</td>
           <td>${typeBadge}</td>
@@ -1030,7 +1030,7 @@ function renderPricesTable(plans) {
     ? plans.map(p=>`<tr>
         <td style="font-weight:600">${p.name}</td>
         <td>${p.duration}</td>
-        <td>${p.section==="Prime"?'<span class="badge badge-prime">Prime</span>':"Regular"}</td>
+        <td>${p.section==="Prime"?'<span class="badge badge-prime">Prime</span>':(p.section||"—")}</td>
         <td>${p.shift}</td>
         <td><input class="price-input" id="price-${p.id}" type="number" value="${p.price}" min="0"></td>
         <td><button class="save-btn" onclick="savePrice('${p.id}')">Save</button></td>
