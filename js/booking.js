@@ -2,7 +2,7 @@
 // SHIKSHA LIBRARY — BOOKING + PAYMENT SYSTEM v2
 // ============================================================
 
-const RAZORPAY_KEY_ID   = "rzp_live_T2Jh3yiTYjVCq2";
+const RAZORPAY_KEY_ID   = "rzp_live_T39pzRZjzRApFM";
 const SUPABASE_URL = "https://ojmxqckunnpthgftwbkq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
 
