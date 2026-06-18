@@ -402,6 +402,7 @@ async function checkSession() {
 let allMembershipsData = [];
 let allPaymentsData = [];
 let allStudentsData = [];
+let allPlansData = [];
 
 // ── REJECTED-FILTERING HELPERS ────────────────────────────────
 // A rejected membership's data should appear ONLY in the Memberships tab.
@@ -457,6 +458,7 @@ async function loadAll() {
   allMembershipsData = memberships || [];
   allPaymentsData    = payments    || [];
   allStudentsData    = students    || [];
+  allPlansData       = plans       || [];
 
   renderStats();
   renderTodaySummary();
@@ -743,9 +745,7 @@ async function viewStudent(studentId) {
       <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
         <select class="date-input" id="plan-type-select">
           <option value="">Select plan type</option>
-          <option value="morning" ${s.plan_type==="morning"?"selected":""}>Morning</option>
-          <option value="evening" ${s.plan_type==="evening"?"selected":""}>Evening</option>
-          <option value="full_day" ${s.plan_type==="full_day"?"selected":""}>Full Day</option>
+          ${allPlansData.map(p => `<option value="${p.id}" ${s.plan_type===p.id?"selected":""}>${p.name} — ${p.duration}, ${p.shift}${p.section==="Prime"?" (Prime)":""}</option>`).join("")}
         </select>
         <button class="save-btn" onclick="updatePlanType('${s.id}')">Update Plan</button>
       </div>
@@ -800,8 +800,9 @@ async function togglePauseStudent(studentId, currentStatus) {
     ? { status: "paused", pause_date: new Date().toISOString() }
     : { status: "active", pause_date: null };
 
-  const { error } = await sb.from("students").update(updateObj).eq("id", studentId);
+  const { data, error } = await sb.from("students").update(updateObj).eq("id", studentId).select();
   if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue. See the SQL fix needed."); return; }
 
   await loadAll();
   viewStudent(studentId);
@@ -812,8 +813,9 @@ async function updatePlanType(studentId) {
   const val = document.getElementById("plan-type-select").value;
   if (!val) { alert("Please select a plan type."); return; }
 
-  const { error } = await sb.from("students").update({ plan_type: val }).eq("id", studentId);
+  const { data, error } = await sb.from("students").update({ plan_type: val }).eq("id", studentId).select();
   if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue. See the SQL fix needed."); return; }
 
   await loadAll();
   viewStudent(studentId);
