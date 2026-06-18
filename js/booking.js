@@ -39,6 +39,15 @@ const PLANS = {
   "3month-morning-prime":     { name: "Prime Morning Shift",  duration: "3 Months", shift: "Morning Premium Hall – 3 Months",     price: 1500 },
   "3month-evening-prime":     { name: "Prime Evening Shift",  duration: "3 Months", shift: "Evening Premium Hall – 3 Months",     price: 1800 },
   "3month-fullday-prime":     { name: "Prime Full Day",       duration: "3 Months", shift: "Full Day Premium Hall – 3 Months",    price: 3300 },
+  "monthly-morning-basement": { name: "Basement Morning Shift", duration: "1 Month",  shift: "Morning Basement Section – 1 Month",  price: 400  },
+  "monthly-evening-basement": { name: "Basement Evening Shift", duration: "1 Month",  shift: "Evening Basement Section – 1 Month",  price: 500  },
+  "monthly-fullday-basement": { name: "Basement Full Day",      duration: "1 Month",  shift: "Full Day Basement Section – 1 Month", price: 800  },
+  "15days-morning-basement":  { name: "Basement Morning Shift", duration: "15 Days",  shift: "Morning Basement Section – 15 Days",  price: 240  },
+  "15days-evening-basement":  { name: "Basement Evening Shift", duration: "15 Days",  shift: "Evening Basement Section – 15 Days",  price: 290  },
+  "15days-fullday-basement":  { name: "Basement Full Day",      duration: "15 Days",  shift: "Full Day Basement Section – 15 Days", price: 480  },
+  "3month-morning-basement":  { name: "Basement Morning Shift", duration: "3 Months", shift: "Morning Basement Section – 3 Months", price: 960  },
+  "3month-evening-basement":  { name: "Basement Evening Shift", duration: "3 Months", shift: "Evening Basement Section – 3 Months", price: 1250 },
+  "3month-fullday-basement":  { name: "Basement Full Day",      duration: "3 Months", shift: "Full Day Basement Section – 3 Months", price: 2160 },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -54,7 +63,11 @@ function attachBookingListeners() {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       const planId = btn.dataset.planId;
-      const planData = PLANS[planId] || { name: "Membership Plan", duration: "1 Month", shift: "—", price: 500 };
+      const planData = PLANS[planId];
+      if (!planData) {
+        alert("This plan is temporarily unavailable. Please refresh the page and try again, or contact the library.");
+        return;
+      }
       openBookingModal(planId, planData);
     });
   });
