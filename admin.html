@@ -733,6 +733,23 @@ async function viewStudent(studentId) {
       </div>
       ${receiptBtnHtml}
     </div>
+
+    <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
+      <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Admin Controls</div>
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem">
+        <span style="font-size:.85rem;color:#64748b">Status: <strong style="color:${s.status==="paused"?"#dc2626":"#15803d"}">${s.status==="paused"?"⏸ Paused":"✅ Active"}</strong></span>
+        <button class="save-btn" style="background:${s.status==="paused"?"#15803d":"#dc2626"}" onclick="togglePauseStudent('${s.id}','${s.status||"active"}')">${s.status==="paused"?"▶ Resume":"⏸ Pause"}</button>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <select class="date-input" id="plan-type-select">
+          <option value="">Select plan type</option>
+          <option value="morning" ${s.plan_type==="morning"?"selected":""}>Morning</option>
+          <option value="evening" ${s.plan_type==="evening"?"selected":""}>Evening</option>
+          <option value="full_day" ${s.plan_type==="full_day"?"selected":""}>Full Day</option>
+        </select>
+        <button class="save-btn" onclick="updatePlanType('${s.id}')">Update Plan</button>
+      </div>
+    </div>
   `;
 
   overlay.style.display = "flex";
@@ -771,6 +788,35 @@ function detailRow(label, value, isHtml) {
 function closeStudentModal() {
   document.getElementById("student-modal").style.display = "none";
   document.body.style.overflow = "";
+}
+
+// ── PAUSE / RESUME STUDENT (independent, no time/billing logic) ──
+async function togglePauseStudent(studentId, currentStatus) {
+  const newStatus = currentStatus === "paused" ? "active" : "paused";
+  const ok = confirm(newStatus === "paused" ? "Pause this student?" : "Resume this student?");
+  if (!ok) return;
+
+  const updateObj = newStatus === "paused"
+    ? { status: "paused", pause_date: new Date().toISOString() }
+    : { status: "active", pause_date: null };
+
+  const { error } = await sb.from("students").update(updateObj).eq("id", studentId);
+  if (error) { alert("Error: " + error.message); return; }
+
+  await loadAll();
+  viewStudent(studentId);
+}
+
+// ── PLAN TYPE UPDATE (independent, manual only, no pricing logic) ──
+async function updatePlanType(studentId) {
+  const val = document.getElementById("plan-type-select").value;
+  if (!val) { alert("Please select a plan type."); return; }
+
+  const { error } = await sb.from("students").update({ plan_type: val }).eq("id", studentId);
+  if (error) { alert("Error: " + error.message); return; }
+
+  await loadAll();
+  viewStudent(studentId);
 }
 
 // ── MEMBERSHIPS TABLE (sorted recent first, with payment mode + filters) ──
