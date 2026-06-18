@@ -370,6 +370,13 @@ async function loadDashboard() {
 
   // Membership card
   let membershipHTML = "";
+  if (student.status === "paused") {
+    membershipHTML += `
+      <div class="membership-status-banner banner-expired" style="margin-bottom:1rem">
+        <span style="font-size:1.3rem">⏸</span>
+        <span>Your membership has been paused. Please contact the library to resume it.</span>
+      </div>`;
+  }
   if (!memberships?.length) {
     membershipHTML = `<div class="empty-state">No membership found. <a href="index.html#plans" style="color:#f59e0b;font-weight:600">Book a plan →</a></div>`;
   } else {
@@ -523,6 +530,15 @@ let rnlState = {
 
 async function openRenewalModal() {
   if (!STUDENT) return;
+
+  // ── PAUSED BLOCK: no renewal while membership is paused ──
+  if (STUDENT.status === "paused") {
+    alert(
+      "⏸ Membership Paused\n\n" +
+      "Your membership is currently paused. Please contact the library to resume it before renewing."
+    );
+    return;
+  }
 
   // ── HARD BLOCK: prevent renewal if active membership exists ──
   const blockToday = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];

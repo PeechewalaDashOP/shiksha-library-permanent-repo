@@ -634,7 +634,7 @@ function renderStudentsTable() {
         return `<tr>
           <td>${i+1}</td>
           <td style="font-weight:700;color:#f59e0b;font-size:.82rem">${s.student_code||"—"}</td>
-          <td>${s.full_name}</td>
+          <td>${s.full_name}${s.status==="paused"?' <span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Paused</span>':""}</td>
           <td>${s.email}</td>
           <td>${s.phone}</td>
           <td>${s.exam_target||"—"}</td>
@@ -739,16 +739,18 @@ async function viewStudent(studentId) {
     <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
       <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Admin Controls</div>
       <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem">
-        <span style="font-size:.85rem;color:#64748b">Status: <strong style="color:${s.status==="paused"?"#dc2626":"#15803d"}">${s.status==="paused"?"⏸ Paused":"✅ Active"}</strong></span>
-        <button class="save-btn" style="background:${s.status==="paused"?"#15803d":"#dc2626"}" onclick="togglePauseStudent('${s.id}','${s.status||"active"}')">${s.status==="paused"?"▶ Resume":"⏸ Pause"}</button>
+        <span style="font-size:.85rem;color:#64748b">Status: <strong style="color:${s.status==="paused"?"#dc2626":"#15803d"}">${s.status==="paused"?"⏸ Paused":"✅ Active"}</strong>${s.status==="paused" && s.paused_days_remaining!=null ? ` <span style="color:#92400e">(${s.paused_days_remaining} days were remaining when paused)</span>` : ""}</span>
+        <button class="save-btn" style="background:${s.status==="paused"?"#15803d":"#dc2626"}" onclick="togglePauseStudent('${s.id}','${s.status||"active"}','${activeM?.end_date||""}')">${s.status==="paused"?"▶ Resume":"⏸ Pause"}</button>
       </div>
+      ${activeM ? `
       <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
         <select class="date-input" id="plan-type-select">
-          <option value="">Select plan type</option>
-          ${allPlansData.map(p => `<option value="${p.id}" ${s.plan_type===p.id?"selected":""}>${p.name} — ${p.duration}, ${p.shift}${p.section==="Prime"?" (Prime)":""}</option>`).join("")}
+          <option value="">Select plan</option>
+          ${allPlansData.map(p => `<option value="${p.id}" ${activeM.plan_id===p.id?"selected":""}>${p.name} — ${p.duration}, ${p.shift}${p.section==="Prime"?" (Prime)":""} — ₹${p.price}</option>`).join("")}
         </select>
-        <button class="save-btn" onclick="updatePlanType('${s.id}')">Update Plan</button>
+        <button class="save-btn" onclick="upgradeMembershipPlan('${s.id}', '${activeM.id}')">Update Plan</button>
       </div>
+      ` : `<div style="font-size:.82rem;color:#94a3b8">No active membership — plan upgrade unavailable.</div>`}
     </div>
   `;
 
@@ -791,18 +793,26 @@ function closeStudentModal() {
 }
 
 // ── PAUSE / RESUME STUDENT (independent, no time/billing logic) ──
-async function togglePauseStudent(studentId, currentStatus) {
+async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   const newStatus = currentStatus === "paused" ? "active" : "paused";
-  const ok = confirm(newStatus === "paused" ? "Pause this student?" : "Resume this student?");
+  const ok = confirm(newStatus === "paused"
+    ? "Pause this student? They'll see a 'Paused — contact admin' message on their dashboard and won't be able to renew until resumed."
+    : "Resume this student? Their dashboard returns to normal and renewal is allowed again.");
   if (!ok) return;
 
-  const updateObj = newStatus === "paused"
-    ? { status: "paused", pause_date: new Date().toISOString() }
-    : { status: "active", pause_date: null };
+  let updateObj;
+  if (newStatus === "paused") {
+    const daysRemaining = activeEndDate
+      ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
+      : null;
+    updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+  } else {
+    updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
+  }
 
   const { data, error } = await sb.from("students").update(updateObj).eq("id", studentId).select();
   if (error) { alert("Error: " + error.message); return; }
-  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue. See the SQL fix needed."); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
 
   await loadAll();
   viewStudent(studentId);
@@ -1490,6 +1500,56 @@ function renderPhase4() {
       <td>${chgLabel}</td>
     </tr>`;
   }).join("");
+}
+
+async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
+  const newStatus = currentStatus === "paused" ? "active" : "paused";
+  const ok = confirm(newStatus === "paused"
+    ? "Pause this student? They'll see a 'Paused — contact admin' message on their dashboard and won't be able to renew until resumed."
+    : "Resume this student? Their dashboard returns to normal and renewal is allowed again.");
+  if (!ok) return;
+
+  let updateObj;
+  if (newStatus === "paused") {
+    const daysRemaining = activeEndDate
+      ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
+      : null;
+    updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+  } else {
+    updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
+  }
+
+  const { data, error } = await sb.from("students").update(updateObj).eq("id", studentId).select();
+  if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
+
+  await loadAll();
+  viewStudent(studentId);
+}
+
+async function upgradeMembershipPlan(studentId, membershipId) {
+  if (!membershipId) { alert("This student has no current membership to update."); return; }
+
+  const select = document.getElementById("plan-type-select");
+  const newPlanId = select.value;
+  if (!newPlanId) { alert("Please select a plan."); return; }
+
+  const newPlan = allPlansData.find(p => p.id === newPlanId);
+  if (!newPlan) { alert("Selected plan not found."); return; }
+
+  if (!confirm(`Update this membership to "${newPlan.name}" at ₹${newPlan.price}? This changes their recorded plan and amount.`)) return;
+
+  const { data, error } = await sb
+    .from("memberships")
+    .update({ plan_id: newPlan.id, amount_paid: newPlan.price })
+    .eq("id", membershipId)
+    .select();
+
+  if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
+
+  await loadAll();
+  viewStudent(studentId);
 }
 
 checkSession();
