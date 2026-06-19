@@ -361,7 +361,7 @@
 <script>
 const SUPABASE_URL      = "https://ojmxqckunnpthgftwbkq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
-const ADMIN_EMAIL       = "namangalav230@gmail.com"; // Set this to your email
+const ADMIN_EMAILS      = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com"];
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function fmt(d){if(!d)return"—";return new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}
@@ -373,7 +373,7 @@ async function adminLogin() {
   const err   = document.getElementById("a-error");
   err.style.display = "none";
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
-  if (error || data.user.email !== ADMIN_EMAIL) {
+  if (error || !ADMIN_EMAILS.includes(data.user.email)) {
     await sb.auth.signOut();
     err.textContent = "Invalid credentials or not an admin account.";
     err.style.display = "block";
@@ -390,7 +390,7 @@ async function adminLogout() {
 
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
-  if (session && session.user.email === ADMIN_EMAIL) {
+  if (session && ADMIN_EMAILS.includes(session.user.email)) {
     document.getElementById("login-overlay").style.display = "none";
     loadAll();
   } else {
