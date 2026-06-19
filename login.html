@@ -122,7 +122,7 @@ async function doReset() {
   err.style.display = "none"; suc.style.display = "none";
   if (!email) { showError(err, "Please enter your email."); return; }
   btn.textContent = "Sending..."; btn.disabled = true;
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/dashboard.html" });
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/reset-password.html" });
   if (error) showError(err, error.message);
   else { suc.textContent = "Reset link sent! Check your email inbox."; suc.style.display = "block"; }
   btn.textContent = "Send Reset Link"; btn.disabled = false;
