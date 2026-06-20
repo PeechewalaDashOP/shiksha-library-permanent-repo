@@ -194,8 +194,8 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
 
     <div class="rnl-section-label">Payment Method</div>
     <div class="rnl-pay-modes">
-      <button class="rnl-pay-mode selected" id="rnl-online-btn" onclick="selectPayMode('online')">💳 Pay Online</button>
-      <button class="rnl-pay-mode" id="rnl-cash-btn" onclick="selectPayMode('cash')">🏦 Pay at Library</button>
+      <button class="rnl-pay-mode" id="rnl-online-btn" onclick="selectPayMode('online')" disabled style="display:none">💳 Pay Online</button>
+      <button class="rnl-pay-mode selected" id="rnl-cash-btn" onclick="selectPayMode('cash')">🏦 Pay at Library</button>
     </div>
 
     <p class="rnl-err" id="rnl-err"></p>
@@ -534,7 +534,7 @@ const PLAN_CATALOG = {
 let rnlState = {
   duration: "monthly",
   selectedPlan: null,
-  payMode: "online",
+  payMode: "cash",
 };
 
 async function openRenewalModal() {
@@ -565,7 +565,7 @@ async function openRenewalModal() {
     return;
   }
 
-  rnlState = { duration:"monthly", selectedPlan:null, payMode:"online" };
+  rnlState = { duration:"monthly", selectedPlan:null, payMode:"cash" };
 
   // Show student info
   document.getElementById("rnl-student-info").textContent =

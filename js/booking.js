@@ -157,7 +157,7 @@ function updateTotalPrice() {
   const fixedSeat = document.getElementById("sl-fixed-seat").checked;
   const locker    = document.getElementById("sl-locker").checked;
   const subtotal  = base + (fixedSeat ? 100 : 0) + (locker ? 100 : 0);
-  const payMode   = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
+  const payMode   = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "cash";
   const gatewayFee = payMode === "online" ? Math.round(base * 0.0236) : 0;
   const total = subtotal + gatewayFee;
 
@@ -280,7 +280,7 @@ async function handleBookingSubmit(e) {  e.preventDefault();
     return;
   }
 
-  const payMode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "online";
+  const payMode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value || "cash";
 
   if (payMode === "cash") {
     try {
@@ -568,12 +568,12 @@ function getModalHTML() {
         <button type="submit" class="sl-submit" id="sl-submit-btn">Proceed to Pay <span id="sl-submit-price">₹0</span></button>
         <div style="margin-top:1rem;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
           <div style="background:#f8fafc;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#374151">Choose Payment Method</div>
-          <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid #f1f5f9">
-            <input type="radio" name="sl-pay-mode" value="online" checked onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
+          <label style="display:none;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid #f1f5f9">
+            <input type="radio" name="sl-pay-mode" value="online" disabled onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
             <span style="font-size:.9rem;color:#1e293b;font-weight:500">💳 Pay Online (UPI / Card / Net Banking)</span>
           </label>
           <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer">
-            <input type="radio" name="sl-pay-mode" value="cash" onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
+            <input type="radio" name="sl-pay-mode" value="cash" checked onchange="updatePayBtn()" style="accent-color:#f59e0b;width:16px;height:16px">
             <span style="font-size:.9rem;color:#1e293b;font-weight:500">🏦 Pay at Library (Cash)</span>
           </label>
         </div>
