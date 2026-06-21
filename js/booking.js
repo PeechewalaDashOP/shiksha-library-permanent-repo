@@ -566,7 +566,7 @@ function getModalHTML() {
         </label>
         <div style="margin-top:1.1rem;text-align:center">
           <p style="font-size:.78rem;color:#64748b;font-weight:600;margin-bottom:.5rem">📷 Scan QR Code to Pay</p>
-          <img src="assets/payment-qr.jpg" alt="Scan to pay via UPI" style="width:180px;height:180px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;margin:0 auto;display:block;background:#fff">
+          <img src="assets/payment-qr.jpg" alt="Scan to pay via UPI" style="width:220px;max-width:100%;height:auto;border-radius:10px;border:1px solid #e2e8f0;margin:0 auto;display:block;background:#fff">
           <div style="display:flex;align-items:center;gap:.6rem;margin:.85rem 0;color:#94a3b8;font-size:.75rem;font-weight:700">
             <span style="flex:1;height:1px;background:#e2e8f0"></span>
             OR
