@@ -564,6 +564,17 @@ function getModalHTML() {
           <input type="checkbox" id="sl-locker" onchange="updateTotalPrice()">
           <span class="sl-check-label">Add Locker &nbsp;<span>+₹100</span><br><small style="color:#6b7280;font-weight:400">Personal locker for your belongings</small></span>
         </label>
+        <div style="margin-top:1.1rem;text-align:center">
+          <p style="font-size:.78rem;color:#64748b;font-weight:600;margin-bottom:.5rem">📷 Scan QR Code to Pay</p>
+          <img src="assets/payment-qr.jpg" alt="Scan to pay via UPI" style="width:180px;height:180px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;margin:0 auto;display:block;background:#fff">
+          <div style="display:flex;align-items:center;gap:.6rem;margin:.85rem 0;color:#94a3b8;font-size:.75rem;font-weight:700">
+            <span style="flex:1;height:1px;background:#e2e8f0"></span>
+            OR
+            <span style="flex:1;height:1px;background:#e2e8f0"></span>
+          </div>
+          <a href="upi://pay?pa=AS59757001@mairtel&pn=Shiksha%20Library&cu=INR&tn=Shiksha%20Library%20Registration" class="sl-btn-f" style="display:inline-block;text-decoration:none">🟢 Open Payment App</a>
+          <p style="font-size:.72rem;color:#64748b;margin-top:.65rem">Pay using either option above, then submit the form below.</p>
+        </div>
         <p class="sl-err" id="sl-form-error"></p>
         <button type="submit" class="sl-submit" id="sl-submit-btn">Proceed to Pay <span id="sl-submit-price">₹0</span></button>
         <div style="margin-top:1rem;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
