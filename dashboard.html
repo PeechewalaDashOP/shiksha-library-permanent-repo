@@ -248,6 +248,17 @@ function pct(start, end) {
 
 // ── RECEIPT GENERATOR (print-friendly) — same design as admin ──
 function generateReceipt(p) {
+  const photoHTML = p.photoSignedUrl
+    ? '<div style="text-align:center;margin-bottom:20px"><img src="' + p.photoSignedUrl + '" alt="Student Photo" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:3px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>'
+    : "";
+  const regDateHTML = p.registeredDate
+    ? '<div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Registration Date</span><span class="v" style="font-size:1rem;font-weight:800;color:#1e40af">' + p.registeredDate + '</span></div>'
+    + '<div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Registration Time</span><span class="v" style="font-size:1rem;font-weight:800;color:#1e40af">' + p.registeredTime + '</span></div>'
+    : "";
+  const membershipDatesHTML = (p.startDate && p.endDate)
+    ? '<div class="r-row"><span class="k">Membership Start Date</span><span class="v">' + p.startDate + '</span></div>'
+    + '<div class="r-row"><span class="k">Membership End Date</span><span class="v">' + p.endDate + '</span></div>'
+    : "";
   const dateObj = new Date(p.date);
   const yr = dateObj.getFullYear();
   const shortId = (p.id || "").replace(/-/g, "").slice(-6).toUpperCase();
@@ -298,11 +309,14 @@ function generateReceipt(p) {
           '<span>Receipt No: <b>' + receiptNo + '</b></span>' +
           '<span>Date: <b>' + dateLabel + '</b></span>' +
         '</div>' +
+        photoHTML +
         '<div class="r-row"><span class="k">Student Name</span><span class="v">' + p.name + '</span></div>' +
+        regDateHTML +
         (p.phone ? '<div class="r-row"><span class="k">Phone</span><span class="v">' + p.phone + '</span></div>' : "") +
         '<div class="r-row"><span class="k">Membership Plan</span><span class="v">' + planLabel + '</span></div>' +
         '<div class="r-row"><span class="k">Payment Mode</span><span class="v">' + modeLabel + '</span></div>' +
         (p.rzp ? '<div class="r-row"><span class="k">Transaction ID</span><span class="v" style="font-size:.8rem">' + p.rzp + '</span></div>' : "") +
+        membershipDatesHTML +
         '<div class="r-total"><span class="k">Amount Paid</span><span class="v">' + amountLabel + '</span></div>' +
       '</div>' +
       '<div class="r-foot">' +
@@ -457,7 +471,18 @@ async function loadDashboard() {
 
   // Payments — with receipt button for paid (success) payments
   if (payments?.length) {
-    document.getElementById("payment-content").innerHTML = payments.map(p => {
+    let paymentHTML = "";
+    for (const p of payments) {
+      let receiptPhotoUrl = "";
+      if (student.photo_url) {
+        try {
+          const { data: sd } = await sb.storage
+            .from("student-photos")
+            .createSignedUrl(student.photo_url, 3600);
+          if (sd?.signedUrl) receiptPhotoUrl = sd.signedUrl;
+        } catch(e) {}
+      }
+      const receiptMemb = memberships?.find(m => m.id === p.membership_id) || null;
       const receiptBtn = p.status === "success"
         ? `<button class="receipt-btn" onclick='generateReceipt(${JSON.stringify({
             id: p.id,
@@ -467,10 +492,15 @@ async function loadDashboard() {
             amount: p.amount,
             mode: p.payment_mode || "online",
             date: p.created_at,
-            rzp: p.razorpay_payment_id || ""
+            rzp: p.razorpay_payment_id || "",
+            photoSignedUrl: receiptPhotoUrl,
+            registeredDate: student.registered_date || "",
+            registeredTime: student.registered_time || "",
+            startDate: receiptMemb ? new Date(receiptMemb.start_date).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}) : "",
+            endDate:   receiptMemb ? new Date(receiptMemb.end_date).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})   : "",
           }).replace(/'/g,"&#39;")})'>🧾 Download Receipt</button>`
         : "";
-      return `
+      paymentHTML += `
       <div class="payment-row">
         <div>
           <div style="font-weight:600">${p.plan_id?.replace(/-/g," ")||"Membership"}</div>
@@ -484,9 +514,9 @@ async function loadDashboard() {
             <span class="badge" style="background:#f1f5f9;color:#64748b;margin-left:.3rem">${p.payment_mode==="cash"?"Cash":"Online"}</span>
           </div>
         </div>
-      </div>
-    `;
-    }).join("");
+      </div>`;
+    }
+    document.getElementById("payment-content").innerHTML = paymentHTML;
   }
 }
 

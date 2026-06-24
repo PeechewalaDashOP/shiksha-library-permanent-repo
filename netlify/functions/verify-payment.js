@@ -2,6 +2,32 @@
 const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 
+// ── FEATURE 1: Plan ID → Student ID Prefix ──────────────────────
+function getPlanPrefix(planId) {
+  if (!planId) return "";
+  const id = planId.toLowerCase();
+  const isBasement = id.includes("basement");
+  const isPrime    = id.includes("prime");
+  const isGround   = !isBasement && !isPrime;
+  if (isPrime) {
+    if (id.includes("morning"))                             return "PM-";
+    if (id.includes("evening"))                             return "PE-";
+    if (id.includes("fullday") || id.includes("fullnight")) return "PF-";
+  }
+  if (isGround) {
+    if (id.includes("morning"))   return "GM-";
+    if (id.includes("evening"))   return "GE-";
+    if (id.includes("fullday"))   return "GF-";
+    if (id.includes("fullnight")) return "GN-";
+  }
+  if (isBasement) {
+    if (id.includes("morning"))                             return "BM-";
+    if (id.includes("evening"))                             return "BE-";
+    if (id.includes("fullday") || id.includes("fullnight")) return "BF-";
+  }
+  return "";
+}
+
 exports.handler = async (event) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -44,7 +70,6 @@ exports.handler = async (event) => {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK ─────────────────────
-    // Warn if student already has an active membership (skip for renewals)
     if (!isRenewal && studentData?.email) {
       const { data: existingStudent } = await supabase
         .from("students")
@@ -62,9 +87,6 @@ exports.handler = async (event) => {
           .maybeSingle();
 
         if (activeMemb) {
-          // Payment already happened via Razorpay — we can't block it here.
-          // We log the membership as a renewal instead of blocking.
-          // This is a safety net only; frontend should have warned the student.
           console.warn("Online payment received for student with active membership — treating as renewal.");
         }
       }
@@ -90,7 +112,6 @@ exports.handler = async (event) => {
     // 4. Student upsert + auto student_code
     let student;
     if (isRenewal && existingStudentId) {
-      // Renewal from dashboard — student already exists
       const { data: s, error: e } = await supabase
         .from("students")
         .select("*")
@@ -99,17 +120,30 @@ exports.handler = async (event) => {
       if (e || !s) throw new Error("Could not find student record for renewal.");
       student = s;
     } else {
-      // New registration — generate student code if needed
       const { data: existingCheck } = await supabase
         .from("students")
         .select("id, student_code")
         .eq("email", studentData.email.toLowerCase())
         .maybeSingle();
 
+      // Feature 1: prefix + code — only for brand-new students
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
         const { data: codeData } = await supabase.rpc("generate_student_code");
-        studentCode = codeData || null;
+        const prefix = getPlanPrefix(planId);
+        studentCode = prefix + (codeData || "");
+      }
+
+      // Feature 2: audit timestamp — only for brand-new students
+      const auditFields = {};
+      if (!existingCheck?.id) {
+        const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
+        const hh = nowIST.getUTCHours(), mm = nowIST.getUTCMinutes(), ss = nowIST.getUTCSeconds();
+        const ampm = hh >= 12 ? "PM" : "AM";
+        const h12 = String(hh % 12 || 12).padStart(2, "0");
+        auditFields.registered_at   = nowIST.toISOString();
+        auditFields.registered_date = nowIST.toISOString().split("T")[0];
+        auditFields.registered_time = `${h12}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")} ${ampm} IST`;
       }
 
       const { data: s, error: e } = await supabase
@@ -127,6 +161,7 @@ exports.handler = async (event) => {
           permanent_address: studentData.permanentAddress || "",
           exam_target: studentData.examTarget || "",
           student_code: studentCode,
+          ...auditFields,
         }, { onConflict: "email", ignoreDuplicates: false })
         .select()
         .single();

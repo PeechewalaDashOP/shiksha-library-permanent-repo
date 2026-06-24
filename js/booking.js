@@ -48,6 +48,8 @@ const PLANS = {
   "3month-morning-basement":  { name: "Basement Morning Shift", duration: "3 Months", shift: "Morning Basement Section – 3 Months", price: 960  },
   "3month-evening-basement":  { name: "Basement Evening Shift", duration: "3 Months", shift: "Evening Basement Section – 3 Months", price: 1250 },
   "3month-fullday-basement":  { name: "Basement Full Day",      duration: "3 Months", shift: "Full Day Basement Section – 3 Months", price: 2160 },
+  // Feature 6: Full Night plan — Ground Floor, Monthly only
+  "monthly-fullnight-regular": { name: "Full Night",           duration: "1 Month",  shift: "Full Night Ground Floor – 10PM to 6AM", price: 400 },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -58,7 +60,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function attachBookingListeners() {
-  // Plan card buttons — open modal
   document.querySelectorAll('[data-plan-id]').forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -72,9 +73,8 @@ function attachBookingListeners() {
     });
   });
 
-  // Hero / other Book Now buttons (no data-plan-id) — scroll to plans
   document.querySelectorAll('a.btn-gold, a.btn-primary, a[href*="wa.me"]').forEach((btn) => {
-    if (btn.dataset.planId) return; // already handled above
+    if (btn.dataset.planId) return;
     const text = btn.textContent.trim().toLowerCase();
     if (!text.includes("book") && !text.includes("join") && !text.includes("start")) return;
     btn.setAttribute("href", "javascript:void(0)");
@@ -130,6 +130,7 @@ async function checkExistingActiveMembership(email, phone) {
     return null;
   }
 }
+
 function openBookingModal(planId, planData) {
   currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null };
   document.getElementById("sl-modal-plan-name").textContent = planData.name + " — " + planData.duration;
@@ -190,8 +191,6 @@ function updateMembershipDates() {
   currentPlan.endDate   = toIST(end);
 }
 
-// ── PHOTO CAPTURE + COMPRESSION ───────────────────────────────
-// Resets the photo input + preview to empty state.
 function resetPhotoUI() {
   const input   = document.getElementById("sl-photo-input");
   const preview = document.getElementById("sl-photo-preview");
@@ -202,7 +201,6 @@ function resetPhotoUI() {
   if (typeof currentPlan === "object") currentPlan.photoBase64 = null;
 }
 
-// Called when the user picks/takes a photo. Compresses to ~max 1000px and stores as JPEG base64.
 function handlePhotoSelected(inputEl) {
   const file = inputEl.files && inputEl.files[0];
   if (!file) return;
@@ -217,7 +215,6 @@ function handlePhotoSelected(inputEl) {
   reader.onload = (ev) => {
     const img = new Image();
     img.onload = () => {
-      // Resize so the longest side is at most 1000px (keeps file small, quality fine for ID)
       const MAX = 1000;
       let { width, height } = img;
       if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
@@ -229,11 +226,9 @@ function handlePhotoSelected(inputEl) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Compress to JPEG ~0.7 quality → typically 100–300KB
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
       currentPlan.photoBase64 = dataUrl;
 
-      // Show preview
       const preview = document.getElementById("sl-photo-preview");
       const prompt  = document.getElementById("sl-photo-prompt");
       if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
@@ -247,7 +242,8 @@ function handlePhotoSelected(inputEl) {
   reader.readAsDataURL(file);
 }
 
-async function handleBookingSubmit(e) {  e.preventDefault();
+async function handleBookingSubmit(e) {
+  e.preventDefault();
   const btn = document.getElementById("sl-submit-btn");
   const err = document.getElementById("sl-form-error");
   err.textContent = "";
@@ -326,7 +322,6 @@ async function handleBookingSubmit(e) {  e.preventDefault();
       handler    : async (response) => { await verifyAndSave(response, studentData, orderData.orderId); },
       modal      : {
         ondismiss: () => {
-          // User closed the Razorpay popup without paying — nothing is saved.
           showFormError("Payment was cancelled. You can try again anytime.");
           document.getElementById("sl-booking-modal").style.display = "flex";
           document.body.style.overflow = "hidden";
@@ -357,6 +352,7 @@ function updatePayBtn() {
     btn.innerHTML = 'Proceed to Pay <span id="sl-submit-price">' + price + '</span>';
   }
 }
+
 function resetBtn(btn) {
   btn.disabled = false;
   const mode = document.querySelector('input[name="sl-pay-mode"]:checked')?.value;
@@ -407,6 +403,7 @@ function showSuccessModal(studentData, data) {
   document.getElementById("sl-success-modal").style.display = "flex";
   document.body.style.overflow = "hidden";
 }
+
 function showCashSuccessModal(studentData) {
   document.getElementById("sl-success-name").textContent   = studentData.fullName;
   document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
@@ -418,19 +415,24 @@ function showCashSuccessModal(studentData) {
   document.getElementById("sl-success-modal").style.display = "flex";
   document.body.style.overflow = "hidden";
 }
+
 function closeSuccessModal() {
   document.getElementById("sl-success-modal").style.display = "none";
   document.body.style.overflow = "";
 }
+
 function showLoader(msg) {
   document.getElementById("sl-loader-text").textContent = msg || "Please wait...";
   document.getElementById("sl-loader-modal").style.display = "flex";
 }
+
 function hideLoader() { document.getElementById("sl-loader-modal").style.display = "none"; }
+
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 }
+
 async function checkLoggedInUser() {
   try {
     const { data: { session } } = await sbClient.auth.getSession();
@@ -588,7 +590,7 @@ function getModalHTML() {
             <span style="font-size:.9rem;color:#1e293b;font-weight:500">🏦 Pay at Library (Cash)</span>
           </label>
         </div>
-        <p style="text-align:center;font-size:.76rem;color:#94a3b8;margin-top:.6rem">🔒 Online payments secured by Razorpay</p>
+        <p style="text-align:center;font-size:.76rem;color:#94a3b8;margin-top:.6rem">🔒 Payments secured</p>
       </form>
     </div>
   </div>

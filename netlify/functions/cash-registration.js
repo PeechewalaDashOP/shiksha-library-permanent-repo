@@ -1,6 +1,32 @@
 // netlify/functions/cash-registration.js
 const { createClient } = require("@supabase/supabase-js");
 
+// ── FEATURE 1: Plan ID → Student ID Prefix ──────────────────────
+function getPlanPrefix(planId) {
+  if (!planId) return "";
+  const id = planId.toLowerCase();
+  const isBasement = id.includes("basement");
+  const isPrime    = id.includes("prime");
+  const isGround   = !isBasement && !isPrime;
+  if (isPrime) {
+    if (id.includes("morning"))                             return "PM-";
+    if (id.includes("evening"))                             return "PE-";
+    if (id.includes("fullday") || id.includes("fullnight")) return "PF-";
+  }
+  if (isGround) {
+    if (id.includes("morning"))   return "GM-";
+    if (id.includes("evening"))   return "GE-";
+    if (id.includes("fullday"))   return "GF-";
+    if (id.includes("fullnight")) return "GN-";
+  }
+  if (isBasement) {
+    if (id.includes("morning"))                             return "BM-";
+    if (id.includes("evening"))                             return "BE-";
+    if (id.includes("fullday") || id.includes("fullnight")) return "BF-";
+  }
+  return "";
+}
+
 exports.handler = async (event) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -16,8 +42,8 @@ exports.handler = async (event) => {
     const {
       studentData, planId, amount, fixedSeat, locker,
       startDate, endDate, photoBase64,
-      isRenewal,        // boolean: true if student is renewing
-      existingStudentId // string: provided by dashboard renewal flow
+      isRenewal,
+      existingStudentId
     } = JSON.parse(event.body);
 
     const supabase = createClient(
@@ -26,8 +52,6 @@ exports.handler = async (event) => {
     );
 
     // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK ─────────────────────
-    // If student already has an ACTIVE membership for this email, warn them.
-    // We skip this check for renewals (isRenewal=true) — renewals are always allowed.
     if (!isRenewal && studentData?.email) {
       const { data: existingStudent } = await supabase
         .from("students")
@@ -77,11 +101,8 @@ exports.handler = async (event) => {
     }
 
     // ── STUDENT UPSERT ───────────────────────────────────────────
-    // For renewals from dashboard, existingStudentId is provided — just fetch the student.
-    // For new registrations, upsert with full details + auto-assign student_code.
     let student;
     if (isRenewal && existingStudentId) {
-      // Renewal: student already exists, just fetch their record
       const { data: s, error: e } = await supabase
         .from("students")
         .select("*")
@@ -90,19 +111,30 @@ exports.handler = async (event) => {
       if (e || !s) throw new Error("Could not find student record for renewal.");
       student = s;
     } else {
-      // New registration: upsert full details
-      // Generate student code only for brand-new students (not existing ones)
       const { data: existingCheck } = await supabase
         .from("students")
         .select("id, student_code")
         .eq("email", studentData.email.toLowerCase())
-        .single();
+        .maybeSingle();
 
+      // Feature 1: prefix + code — only for brand-new students
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
-        // Call DB function to get next code (thread-safe via DB)
         const { data: codeData } = await supabase.rpc("generate_student_code");
-        studentCode = codeData || null;
+        const prefix = getPlanPrefix(planId);
+        studentCode = prefix + (codeData || "");
+      }
+
+      // Feature 2: audit timestamp — only for brand-new students
+      const auditFields = {};
+      if (!existingCheck?.id) {
+        const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
+        const hh = nowIST.getUTCHours(), mm = nowIST.getUTCMinutes(), ss = nowIST.getUTCSeconds();
+        const ampm = hh >= 12 ? "PM" : "AM";
+        const h12 = String(hh % 12 || 12).padStart(2, "0");
+        auditFields.registered_at   = nowIST.toISOString();
+        auditFields.registered_date = nowIST.toISOString().split("T")[0];
+        auditFields.registered_time = `${h12}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")} ${ampm} IST`;
       }
 
       const { data: s, error: e } = await supabase
@@ -120,6 +152,7 @@ exports.handler = async (event) => {
           permanent_address: studentData.permanentAddress || "",
           exam_target: studentData.examTarget || "",
           student_code: studentCode,
+          ...auditFields,
         }, { onConflict: "email" })
         .select()
         .single();

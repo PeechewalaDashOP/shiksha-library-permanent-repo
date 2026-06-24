@@ -349,6 +349,19 @@
   </div>
 </div>
 
+<!-- EDIT STUDENT MODAL -->
+<div id="edit-student-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);z-index:99999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeEditStudentModal()">
+  <div style="background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 25px 60px rgba(0,0,0,0.35)">
+    <button onclick="closeEditStudentModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.6rem;cursor:pointer;color:#94a3b8;line-height:1">×</button>
+    <div style="font-size:1.05rem;font-weight:800;color:#1e293b;margin-bottom:1.25rem">✏️ Edit Student Details</div>
+    <div id="edit-student-modal-body"></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+      <button onclick="closeEditStudentModal()" class="edit-btn">Cancel</button>
+      <button id="edit-student-save-btn" onclick="saveEditStudent()" class="save-btn" style="padding:.5rem 1.25rem">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- STUDENT DETAIL MODAL -->
 <div id="student-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.75);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeStudentModal()">
   <div style="background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 25px 60px rgba(0,0,0,0.35)">
@@ -495,8 +508,8 @@ function renderStats() {
   document.getElementById("s-today").textContent = thisMonth;
 
   // Renewal vs new admission counts
-  const renewals = allMembershipsData.filter(m => m.registration_type === "renewal").length;
-  const newAdmissions = allMembershipsData.filter(m => (m.registration_type || "new") === "new").length;
+  const renewals = allMembershipsData.filter(m => m.registration_type === "renewal" && m.status === "active").length;
+  const newAdmissions = allMembershipsData.filter(m => (m.registration_type || "new") === "new" && m.status === "active").length;
   const sRenewals = document.getElementById("s-renewals");
   const sNew = document.getElementById("s-new");
   if (sRenewals) sRenewals.textContent = renewals;
@@ -685,10 +698,22 @@ async function viewStudent(studentId) {
       )
     );
     if (pay) {
+      let photoSignedUrl = "";
+      if (s.photo_url) {
+        try {
+          const { data: signedData } = await sb.storage.from("student-photos").createSignedUrl(s.photo_url, 3600);
+          if (signedData?.signedUrl) photoSignedUrl = signedData.signedUrl;
+        } catch(e) {}
+      }
       const payload = JSON.stringify({
         id: pay.id, name: s.full_name, phone: s.phone || "",
         plan: pay.plan_id || m.plan_id || "—", amount: pay.amount,
-        mode: pay.payment_mode || "online", date: pay.created_at, rzp: pay.razorpay_payment_id || ""
+        mode: pay.payment_mode || "online", date: pay.created_at, rzp: pay.razorpay_payment_id || "",
+        photoSignedUrl,
+        registeredDate: s.registered_date || "",
+        registeredTime: s.registered_time || "",
+        startDate: m ? fmt(m.start_date) : "",
+        endDate:   m ? fmt(m.end_date)   : "",
       }).replace(/'/g, "&#39;");
       receiptBtnHtml = `<div style="margin-top:1rem"><button class="save-btn" style="background:#1a73e8" onclick='generateReceipt(${payload})'>🧾 Generate Receipt</button></div>`;
     }
@@ -718,6 +743,10 @@ async function viewStudent(studentId) {
       ${detailRow("Residential Address", s.address)}
       ${detailRow("Permanent Address", s.permanent_address)}
       ${detailRow("Joined", fmt(s.created_at))}
+      ${detailRow("Registered Date", s.registered_date || "—")}
+      ${detailRow("Registered Time", s.registered_time || "—")}
+      ${detailRow("Last Edited By", s.last_edited_by || "—")}
+      ${detailRow("Last Edited At", s.last_edited_at ? fmt(s.last_edited_at) : "—")}
     </div>
 
     <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
@@ -737,7 +766,10 @@ async function viewStudent(studentId) {
     </div>
 
     <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
-      <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Admin Controls</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+        <div style="font-weight:700;color:#1e293b">Admin Controls</div>
+        <button class="edit-btn" style="background:#1e293b;color:#fff" onclick="openEditStudentModal('${s.id}')">✏️ Edit Details</button>
+      </div>
       <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem">
         <span style="font-size:.85rem;color:#64748b">Status: <strong style="color:${s.status==="paused"?"#dc2626":"#15803d"}">${s.status==="paused"?"⏸ Paused":"✅ Active"}</strong>${s.status==="paused" && s.paused_days_remaining!=null ? ` <span style="color:#92400e">(${s.paused_days_remaining} days were remaining when paused)</span>` : ""}</span>
         <button class="save-btn" style="background:${s.status==="paused"?"#15803d":"#dc2626"}" onclick="togglePauseStudent('${s.id}','${s.status||"active"}','${activeM?.end_date||""}')">${s.status==="paused"?"▶ Resume":"⏸ Pause"}</button>
@@ -785,6 +817,164 @@ function detailRow(label, value, isHtml) {
     <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">${label}</div>
     <div style="font-size:.9rem;color:#1e293b;font-weight:600;margin-top:1px">${isHtml ? val : String(val)}</div>
   </div>`;
+}
+
+// ── ADMIN EDIT STUDENT MODAL ────────────────────────────────
+function openEditStudentModal(studentId) {
+  const s = allStudentsData.find(x => x.id === studentId);
+  if (!s) return;
+  const body = document.getElementById("edit-student-modal-body");
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.25rem">
+      <div style="grid-column:1/-1">
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Student ID</div>
+        <div style="font-size:.9rem;font-weight:700;color:#f59e0b">${s.student_code || "—"}</div>
+      </div>
+      ${editField("Full Name","edit-full-name",s.full_name,"text",true)}
+      ${editField("Father's Name","edit-father-name",s.father_name,"text",true)}
+      <div>
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Gender *</div>
+        <select id="edit-gender" style="width:100%;padding:.5rem .75rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.88rem;font-family:inherit;outline:none">
+          <option value="Male" ${s.gender==="Male"?"selected":""}>Male</option>
+          <option value="Female" ${s.gender==="Female"?"selected":""}>Female</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Email (Read-only)</div>
+        <input type="email" value="${s.email||""}" readonly style="width:100%;padding:.5rem .75rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.88rem;background:#f8fafc;color:#94a3b8;cursor:not-allowed;font-family:inherit">
+      </div>
+      ${editField("Phone Number","edit-phone",s.phone,"tel",true,"[6-9][0-9]{9}","10-digit mobile")}
+      ${editField("Parent Mobile","edit-parent-mobile",s.parent_mobile,"tel",false,"[0-9]{10}","10-digit number")}
+      ${editField("Aadhar Number","edit-aadhar",s.aadhar,"text",true,"[0-9]{12}","12-digit Aadhar")}
+      <div style="grid-column:1/-1">${editField("Residential Address","edit-address",s.address,"text",true)}</div>
+      <div style="grid-column:1/-1">
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Permanent Address</div>
+        <textarea id="edit-permanent-address" style="width:100%;padding:.5rem .75rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.88rem;font-family:inherit;outline:none;resize:vertical" rows="2">${s.permanent_address||""}</textarea>
+      </div>
+      <div style="grid-column:1/-1">
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Exam Target</div>
+        <select id="edit-exam-target" style="width:100%;padding:.5rem .75rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.88rem;font-family:inherit;outline:none">
+          <option value="">—</option>
+          <option value="IIT JEE" ${s.exam_target==="IIT JEE"?"selected":""}>IIT JEE</option>
+          <option value="NEET" ${s.exam_target==="NEET"?"selected":""}>NEET</option>
+          <option value="UPSC" ${s.exam_target==="UPSC"?"selected":""}>UPSC</option>
+          <option value="SSC CGL" ${s.exam_target==="SSC CGL"?"selected":""}>SSC CGL</option>
+          <option value="Banking / Railway" ${s.exam_target==="Banking / Railway"?"selected":""}>Banking / Railway</option>
+          <option value="GATE" ${s.exam_target==="GATE"?"selected":""}>GATE</option>
+          <option value="CUET" ${s.exam_target==="CUET"?"selected":""}>CUET</option>
+          <option value="Board Exams" ${s.exam_target==="Board Exams"?"selected":""}>Board Exams</option>
+          <option value="Other" ${s.exam_target==="Other"?"selected":""}>Other</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Replace Photo (optional)</div>
+        <input type="file" id="edit-photo-input" accept="image/*" style="font-size:.82rem">
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:3px">Leave blank to keep existing photo</div>
+      </div>
+    </div>
+    <div id="edit-student-error" style="color:#dc2626;font-size:.82rem;margin-top:.75rem;min-height:1.2em"></div>
+  `;
+  document.getElementById("edit-student-modal").dataset.studentId = studentId;
+  document.getElementById("edit-student-modal").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+function editField(label, id, value, type, required, pattern, placeholder) {
+  return `<div>
+    <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">${label}${required?" *":""}</div>
+    <input type="${type}" id="${id}" value="${(value||"").replace(/"/g,"&quot;")}"
+      ${pattern?`pattern="${pattern}"`:""}
+      ${placeholder?`placeholder="${placeholder}"`:""}
+      style="width:100%;padding:.5rem .75rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.88rem;font-family:inherit;outline:none">
+  </div>`;
+}
+
+async function saveEditStudent() {
+  const modal     = document.getElementById("edit-student-modal");
+  const studentId = modal.dataset.studentId;
+  const errEl     = document.getElementById("edit-student-error");
+  errEl.textContent = "";
+  const s = allStudentsData.find(x => x.id === studentId);
+  if (!s) return;
+
+  const fullName     = document.getElementById("edit-full-name").value.trim();
+  const fatherName   = document.getElementById("edit-father-name").value.trim();
+  const gender       = document.getElementById("edit-gender").value;
+  const phone        = document.getElementById("edit-phone").value.trim();
+  const parentMobile = document.getElementById("edit-parent-mobile").value.trim();
+  const aadhar       = document.getElementById("edit-aadhar").value.trim();
+  const address      = document.getElementById("edit-address").value.trim();
+  const permAddress  = document.getElementById("edit-permanent-address").value.trim();
+  const examTarget   = document.getElementById("edit-exam-target").value;
+  const photoFile    = document.getElementById("edit-photo-input").files[0];
+
+  if (!fullName)                                              { errEl.textContent = "Full name is required."; return; }
+  if (!fatherName)                                            { errEl.textContent = "Father's name is required."; return; }
+  if (!/^[6-9][0-9]{9}$/.test(phone))                        { errEl.textContent = "Phone must be a valid 10-digit mobile number."; return; }
+  if (parentMobile && !/^[0-9]{10}$/.test(parentMobile))     { errEl.textContent = "Parent mobile must be 10 digits."; return; }
+  if (aadhar.length !== 12 || !/^[0-9]{12}$/.test(aadhar))  { errEl.textContent = "Aadhar must be exactly 12 digits."; return; }
+  if (!address)                                               { errEl.textContent = "Residential address is required."; return; }
+
+  if (!confirm("Are you sure? This will update the student's details.")) return;
+
+  const saveBtn = document.getElementById("edit-student-save-btn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    const now = new Date();
+    const ist = new Date(now.getTime() + 5.5*60*60000);
+    const session = await sb.auth.getSession();
+    const editorEmail = session?.data?.session?.user?.email || "admin";
+
+    let photoUrl = s.photo_url;
+    if (photoFile) {
+      const ext  = photoFile.name.split(".").pop() || "jpg";
+      const path = `student-${studentId}-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await sb.storage
+        .from("student-photos")
+        .upload(path, photoFile, { upsert: true });
+      if (uploadErr) throw new Error("Photo upload failed: " + uploadErr.message);
+      photoUrl = path;
+    }
+
+    const { data, error } = await sb
+      .from("students")
+      .update({
+        full_name:         fullName,
+        father_name:       fatherName,
+        gender,
+        phone,
+        parent_mobile:     parentMobile,
+        aadhar,
+        address,
+        permanent_address: permAddress,
+        exam_target:       examTarget,
+        photo_url:         photoUrl,
+        last_edited_by:    editorEmail,
+        last_edited_at:    ist.toISOString(),
+      })
+      .eq("id", studentId)
+      .select();
+
+    if (error) throw new Error(error.message);
+    if (!data || !data.length) throw new Error("Update didn't apply — likely an RLS issue.");
+
+    closeEditStudentModal();
+    await loadAll();
+    viewStudent(studentId);
+    alert("✅ Student details updated successfully.");
+  } catch (ex) {
+    errEl.textContent = "Error: " + ex.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Changes";
+  }
+}
+
+function closeEditStudentModal() {
+  document.getElementById("edit-student-modal").style.display = "none";
+  document.body.style.overflow = "";
 }
 
 function closeStudentModal() {
@@ -931,7 +1121,11 @@ function renderPaymentsTable() {
                 amount: p.amount,
                 mode: p.payment_mode || "online",
                 date: p.created_at,
-                rzp: p.razorpay_payment_id || ""
+                rzp: p.razorpay_payment_id || "",
+                registeredDate: (() => { const st = allStudentsData.find(s => s.id === p.student_id); return st?.registered_date || ""; })(),
+                registeredTime: (() => { const st = allStudentsData.find(s => s.id === p.student_id); return st?.registered_time || ""; })(),
+                startDate: (() => { const mb = allMembershipsData.find(mb => mb.id === p.membership_id); return mb ? fmt(mb.start_date) : ""; })(),
+                endDate:   (() => { const mb = allMembershipsData.find(mb => mb.id === p.membership_id); return mb ? fmt(mb.end_date)   : ""; })()
               }).replace(/'/g,"&#39;")})'>🧾 Receipt</button>`
             : "—"}</td>
         </tr>`;
@@ -941,6 +1135,17 @@ function renderPaymentsTable() {
 
 // ── RECEIPT GENERATOR (print-friendly) ─────────────────────────
 function generateReceipt(p) {
+  const photoHTML = p.photoSignedUrl
+    ? `<div style="text-align:center;margin-bottom:20px"><img src="${p.photoSignedUrl}" alt="Student Photo" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:3px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>`
+    : "";
+  const regDateHTML = p.registeredDate
+    ? `<div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Registration Date</span><span class="v" style="font-size:1rem;font-weight:800;color:#1e40af">${p.registeredDate}</span></div>
+       <div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Registration Time</span><span class="v" style="font-size:1rem;font-weight:800;color:#1e40af">${p.registeredTime}</span></div>`
+    : "";
+  const membershipDatesHTML = (p.startDate && p.endDate)
+    ? `<div class="r-row"><span class="k">Membership Start Date</span><span class="v">${p.startDate}</span></div>
+       <div class="r-row"><span class="k">Membership End Date</span><span class="v">${p.endDate}</span></div>`
+    : "";
   // Build a short readable receipt number from the payment id + date
   const dateObj = new Date(p.date);
   const yr = dateObj.getFullYear();
@@ -996,11 +1201,14 @@ function generateReceipt(p) {
           <span>Receipt No: <b>${receiptNo}</b></span>
           <span>Date: <b>${dateLabel}</b></span>
         </div>
+        ${photoHTML}
         <div class="r-row"><span class="k">Student Name</span><span class="v">${p.name}</span></div>
+        ${regDateHTML}
         ${p.phone ? `<div class="r-row"><span class="k">Phone</span><span class="v">${p.phone}</span></div>` : ""}
         <div class="r-row"><span class="k">Membership Plan</span><span class="v">${planLabel}</span></div>
         <div class="r-row"><span class="k">Payment Mode</span><span class="v">${modeLabel}</span></div>
         ${p.rzp ? `<div class="r-row"><span class="k">Transaction ID</span><span class="v" style="font-size:.8rem">${p.rzp}</span></div>` : ""}
+        ${membershipDatesHTML}
         <div class="r-total">
           <span class="k">Amount Paid</span>
           <span class="v">${amountLabel}</span>
