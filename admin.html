@@ -540,14 +540,7 @@ function renderTodaySummary() {
     .reduce((s, p) => s + p.amount, 0);
 
   const cashToday = pay
-    .filter(p => {
-      if (p.status !== "success" || p.payment_mode !== "cash") return false;
-      const memb = allMembershipsData.find(m =>
-        m.id === p.membership_id ||
-        (!p.membership_id && m.student_id === p.student_id && m.amount_paid === p.amount && m.payment_mode === "cash")
-      );
-      return memb && isToday(memb.start_date);
-    })
+    .filter(p => p.status === "success" && p.payment_mode === "cash" && isToday(p.created_at))
     .reduce((s, p) => s + p.amount, 0);
 
   const collected = onlineToday + cashToday;
