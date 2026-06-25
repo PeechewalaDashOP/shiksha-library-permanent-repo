@@ -183,6 +183,11 @@ exports.handler = async (event) => {
     }
 
     // 5. Membership dates
+    // ── FEATURE 1 FIX: correct cycle rule ──
+    // Rule: start date is Day 1, end date = one day before same date next cycle
+    // monthly: +1 month then -1 day  →  Jun 25 → Jul 24
+    // 15days : +14 days              →  Jun 25 → Jul 09
+    // 3month : +3 months then -1 day →  Jun 25 → Sep 24
     let startStr, endStr;
     if (startDateInput && endDateInput) {
       startStr = startDateInput;
@@ -191,9 +196,9 @@ exports.handler = async (event) => {
       const nowIST    = new Date(new Date().getTime() + 5.5*60*60000);
       const startDate = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
       const endDate   = new Date(startDate);
-      if (planId.startsWith("monthly"))     endDate.setMonth(endDate.getMonth() + 1);
-      else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 15);
-      else if (planId.startsWith("3month")) endDate.setMonth(endDate.getMonth() + 3);
+      if (planId.startsWith("monthly"))     { endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(endDate.getDate() - 1); }
+      else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 14);
+      else if (planId.startsWith("3month")) { endDate.setMonth(endDate.getMonth() + 3); endDate.setDate(endDate.getDate() - 1); }
       const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };
       startStr = toIST(startDate);
       endStr   = toIST(endDate);

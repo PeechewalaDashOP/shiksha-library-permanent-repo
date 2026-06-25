@@ -175,15 +175,20 @@ function updateTotalPrice() {
   document.getElementById("sl-submit-price").textContent = "₹" + total.toLocaleString();
 }
 
+// ── FEATURE 1 FIX: Correct membership cycle rule ──────────────────
+// Rule: start = Day 1, end = one day before same date next cycle
+// monthly : +1 month  then -1 day  →  25 Jun → 24 Jul
+// 15days  : +14 days               →  25 Jun → 09 Jul
+// 3month  : +3 months then -1 day  →  25 Jun → 24 Sep
 function updateMembershipDates() {
   const planId     = document.getElementById("sl-plan-id-hidden").value;
   const startInput = document.getElementById("sl-start-date").value;
   const nowIST = new Date(new Date().getTime() + 5.5*60*60000);
   const start  = startInput ? new Date(startInput + "T00:00:00") : new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
   const end        = new Date(start);
-  if (planId.startsWith("monthly"))     end.setMonth(end.getMonth() + 1);
-  else if (planId.startsWith("15days")) end.setDate(end.getDate() + 15);
-  else if (planId.startsWith("3month")) end.setMonth(end.getMonth() + 3);
+  if (planId.startsWith("monthly"))     { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+  else if (planId.startsWith("15days")) end.setDate(end.getDate() + 14);
+  else if (planId.startsWith("3month")) { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   const fmt = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   document.getElementById("sl-date-display").value = `From ${fmt(start)} to ${fmt(end)}`;
   const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };
