@@ -957,7 +957,22 @@ async function saveEditStudent() {
 
     if (error) throw new Error(error.message);
     if (!data || !data.length) throw new Error("Update didn't apply — likely an RLS issue.");
-
+ // If phone number changed, sync the Supabase Auth password (student login = phone number)
+    if (phone !== s.phone) {
+      try {
+        const authRes = await fetch("/.netlify/functions/update-student-auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId, newPhone: phone }),
+        });
+        const authData = await authRes.json();
+        if (!authData.success && !authData.skipped) {
+          console.warn("Auth password sync failed:", authData.error);
+        }
+      } catch (authEx) {
+        console.warn("Could not sync auth password:", authEx.message);
+      }
+    }
     closeEditStudentModal();
     await loadAll();
     viewStudent(studentId);

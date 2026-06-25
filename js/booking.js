@@ -447,6 +447,8 @@ async function checkLoggedInUser() {
 function getModalHTML() {
   const _d = new Date(); _d.setTime(_d.getTime() + (5.5*60*60000));
   const today = _d.toISOString().split('T')[0];
+  const _7ago = new Date(_d.getTime() - 7*24*60*60000);
+  const sevenDaysAgo = _7ago.toISOString().split('T')[0];
   return `
   <style>
     .sl-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;padding:1rem}
@@ -557,7 +559,7 @@ function getModalHTML() {
         </div>
         <div class="sl-fg"><label>Shift & Section (Auto-filled)</label><input type="text" id="sl-shift-display" readonly></div>
         <hr class="sl-divider">
-        <div class="sl-fg"><label>Membership Start Date</label><input type="date" id="sl-start-date" onchange="updateMembershipDates()" min="${today}"></div>
+        <div class="sl-fg"><label>Membership Start Date (upto 7 days back allowed)</label><input type="date" id="sl-start-date" onchange="updateMembershipDates()" min="${sevenDaysAgo}" value="${today}"></div>
         <div class="sl-date-box">
           <label>📅 Membership Period (Auto-calculated)</label>
           <input type="text" id="sl-date-display" readonly>
