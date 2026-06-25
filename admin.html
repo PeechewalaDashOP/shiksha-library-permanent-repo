@@ -1762,7 +1762,6 @@ async function cancelActiveMembership(studentId, membershipId) {
     .eq("membership_id", membershipId)
     .eq("status", "success");
 
-  if (!data || !data.length) { alert("No active membership found to cancel — it may have already been cancelled."); return; }
   await loadAll();
   viewStudent(studentId);
   alert("✅ Membership cancelled successfully. The student has been removed from active list.");
