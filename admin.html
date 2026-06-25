@@ -528,7 +528,7 @@ function renderTodaySummary() {
   };
 
   // New registrations today = memberships created today
-  const newRegs = allMembershipsData.filter(m => isToday(m.created_at)).length;
+  const newRegs = allMembershipsData.filter(m => isToday(m.created_at) && m.status === "active").length;
 
   // Collected today:
   // Online: success payments created today
@@ -707,6 +707,7 @@ async function viewStudent(studentId) {
       }
       const payload = JSON.stringify({
         id: pay.id, name: s.full_name, phone: s.phone || "",
+        studentCode: s.student_code || "",
         plan: pay.plan_id || m.plan_id || "—", amount: pay.amount,
         mode: pay.payment_mode || "online", date: pay.created_at, rzp: pay.razorpay_payment_id || "",
         photoSignedUrl,
@@ -781,6 +782,10 @@ async function viewStudent(studentId) {
           ${allPlansData.map(p => `<option value="${p.id}" ${activeM.plan_id===p.id?"selected":""}>${p.name} — ${p.duration}, ${p.shift}${p.section==="Prime"?" (Prime)":""} — ₹${p.price}</option>`).join("")}
         </select>
         <button class="save-btn" onclick="upgradeMembershipPlan('${s.id}', '${activeM.id}')">Update Plan</button>
+      </div>
+      <div style="margin-top:.85rem;padding-top:.85rem;border-top:1px dashed #fee2e2">
+        <div style="font-size:.78rem;color:#94a3b8;margin-bottom:.5rem">⚠️ Danger Zone</div>
+        <button class="edit-btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="cancelActiveMembership('${s.id}', '${activeM.id}')">🚫 Cancel Active Membership</button>
       </div>
       ` : `<div style="font-size:.82rem;color:#94a3b8">No active membership — plan upgrade unavailable.</div>`}
     </div>
@@ -1117,6 +1122,7 @@ function renderPaymentsTable() {
                 id: p.id,
                 name: p.students?.full_name || "—",
                 phone: p.students?.phone || "",
+                studentCode: (() => { const st = allStudentsData.find(s => s.id === p.student_id); return st?.student_code || ""; })(),
                 plan: p.plan_id || "—",
                 amount: p.amount,
                 mode: p.payment_mode || "online",
@@ -1203,6 +1209,7 @@ function generateReceipt(p) {
         </div>
         ${photoHTML}
         <div class="r-row"><span class="k">Student Name</span><span class="v">${p.name}</span></div>
+        ${p.studentCode ? `<div class="r-row"><span class="k">Student ID</span><span class="v" style="font-weight:800;color:#f59e0b">${p.studentCode}</span></div>` : ""}
         ${regDateHTML}
         ${p.phone ? `<div class="r-row"><span class="k">Phone</span><span class="v">${p.phone}</span></div>` : ""}
         <div class="r-row"><span class="k">Membership Plan</span><span class="v">${planLabel}</span></div>
@@ -1733,6 +1740,39 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
 
   await loadAll();
   viewStudent(studentId);
+}
+
+async function cancelActiveMembership(studentId, membershipId) {
+  const s = allStudentsData.find(x => x.id === studentId);
+  const name = s?.full_name || "this student";
+
+  // Double confirm — as requested
+  const first = confirm(`⚠️ Cancel Active Membership\n\nAre you sure you want to cancel ${name}'s active membership?\n\nThis will mark it as REJECTED. This action cannot be undone automatically.`);
+  if (!first) return;
+
+  const second = confirm(`🔴 Final Confirmation\n\nYou are about to CANCEL and REJECT the active membership for:\n\n👤 ${name}\n\nPress OK to confirm cancellation.`);
+  if (!second) return;
+
+  const { data, error } = await sb
+    .from("memberships")
+    .update({ status: "rejected" })
+    .eq("id", membershipId)
+    .select();
+
+  if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely an RLS issue."); return; }
+
+  // Also mark the corresponding payment as failed
+  await sb
+    .from("payments")
+    .update({ status: "failed" })
+    .eq("membership_id", membershipId)
+    .eq("status", "success");
+
+  if (!data || !data.length) { alert("No active membership found to cancel — it may have already been cancelled."); return; }
+  await loadAll();
+  viewStudent(studentId);
+  alert("✅ Membership cancelled successfully. The student has been removed from active list.");
 }
 
 async function upgradeMembershipPlan(studentId, membershipId) {

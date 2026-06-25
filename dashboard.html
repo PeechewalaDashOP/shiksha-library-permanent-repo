@@ -311,6 +311,7 @@ function generateReceipt(p) {
         '</div>' +
         photoHTML +
         '<div class="r-row"><span class="k">Student Name</span><span class="v">' + p.name + '</span></div>' +
+        (p.studentCode ? '<div class="r-row"><span class="k">Student ID</span><span class="v" style="font-weight:800;color:#f59e0b">' + p.studentCode + '</span></div>' : "") +
         regDateHTML +
         (p.phone ? '<div class="r-row"><span class="k">Phone</span><span class="v">' + p.phone + '</span></div>' : "") +
         '<div class="r-row"><span class="k">Membership Plan</span><span class="v">' + planLabel + '</span></div>' +
@@ -488,6 +489,7 @@ async function loadDashboard() {
             id: p.id,
             name: student.full_name,
             phone: student.phone || "",
+            studentCode: student.student_code || "",
             plan: p.plan_id || "—",
             amount: p.amount,
             mode: p.payment_mode || "online",
