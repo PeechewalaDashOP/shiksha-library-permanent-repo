@@ -995,21 +995,60 @@ function closeStudentModal() {
   document.body.style.overflow = "";
 }
 
-// ── PAUSE / RESUME STUDENT (independent, no time/billing logic) ──
+// ── PAUSE / RESUME STUDENT ──────────────────────────────────────
+// On PAUSE : freeze membership days (pg_cron skips paused students).
+// On RESUME: extend membership end_date by exact days spent paused.
 async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   const newStatus = currentStatus === "paused" ? "active" : "paused";
   const ok = confirm(newStatus === "paused"
-    ? "Pause this student? They'll see a 'Paused — contact admin' message on their dashboard and won't be able to renew until resumed."
-    : "Resume this student? Their dashboard returns to normal and renewal is allowed again.");
+    ? "Pause this student? Their membership days will freeze. The expiry date will automatically extend when resumed."
+    : "Resume this student? Their membership will extend by the number of days it was paused.");
   if (!ok) return;
 
   let updateObj;
+
   if (newStatus === "paused") {
     const daysRemaining = activeEndDate
       ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
       : null;
     updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+
   } else {
+    // ── RESUME: extend membership end_date by paused duration ─────
+    const s = allStudentsData.find(x => x.id === studentId);
+    if (s?.pause_date) {
+      const daysPaused = Math.round((Date.now() - new Date(s.pause_date).getTime()) / 86400000);
+      if (daysPaused > 0) {
+        const { data: activeMemb, error: fetchErr } = await sb
+          .from("memberships")
+          .select("id, end_date")
+          .eq("student_id", studentId)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (fetchErr) {
+          alert("Error fetching membership: " + fetchErr.message);
+          return;
+        }
+
+        if (activeMemb?.end_date) {
+          const [y, mo, d] = activeMemb.end_date.split("-").map(Number);
+          const newEnd = new Date(Date.UTC(y, mo - 1, d));
+          newEnd.setUTCDate(newEnd.getUTCDate() + daysPaused);
+          const newEndStr = newEnd.toISOString().split("T")[0];
+
+          const { error: extErr } = await sb
+            .from("memberships")
+            .update({ end_date: newEndStr })
+            .eq("id", activeMemb.id);
+
+          if (extErr) {
+            alert("Error extending membership: " + extErr.message);
+            return;
+          }
+        }
+      }
+    }
     updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
   }
 
@@ -1725,20 +1764,60 @@ function renderPhase4() {
   }).join("");
 }
 
+// ── PAUSE / RESUME STUDENT ──────────────────────────────────────
+// On PAUSE : freeze membership days (pg_cron skips paused students).
+// On RESUME: extend membership end_date by exact days spent paused.
 async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   const newStatus = currentStatus === "paused" ? "active" : "paused";
   const ok = confirm(newStatus === "paused"
-    ? "Pause this student? They'll see a 'Paused — contact admin' message on their dashboard and won't be able to renew until resumed."
-    : "Resume this student? Their dashboard returns to normal and renewal is allowed again.");
+    ? "Pause this student? Their membership days will freeze. The expiry date will automatically extend when resumed."
+    : "Resume this student? Their membership will extend by the number of days it was paused.");
   if (!ok) return;
 
   let updateObj;
+
   if (newStatus === "paused") {
     const daysRemaining = activeEndDate
       ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
       : null;
     updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+
   } else {
+    // ── RESUME: extend membership end_date by paused duration ─────
+    const s = allStudentsData.find(x => x.id === studentId);
+    if (s?.pause_date) {
+      const daysPaused = Math.round((Date.now() - new Date(s.pause_date).getTime()) / 86400000);
+      if (daysPaused > 0) {
+        const { data: activeMemb, error: fetchErr } = await sb
+          .from("memberships")
+          .select("id, end_date")
+          .eq("student_id", studentId)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (fetchErr) {
+          alert("Error fetching membership: " + fetchErr.message);
+          return;
+        }
+
+        if (activeMemb?.end_date) {
+          const [y, mo, d] = activeMemb.end_date.split("-").map(Number);
+          const newEnd = new Date(Date.UTC(y, mo - 1, d));
+          newEnd.setUTCDate(newEnd.getUTCDate() + daysPaused);
+          const newEndStr = newEnd.toISOString().split("T")[0];
+
+          const { error: extErr } = await sb
+            .from("memberships")
+            .update({ end_date: newEndStr })
+            .eq("id", activeMemb.id);
+
+          if (extErr) {
+            alert("Error extending membership: " + extErr.message);
+            return;
+          }
+        }
+      }
+    }
     updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
   }
 
