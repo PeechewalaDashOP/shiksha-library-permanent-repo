@@ -449,8 +449,10 @@ async function loadDashboard() {
         // ── RENEWAL QUEUE: show queued state — never touch start_date/end_date (they are NULL)
         bannerClass = "banner-pending";
         bannerIcon  = "🔄";
-        const cashNote = isCash ? " Cash payment pending — please visit the library." : " Payment received.";
-        bannerMsg = "Renewal Queued — will activate automatically when current membership expires." + cashNote;
+        // status=queued means payment is always confirmed:
+        // online → Razorpay verified; cash → admin approved (sets payment success THEN queued)
+        const payNote = isCash ? " Cash payment received." : " Payment received.";
+        bannerMsg = "Renewal Queued — will activate automatically when current membership expires." + payNote;
       } else if (isPending) {
         bannerClass = "banner-pending";
         bannerIcon  = "⏳";

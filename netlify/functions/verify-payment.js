@@ -10,20 +10,20 @@ function getPlanPrefix(planId) {
   const isPrime    = id.includes("prime");
   const isGround   = !isBasement && !isPrime;
   if (isPrime) {
-    if (id.includes("morning"))                             return "PM-";
-    if (id.includes("evening"))                             return "PE-";
-    if (id.includes("fullday") || id.includes("fullnight")) return "PF-";
+    if (id.includes("morning"))                             return "PM";
+    if (id.includes("evening"))                             return "PE";
+    if (id.includes("fullday") || id.includes("fullnight")) return "PFD";
   }
   if (isGround) {
-    if (id.includes("morning"))   return "GM-";
-    if (id.includes("evening"))   return "GE-";
-    if (id.includes("fullday"))   return "GF-";
-    if (id.includes("fullnight")) return "GN-";
+    if (id.includes("morning"))   return "GM";
+    if (id.includes("evening"))   return "GE";
+    if (id.includes("fullday"))   return "GFD";
+    if (id.includes("fullnight")) return "GN";
   }
   if (isBasement) {
-    if (id.includes("morning"))                             return "BM-";
-    if (id.includes("evening"))                             return "BE-";
-    if (id.includes("fullday") || id.includes("fullnight")) return "BF-";
+    if (id.includes("morning"))                             return "BM";
+    if (id.includes("evening"))                             return "BE";
+    if (id.includes("fullday") || id.includes("fullnight")) return "BFD";
   }
   return "";
 }
@@ -131,7 +131,8 @@ exports.handler = async (event) => {
       if (!studentCode) {
         const { data: codeData } = await supabase.rpc("generate_student_code");
         const prefix = getPlanPrefix(planId);
-        studentCode = prefix + (codeData || "");
+        const rawCode = (codeData || "").replace(/^SL-/, ""); // strip legacy SL- → new format: PREFIX-YYYY-NNN
+        studentCode = prefix ? prefix + "-" + rawCode : rawCode;
       }
 
       const auditFields = {};
