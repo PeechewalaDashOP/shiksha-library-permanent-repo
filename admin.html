@@ -153,6 +153,7 @@
             <option value="expired">Expired</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
+<option value="queued">Queued</option>
           </select>
           <select class="date-input" id="memb-type-filter" onchange="renderMembershipsTable()">
             <option value="all">All Types</option>
@@ -1090,6 +1091,7 @@ function renderMembershipsTable() {
       if (statusFilter === "expired")  return isExpired;
       if (statusFilter === "pending")  return m.status === "pending";
       if (statusFilter === "rejected") return m.status === "rejected";
+if (statusFilter === "queued")   return m.status === "queued";
       return true;
     });
   }
@@ -1121,6 +1123,8 @@ function renderMembershipsTable() {
           ? '<span class="badge" style="background:#fef3c7;color:#92400e">Pending</span>'
           : m.status === "rejected"
           ? '<span class="badge badge-expired">Rejected</span>'
+          : m.status === "queued"
+          ? '<span class="badge" style="background:#ede9fe;color:#6d28d9">🔄 Queued</span>'
           : `<span class="badge ${isActive ? "badge-active" : "badge-expired"}">${isActive ? "Active" : "Expired"}</span>`;
         const typeBadge = (m.registration_type || "new") === "renewal"
           ? '<span class="badge" style="background:#ede9fe;color:#6d28d9">🔄 Renewal</span>'
@@ -1360,7 +1364,7 @@ async function loadCashPending() {
   document.getElementById("cash-body").innerHTML = count
     ? data.map(m => `<tr>
         <td><strong>${m.students?.full_name || "—"}</strong><br><small style="color:#64748b">${m.students?.email || ""}</small></td>
-        <td style="font-size:.82rem;color:#64748b">${m.plan_id}</td>
+        <td style="font-size:.82rem;color:#64748b">${m.plan_id}${m.start_date === null && m.registration_type === "renewal" ? ' <span class="badge" style="background:#ede9fe;color:#6d28d9">🔄 Queued</span>' : ""}</td>
         <td style="font-weight:700;color:#15803d">₹${m.amount_paid.toLocaleString()}</td>
         <td style="font-size:.8rem">${fmt(m.created_at)}</td>
         <td><span class="badge" style="background:#fef3c7;color:#92400e">Pending</span></td>
@@ -1380,7 +1384,7 @@ async function approveCash(membershipId, btn) {
   // Fetch the membership first so we know student_id + amount (used to find the matching payment row)
   const { data: membership, error: fetchErr } = await sb
     .from("memberships")
-    .select("student_id, amount_paid")
+    .select("student_id, amount_paid, start_date, registration_type")
     .eq("id", membershipId)
     .single();
 
@@ -1391,6 +1395,15 @@ async function approveCash(membershipId, btn) {
     return;
   }
 
+  const isQueuedRenewal = membership.start_date === null && membership.registration_type === "renewal";
+  if (isQueuedRenewal) {
+    const { error: memErr } = await sb.from("memberships").update({ status: "queued" }).eq("id", membershipId);
+    if (memErr) { alert("Error: " + memErr.message); btn.textContent = "✅ Approve"; btn.disabled = false; return; }
+    await sb.from("payments").update({ status: "success" }).eq("membership_id", membershipId).eq("payment_mode", "cash").eq("status", "pending");
+    try { await sb.rpc("activate_queued_memberships"); } catch(e) { console.warn("Lazy activation:", e.message); }
+    await loadAll(); loadCashPending();
+    return;
+  }
   // 1. Activate the membership
   const { error: memErr } = await sb
     .from("memberships")

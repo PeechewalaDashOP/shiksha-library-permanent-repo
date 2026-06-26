@@ -43,7 +43,8 @@ exports.handler = async (event) => {
       studentData, planId, amount, fixedSeat, locker,
       startDate, endDate, photoBase64,
       isRenewal,
-      existingStudentId
+      existingStudentId,
+      isQueued,             // ── RENEWAL QUEUE: true when active membership exists
     } = JSON.parse(event.body);
 
     const supabase = createClient(
@@ -51,7 +52,7 @@ exports.handler = async (event) => {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK ─────────────────────
+    // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK (new registrations) ─────────────
     if (!isRenewal && studentData?.email) {
       const { data: existingStudent } = await supabase
         .from("students")
@@ -117,7 +118,6 @@ exports.handler = async (event) => {
         .eq("email", studentData.email.toLowerCase())
         .maybeSingle();
 
-      // Feature 1: prefix + code — only for brand-new students
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
         const { data: codeData } = await supabase.rpc("generate_student_code");
@@ -125,7 +125,6 @@ exports.handler = async (event) => {
         studentCode = prefix + (codeData || "");
       }
 
-      // Feature 2: audit timestamp — only for brand-new students
       const auditFields = {};
       if (!existingCheck?.id) {
         const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
@@ -173,6 +172,55 @@ exports.handler = async (event) => {
       }
     }
 
+    // ── RENEWAL QUEUE GUARD ──────────────────────────────────────
+    // If frontend signals isQueued, verify backend and guard duplicates.
+    // Status stays "pending" (cash needs admin approval regardless).
+    // Dates stored as NULL — calculated at activation time by activate_queued_memberships().
+    let isActuallyQueued = false;
+    if (isRenewal && isQueued) {
+      // Backend verify: confirm active membership still exists
+      const { data: activeMemb } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("student_id", student.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (activeMemb) {
+        // Guard: block if queued renewal already exists (any status with null dates + renewal type)
+        const { data: existingQueued } = await supabase
+          .from("memberships")
+          .select("id, status")
+          .eq("student_id", student.id)
+          .eq("status", "queued")
+          .maybeSingle();
+
+        const { data: existingPendingQueue } = await supabase
+          .from("memberships")
+          .select("id")
+          .eq("student_id", student.id)
+          .eq("status", "pending")
+          .eq("registration_type", "renewal")
+          .is("start_date", null)
+          .maybeSingle();
+
+        if (existingQueued || existingPendingQueue) {
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              alreadyQueued: true,
+              message: "A renewal is already pending or queued for this account. Please contact the library if you need to change it.",
+            }),
+          };
+        }
+
+        isActuallyQueued = true;
+      }
+      // If no active membership found (expired between submit and now): treat as normal renewal
+    }
+
     // ── MEMBERSHIP ───────────────────────────────────────────────
     const registrationType = isRenewal ? "renewal" : "new";
 
@@ -184,9 +232,9 @@ exports.handler = async (event) => {
         fixed_seat: fixedSeat || false,
         locker: locker || false,
         amount_paid: amount,
-        start_date: startDate,
-        end_date: endDate,
-        status: "pending",
+        start_date: isActuallyQueued ? null : startDate,  // NULL = calculated at activation
+        end_date:   isActuallyQueued ? null : endDate,    // NULL = calculated at activation
+        status: "pending",                                  // always pending for cash
         payment_mode: "cash",
         registration_type: registrationType,
       })
@@ -215,6 +263,7 @@ exports.handler = async (event) => {
         membershipId: membership.id,
         isNewUser: !authError,
         registrationType,
+        isQueued: isActuallyQueued,
       }),
     };
   } catch (err) {

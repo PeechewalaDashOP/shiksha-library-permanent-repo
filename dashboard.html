@@ -182,7 +182,10 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
     </div>
 
     <!-- FEATURE 2: Backdated renewal date input -->
-    <div class="rnl-date-row">
+    <!-- RENEWAL QUEUE: info shown when active membership exists -->
+    <div id="rnl-queue-info" style="display:none;font-size:.82rem;color:#6d28d9;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:.65rem .9rem;margin-bottom:.85rem"></div>
+
+    <div class="rnl-date-row" id="rnl-date-row">
       <label id="rnl-date-label">Start Date</label>
       <input type="date" id="rnl-start-date" onchange="calcRenewalTotal()" min="">
       <div id="rnl-backdate-info" style="display:none;font-size:.75rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:.4rem .65rem;margin-top:.35rem"></div>
@@ -366,6 +369,40 @@ async function loadDashboard() {
   document.getElementById("content").style.display = "block";
   document.getElementById("student-name").textContent = student.full_name.split(" ")[0];
 
+  // ── RENEWAL QUEUE: lazy activation — if queued exists and no active, activate now ──
+  // This handles the case where pg_cron hasn't run yet but active has expired.
+  // Uses SECURITY DEFINER function — safe to call from authenticated client.
+  {
+    const todayLazy = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
+    const hasActive = memberships?.some(m => m.status === "active" && m.end_date >= todayLazy);
+    const hasQueued = memberships?.some(m => m.status === "queued");
+    if (hasQueued && !hasActive) {
+      try {
+        const { data: count } = await sb.rpc("activate_queued_memberships");
+        if (count > 0) {
+          // Reload memberships with fresh data after activation
+          const { data: refreshed } = await sb.from("memberships")
+            .select("*, plans(name,duration,shift,section)")
+            .eq("student_id", student.id)
+            .order("created_at", { ascending: false });
+          if (refreshed) {
+            MEMBERSHIPS = refreshed;
+            // Proceed with refreshed data below
+            const refreshedActive = refreshed.find(m => m.status === "active");
+            if (refreshedActive) {
+              document.getElementById("stat-plan").textContent  = refreshedActive.plans?.duration || "—";
+              document.getElementById("stat-days").textContent  = daysLeft(refreshedActive.end_date) + "d";
+              document.getElementById("stat-paid").textContent  = "₹" + refreshedActive.amount_paid.toLocaleString();
+            }
+          }
+        }
+      } catch(e) {
+        // Non-critical — pg_cron will handle at midnight
+        console.warn("Lazy activation on dashboard load:", e.message);
+      }
+    }
+  }
+
   // Show renew button for any student (they can always renew or get a new plan)
   document.getElementById("renew-btn").style.display = "inline-block";
 
@@ -400,6 +437,7 @@ async function loadDashboard() {
     memberships.forEach(m => {
       const isActive  = m.status === "active";
       const isPending = m.status === "pending";
+      const isQueued  = m.status === "queued";   // ── RENEWAL QUEUE
       const isExpired = m.status === "expired" || (isActive && new Date(m.end_date) < new Date());
       const isCash    = m.payment_mode === "cash";
 
@@ -407,7 +445,13 @@ async function loadDashboard() {
       let bannerIcon  = "✅";
       let bannerMsg   = "";
 
-      if (isPending) {
+      if (isQueued) {
+        // ── RENEWAL QUEUE: show queued state — never touch start_date/end_date (they are NULL)
+        bannerClass = "banner-pending";
+        bannerIcon  = "🔄";
+        const cashNote = isCash ? " Cash payment pending — please visit the library." : " Payment received.";
+        bannerMsg = "Renewal Queued — will activate automatically when current membership expires." + cashNote;
+      } else if (isPending) {
         bannerClass = "banner-pending";
         bannerIcon  = "⏳";
         bannerMsg   = "Payment Pending — Please visit the library and pay ₹" + m.amount_paid.toLocaleString() + " in cash to activate your membership.";
@@ -423,7 +467,8 @@ async function loadDashboard() {
         }
       }
 
-      const used = isActive ? pct(m.start_date, m.end_date) : 0;
+      // Only calculate pct for active memberships with valid dates
+      const used = (isActive && m.start_date && m.end_date) ? pct(m.start_date, m.end_date) : 0;
 
       membershipHTML += `
         <div style="margin-bottom:1.25rem">
@@ -444,7 +489,9 @@ async function loadDashboard() {
           <div class="info-row"><span class="info-key">Duration</span><span class="info-val">${m.plans?.duration||"—"}</span></div>
           <div class="info-row"><span class="info-key">Shift</span><span class="info-val">${m.plans?.shift||"—"}</span></div>
           <div class="info-row"><span class="info-key">Amount Paid</span><span class="info-val">₹${m.amount_paid.toLocaleString()}</span></div>
-          ${isActive ? `
+          ${isQueued ? `
+          <div class="info-row"><span class="info-key">Status</span><span class="info-val" style="color:#6d28d9">🔄 Queued — activates after current membership expires</span></div>
+          ` : isActive ? `
           <div class="info-row"><span class="info-key">Active Since</span><span class="info-val">${fmt(m.start_date)}</span></div>
           <div class="info-row"><span class="info-key">Expires On</span><span class="info-val" style="color:${daysLeft(m.end_date)<5?"#dc2626":"#15803d"}">${fmt(m.end_date)}</span></div>
           <div class="progress-wrap"><div class="progress-bar" style="width:${used}%"></div></div>
@@ -573,6 +620,8 @@ let rnlState = {
   duration: "monthly",
   selectedPlan: null,
   payMode: "cash",
+  isQueuedRenewal: false,      // true when active membership exists → renewal will be queued
+  activeMembershipEndDate: null, // end date of current active (for queue notice display)
 };
 
 async function openRenewalModal() {
@@ -587,27 +636,45 @@ async function openRenewalModal() {
     return;
   }
 
-  // ── HARD BLOCK: prevent renewal if active membership exists ──
-  const blockToday = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
-  const activeMembership = MEMBERSHIPS?.find(
-    m => (m.status === "active" && m.end_date >= blockToday) || m.status === "pending"
-  );
-  if (activeMembership) {
-    alert(
-      "⛔ Renewal Not Allowed\n\n" +
-      "You already have an active membership valid until " +
-      fmt(activeMembership.end_date) + ".\n\n" +
-      "You can renew only after your current membership expires.\n" +
-      "For special cases, please contact the library."
-    );
+  // ── BLOCK: pending cash not yet approved — cannot renew until payment cleared ──
+  const pendingMembership = MEMBERSHIPS?.find(m => m.status === "pending");
+  if (pendingMembership) {
+    alert("⏳ Pending Payment\n\nYou have a membership awaiting cash payment approval. Please visit the library to complete payment before renewing.");
     return;
   }
 
-  rnlState = { duration:"monthly", selectedPlan:null, payMode:"cash" };
+  // ── BLOCK: queued renewal already exists — one queue per student ──
+  const existingQueuedM = MEMBERSHIPS?.find(m => m.status === "queued");
+  if (existingQueuedM) {
+    alert("🔄 Renewal Already Queued\n\nYou already have a renewal queued. It will automatically activate when your current membership expires.\n\nTo make changes, please contact the library.");
+    return;
+  }
+
+  // ── ACTIVE: do NOT block — continue into queue mode ──
+  // isQueuedRenewal is set below after rnlState reset.
+
+  rnlState = { duration:"monthly", selectedPlan:null, payMode:"cash", isQueuedRenewal:false, activeMembershipEndDate:null };
 
   // Show student info
   document.getElementById("rnl-student-info").textContent =
     `👤 ${STUDENT.full_name} · ${STUDENT.phone} · ${STUDENT.email}`;
+
+  // ── RENEWAL QUEUE: check if active membership exists → queue mode ──
+  const queueCheckToday = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
+  const currentActive = MEMBERSHIPS?.find(m => m.status === "active" && m.end_date >= queueCheckToday);
+  if (currentActive) {
+    rnlState.isQueuedRenewal = true;
+    rnlState.activeMembershipEndDate = currentActive.end_date;
+    document.getElementById("rnl-queue-info").style.display = "block";
+    document.getElementById("rnl-queue-info").textContent =
+      `🔄 Queue Mode — your renewal will activate automatically the day after your current membership expires (${fmt(currentActive.end_date)}). Payment is collected now.`;
+    document.getElementById("rnl-date-row").style.display = "none";
+  } else {
+    rnlState.isQueuedRenewal = false;
+    rnlState.activeMembershipEndDate = null;
+    document.getElementById("rnl-queue-info").style.display = "none";
+    document.getElementById("rnl-date-row").style.display = "block";
+  }
 
   // ── FEATURE 2: Backdated renewal — set date range ──────────────
   // Rule: if membership expired within last 10 days, allow backdate to expiry date.
@@ -785,8 +852,15 @@ async function submitRenewal() {
   btn.disabled = true;
   btn.textContent = "Processing…";
 
+  // Dates: NULL for queued renewals (calculated at activation time by DB function)
+  // Dates: calculated now for normal renewals (no active membership)
   const startInput = document.getElementById("rnl-start-date").value;
-  const { startDate, endDate } = calcDates(rnlState.selectedPlan.id, startInput);
+  let startDate = null, endDate = null;
+  if (!rnlState.isQueuedRenewal) {
+    const calculated = calcDates(rnlState.selectedPlan.id, startInput);
+    startDate = calculated.startDate;
+    endDate   = calculated.endDate;
+  }
 
   const payload = {
     planId:           rnlState.selectedPlan.id,
@@ -796,6 +870,7 @@ async function submitRenewal() {
     startDate,
     endDate,
     isRenewal:        true,
+    isQueued:         rnlState.isQueuedRenewal,   // ── RENEWAL QUEUE flag
     existingStudentId: STUDENT.id,
     studentData: {    // sent for completeness; backend uses existingStudentId
       fullName:  STUDENT.full_name,
@@ -819,7 +894,11 @@ async function submitRenewal() {
       const data = await res.json();
       if (data.success) {
         closeRenewalModal();
-        alert(`✅ Renewal registered!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount: ₹${rnlState.total.toLocaleString()}\n\nPlease visit the library and pay ₹${rnlState.total.toLocaleString()} in cash to activate your renewed membership.`);
+        if (data.isQueued) {
+          alert(`🔄 Renewal Queued!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount: ₹${rnlState.total.toLocaleString()}\n\nPlease visit the library and pay ₹${rnlState.total.toLocaleString()} in cash. Your renewal will automatically activate after your current membership expires.`);
+        } else {
+          alert(`✅ Renewal registered!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount: ₹${rnlState.total.toLocaleString()}\n\nPlease visit the library and pay ₹${rnlState.total.toLocaleString()} in cash to activate your renewed membership.`);
+        }
         location.reload();
       } else {
         err.textContent = data.message || data.error || "Registration failed.";
@@ -866,7 +945,11 @@ async function submitRenewal() {
         const vData = await vRes.json();
         if (vData.success) {
           closeRenewalModal();
-          alert(`✅ Renewal Confirmed!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount Paid: ₹${rnlState.total.toLocaleString()}\nValid Until: ${endDate}`);
+          if (vData.isQueued) {
+            alert(`🔄 Renewal Queued!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount Paid: ₹${rnlState.total.toLocaleString()}\n\nPayment received. Your renewal will automatically activate after your current membership expires.`);
+          } else {
+            alert(`✅ Renewal Confirmed!\n\nPlan: ${rnlState.selectedPlan.id.replace(/-/g," ")}\nAmount Paid: ₹${rnlState.total.toLocaleString()}\nValid Until: ${endDate}`);
+          }
           location.reload();
         } else {
           err.textContent = "Payment received but renewal failed. Contact library with payment ID: " + response.razorpay_payment_id;

@@ -54,6 +54,7 @@ exports.handler = async (event) => {
       photoBase64,
       isRenewal,
       existingStudentId,
+      isQueued,             // ── RENEWAL QUEUE: true when active membership exists
     } = JSON.parse(event.body);
 
     // 1. Verify Razorpay signature
@@ -69,7 +70,7 @@ exports.handler = async (event) => {
     // 2. Supabase service role client
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK ─────────────────────
+    // ── DUPLICATE / ACTIVE MEMBERSHIP CHECK (new registrations) ─────────────
     if (!isRenewal && studentData?.email) {
       const { data: existingStudent } = await supabase
         .from("students")
@@ -109,7 +110,7 @@ exports.handler = async (event) => {
       authUserId = existing?.id || null;
     }
 
-    // 4. Student upsert + auto student_code
+    // 4. Student upsert
     let student;
     if (isRenewal && existingStudentId) {
       const { data: s, error: e } = await supabase
@@ -126,7 +127,6 @@ exports.handler = async (event) => {
         .eq("email", studentData.email.toLowerCase())
         .maybeSingle();
 
-      // Feature 1: prefix + code — only for brand-new students
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
         const { data: codeData } = await supabase.rpc("generate_student_code");
@@ -134,7 +134,6 @@ exports.handler = async (event) => {
         studentCode = prefix + (codeData || "");
       }
 
-      // Feature 2: audit timestamp — only for brand-new students
       const auditFields = {};
       if (!existingCheck?.id) {
         const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
@@ -182,14 +181,55 @@ exports.handler = async (event) => {
       }
     }
 
+    // ── RENEWAL QUEUE GUARD ──────────────────────────────────────
+    // Online payment is already captured when this runs.
+    // If isQueued: store as "queued" with NULL dates (activation calculates them).
+    // Guard against duplicate queue — unique index is the final safety net.
+    let isActuallyQueued = false;
+    if (isRenewal && isQueued) {
+      // Backend verify: confirm active membership still exists
+      const { data: activeMemb } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("student_id", student.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (activeMemb) {
+        // Guard: block if queued already exists
+        const { data: existingQueued } = await supabase
+          .from("memberships")
+          .select("id")
+          .eq("student_id", student.id)
+          .eq("status", "queued")
+          .maybeSingle();
+
+        if (existingQueued) {
+          // Payment received but queued slot taken — flag for admin resolution
+          console.error(`QUEUE DUPLICATE: Student ${student.id} already has queued membership. Payment ${razorpay_payment_id} received. Manual admin resolution required.`);
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              error: `A renewal is already queued for this account. Payment received (ID: ${razorpay_payment_id}) — please contact the library to resolve.`,
+            }),
+          };
+        }
+
+        isActuallyQueued = true;
+      }
+      // If no active found (expired between submit and now): treat as normal online activation
+    }
+
     // 5. Membership dates
     // ── FEATURE 1 FIX: correct cycle rule ──
-    // Rule: start date is Day 1, end date = one day before same date next cycle
-    // monthly: +1 month then -1 day  →  Jun 25 → Jul 24
-    // 15days : +14 days              →  Jun 25 → Jul 09
-    // 3month : +3 months then -1 day →  Jun 25 → Sep 24
+    // For queued: NULL dates (calculated at activation by activate_queued_memberships)
+    // For active: calculated here (same as before)
     let startStr, endStr;
-    if (startDateInput && endDateInput) {
+    if (isActuallyQueued) {
+      startStr = null;
+      endStr   = null;
+    } else if (startDateInput && endDateInput) {
       startStr = startDateInput;
       endStr   = endDateInput;
     } else {
@@ -215,9 +255,9 @@ exports.handler = async (event) => {
         fixed_seat: fixedSeat || false,
         locker: locker || false,
         amount_paid: amount,
-        start_date: startStr,
-        end_date: endStr,
-        status: "active",
+        start_date: startStr,                               // null for queued
+        end_date: endStr,                                   // null for queued
+        status: isActuallyQueued ? "queued" : "active",    // queued or active
         payment_mode: "online",
         registration_type: registrationType,
         razorpay_order_id,
@@ -253,6 +293,7 @@ exports.handler = async (event) => {
         isNewUser: !authError,
         defaultPassword: studentData.phone,
         registrationType,
+        isQueued: isActuallyQueued,        // NEW: dashboard uses this to show queue message
       }),
     };
   } catch (err) {
