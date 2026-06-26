@@ -416,8 +416,11 @@ async function loadDashboard() {
         bannerIcon  = "❌";
         bannerMsg   = "Membership expired on " + fmt(m.end_date);
       } else if (isActive) {
-        const days = daysLeft(m.end_date);
-        bannerMsg = "Active · " + days + " days remaining" + (isCash ? " · Cash Payment" : " · Online Payment");
+        // Only show active banner if student is not paused
+        if (student.status !== "paused") {
+          const days = daysLeft(m.end_date);
+          bannerMsg = "Active · " + days + " days remaining" + (isCash ? " · Cash Payment" : " · Online Payment");
+        }
       }
 
       const used = isActive ? pct(m.start_date, m.end_date) : 0;
