@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Registration — Shiksha Library Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#0f172a;min-height:100vh;color:#1e293b}
+  header{background:#1e293b;color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  header h1{font-size:1.1rem;font-weight:700}
+  .back-btn{background:#334155;border:none;color:#fff;padding:.4rem .9rem;border-radius:7px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  .container{max-width:780px;margin:0 auto;padding:1.5rem 1rem}
+  .card{background:#fff;border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .section-title{font-size:1rem;font-weight:800;color:#1e293b;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:2px solid #f1f5f9}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.25rem}
+  .full-width{grid-column:1/-1}
+  .field{display:flex;flex-direction:column;gap:3px}
+  .field label{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .field input,.field select,.field textarea{padding:.55rem .75rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;background:#fff;color:#1e293b}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#f59e0b}
+  .field input[readonly]{background:#f8fafc;color:#94a3b8;cursor:default}
+  .field textarea{resize:vertical;min-height:60px}
+  .req{color:#dc2626}
+  .toggle-group{display:flex;gap:.5rem;margin-bottom:1.25rem}
+  .tog{flex:1;padding:.6rem;border:2px solid #e2e8f0;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;background:#fff;color:#64748b;transition:all .15s;text-align:center}
+  .tog.active{border-color:#f59e0b;background:#fffbeb;color:#92400e}
+  .search-wrap{position:relative}
+  .search-input{width:100%;padding:.55rem .75rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none}
+  .search-input:focus{border-color:#f59e0b}
+  .search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:4px;display:none}
+  .search-item{padding:.6rem .75rem;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9}
+  .search-item:hover{background:#fffbeb}
+  .search-item:last-child{border-bottom:none}
+  .student-card{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.75rem}
+  .student-card .info .name{font-weight:700;color:#1e293b;font-size:.95rem}
+  .student-card .info .sub{font-size:.78rem;color:#64748b;margin-top:2px}
+  .student-card .info .code{font-size:.78rem;font-weight:700;color:#f59e0b;margin-top:2px}
+  .change-btn{background:#f1f5f9;border:none;padding:.35rem .8rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:500;white-space:nowrap}
+  .calc-box{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:.65rem .85rem;margin-top:.75rem}
+  .calc-box .lbl{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+  .calc-box .val{font-size:1.15rem;font-weight:800;color:#15803d;margin-top:2px}
+  .calc-box .brk{font-size:.72rem;color:#64748b;margin-top:1px}
+  .discount-wrap{background:#fef3c7;border:1.5px solid #fde68a;border-radius:8px;padding:.85rem 1rem;margin-top:.75rem}
+  .discount-wrap .dlbl{font-size:.8rem;font-weight:700;color:#92400e;margin-bottom:.5rem}
+  .submit-btn{background:#f59e0b;border:none;color:#fff;padding:.75rem 2rem;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;width:100%;margin-top:1rem}
+  .submit-btn:disabled{background:#cbd5e1;cursor:not-allowed}
+  .err{color:#dc2626;font-size:.82rem;margin-top:.5rem;display:none}
+  .success-box{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:1.5rem;text-align:center}
+  .info-row{display:flex;justify-content:space-between;padding:.6rem 0;font-size:.87rem;border-bottom:1px solid #f1f5f9}
+  .info-row .k{color:#64748b}
+  .info-row .v{font-weight:600;text-align:right}
+  .spinner{width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:580px){.form-grid{grid-template-columns:1fr}.full-width{grid-column:1}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:.85rem">
+    <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">⚡</div>
+    <div>
+      <h1>New Registration</h1>
+      <p style="font-size:.75rem;opacity:.6;margin-top:2px">Admin Direct — Membership activates immediately</p>
+    </div>
+  </div>
+  <a href="/admin.html" class="back-btn">← Dashboard</a>
+</header>
+
+<div class="container">
+
+  <!-- AUTH LOADING -->
+  <div id="auth-check"><div class="spinner"></div></div>
+
+  <!-- MAIN FORM -->
+  <div id="main-form" style="display:none">
+
+    <!-- ── SECTION 1: STUDENT ──────────────────────────────────── -->
+    <div class="card">
+      <div class="section-title">👤 Step 1 — Student</div>
+
+      <div class="toggle-group">
+        <button class="tog active" id="btn-existing" onclick="setStudentMode('existing')">Search Existing Student</button>
+        <button class="tog"        id="btn-new"      onclick="setStudentMode('new')">Create New Student</button>
+      </div>
+
+      <!-- Existing student -->
+      <div id="sec-existing">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="student-search"
+            placeholder="Type name or phone number to search..."
+            oninput="searchStudents(this.value)">
+          <div class="search-results" id="search-results"></div>
+        </div>
+        <div id="selected-student" style="display:none"></div>
+      </div>
+
+      <!-- New student fields — same order as self-registration form -->
+      <div id="sec-new" style="display:none">
+        <div class="form-grid">
+          <div class="field">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="ns-fullname" placeholder="Student's full name" oninput="updateSummary()">
+          </div>
+          <div class="field">
+            <label>Father's Name <span class="req">*</span></label>
+            <input type="text" id="ns-fathername" placeholder="Father's full name">
+          </div>
+          <div class="field">
+            <label>Gender <span class="req">*</span></label>
+            <select id="ns-gender">
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" id="ns-email" placeholder="Used for student login">
+          </div>
+          <div class="field">
+            <label>Phone <span class="req">*</span></label>
+            <input type="tel" id="ns-phone" placeholder="10-digit mobile" maxlength="10">
+          </div>
+          <div class="field">
+            <label>Parent's Mobile</label>
+            <input type="tel" id="ns-parent" placeholder="Optional" maxlength="10">
+          </div>
+          <div class="field">
+            <label>Aadhar Number <span class="req">*</span></label>
+            <input type="text" id="ns-aadhar" placeholder="12-digit Aadhar" maxlength="12">
+          </div>
+          <div class="field">
+            <label>Exam Target <span class="req">*</span></label>
+            <select id="ns-exam">
+              <option value="">Select exam</option>
+              <option>IIT JEE</option><option>NEET</option><option>UPSC</option>
+              <option>SSC CGL</option><option>Banking / Railway</option>
+              <option>GATE</option><option>CUET</option><option>Board Exams</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field full-width">
+            <label>Residential Address <span class="req">*</span></label>
+            <input type="text" id="ns-address" placeholder="Current residential address">
+          </div>
+          <div class="field full-width">
+            <label>Permanent Address</label>
+            <textarea id="ns-perm-address" placeholder="Permanent address if different"></textarea>
+          </div>
+          <div class="field full-width">
+            <label>Photo (optional)</label>
+            <input type="file" id="ns-photo" accept="image/*">
+            <div style="font-size:.72rem;color:#94a3b8;margin-top:3px">JPG or PNG, max 5 MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: PLAN ────────────────────────────────────── -->
+    <div class="card">
+      <div class="section-title">🎫 Step 2 — Membership Plan</div>
+
+      <div class="toggle-group">
+        <button class="tog active" id="btn-fixed"  onclick="setPlanType('fixed')">Fixed Plan</button>
+        <button class="tog"        id="btn-custom" onclick="setPlanType('custom')">Custom Duration</button>
+      </div>
+
+      <!-- Fixed plan -->
+      <div id="sec-fixed">
+        <div class="field">
+          <label>Select Plan <span class="req">*</span></label>
+          <select id="plan-select" onchange="onPlanSelected()">
+            <option value="">Loading plans…</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom plan -->
+      <div id="sec-custom" style="display:none">
+        <div class="form-grid">
+          <div class="field">
+            <label>Duration (Days) <span class="req">*</span></label>
+            <input type="number" id="c-days" min="1" max="365" placeholder="e.g. 21" oninput="onCustomChange()">
+          </div>
+          <div class="field">
+            <label>Shift <span class="req">*</span></label>
+            <select id="c-shift" onchange="onCustomChange()">
+              <option value="">Select shift</option>
+              <option value="Morning">Morning (6 AM – 2 PM)</option>
+              <option value="Evening">Evening (2 PM – 10 PM)</option>
+              <option value="Full Day">Full Day (24×7 Access)</option>
+              <option value="Full Night">Full Night (10 PM – 6 AM)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Section <span class="req">*</span></label>
+            <select id="c-section" onchange="onCustomChange()">
+              <option value="">Select section</option>
+              <option value="Prime">Prime (Fixed Seat)</option>
+              <option value="Ground Floor">Ground Floor</option>
+              <option value="Basement">Basement</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Daily Rate (₹) <span class="req">*</span></label>
+            <input type="number" id="c-rate" min="1" placeholder="₹ per day" oninput="onCustomChange()">
+          </div>
+        </div>
+        <div id="c-calc" style="display:none">
+          <div class="calc-box">
+            <div class="lbl">Calculated Amount</div>
+            <div class="val" id="c-calc-val">₹0</div>
+            <div class="brk" id="c-calc-brk"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: PRICING & PAYMENT ──────────────────────── -->
+    <div class="card">
+      <div class="section-title">💰 Step 3 — Pricing & Payment</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Standard / Base Amount</label>
+          <input type="text" id="base-display" readonly placeholder="Auto-calculated">
+        </div>
+        <div class="field">
+          <label>Final Amount (₹) <span class="req">*</span></label>
+          <input type="number" id="final-amount" min="0" placeholder="Enter amount charged"
+            oninput="onFinalChange()">
+        </div>
+
+        <div class="full-width" id="discount-wrap" style="display:none">
+          <div class="discount-wrap">
+            <div class="dlbl" id="discount-label">⚠️ Amount below standard — reason required</div>
+            <div class="field">
+              <label>Reason <span class="req">*</span></label>
+              <input type="text" id="discount-reason"
+                placeholder="e.g. Negotiated rate, special discount, complimentary…">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Payment Mode <span class="req">*</span></label>
+          <select id="payment-mode" onchange="onModeChange()">
+            <option value="cash">Cash (Paid at Library)</option>
+            <option value="complimentary">Complimentary (₹0)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Start Date <span class="req">*</span></label>
+          <input type="date" id="start-date" onchange="onDateChange()">
+        </div>
+
+        <div class="field">
+          <label>End Date (auto-calculated)</label>
+          <input type="text" id="end-display" readonly placeholder="—">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: EXTRAS ──────────────────────────────────── -->
+    <div class="card">
+      <div class="section-title">⚙️ Additional Options</div>
+      <div style="display:flex;gap:2rem;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.88rem;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="fixed-seat" style="width:16px;height:16px;accent-color:#f59e0b">
+          Fixed Seat
+        </label>
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.88rem;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="locker" style="width:16px;height:16px;accent-color:#f59e0b">
+          Locker
+        </label>
+      </div>
+    </div>
+
+    <!-- ── SECTION 5: REVIEW & SUBMIT ────────────────────────── -->
+    <div class="card">
+      <div class="section-title">✅ Review & Register</div>
+      <div id="summary"></div>
+      <div class="err" id="submit-err"></div>
+      <button class="submit-btn" id="submit-btn" onclick="submitRegistration()">
+        Register Student & Activate Membership
+      </button>
+    </div>
+
+    <!-- ── SUCCESS ────────────────────────────────────────────── -->
+    <div id="success-sec" style="display:none">
+      <div class="card">
+        <div class="success-box">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">✅</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#15803d;margin-bottom:.4rem">Registration Successful</div>
+          <div id="success-detail" style="font-size:.88rem;color:#64748b;margin-bottom:1.25rem"></div>
+          <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+            <button onclick="showReceipt()" style="background:#1a73e8;border:none;color:#fff;padding:.6rem 1.4rem;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">🧾 Print Receipt</button>
+            <button onclick="resetForm()"  style="background:#1e293b;border:none;color:#fff;padding:.6rem 1.4rem;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">➕ New Registration</button>
+            <a href="/admin.html" style="background:#334155;color:#fff;padding:.6rem 1.4rem;border-radius:8px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center">← Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end main-form -->
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────
+const SUPABASE_URL      = "https://ojmxqckunnpthgftwbkq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_j8mlu6_1po8jUo3k5tpMrw_l7Wq74VS";
+const ADMIN_EMAILS      = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com"];
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Default daily rates per shift|section — based on 15-day plan prices ÷ 15.
+// Admin can override per registration. Update values here if rates change.
+const DAILY_RATES = {
+  "Morning|Prime":         25,
+  "Morning|Ground Floor":  20,
+  "Morning|Basement":      17,
+  "Evening|Prime":         27,
+  "Evening|Ground Floor":  23,
+  "Evening|Basement":      20,
+  "Full Day|Prime":        40,
+  "Full Day|Ground Floor": 40,
+  "Full Day|Basement":     30,
+  "Full Night|Ground Floor": 14,
+  "Full Night|Basement":   14,
+};
+function defaultRate(shift, section) {
+  return DAILY_RATES[shift + "|" + section] || 20;
+}
+
+// ── STATE ──────────────────────────────────────────────────────────
+let studentMode  = "existing";
+let planType     = "fixed";
+let selectedStudent = null;
+let selectedPlan    = null;
+let allPlans        = [];
+let lastReceipt     = null;
+let searchTimer     = null;
+
+// ── INIT ───────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session || !ADMIN_EMAILS.includes(session.user.email)) {
+    window.location.href = "/admin.html";
+    return;
+  }
+  document.getElementById("auth-check").style.display  = "none";
+  document.getElementById("main-form").style.display   = "block";
+  await loadPlans();
+  initDates();
+  updateSummary();
+}
+
+// ── PLANS ──────────────────────────────────────────────────────────
+async function loadPlans() {
+  const { data } = await sb.from("plans").select("*").eq("is_active", true)
+    .order("shift").order("section").order("duration");
+  allPlans = data || [];
+  const sel = document.getElementById("plan-select");
+  sel.innerHTML = '<option value="">— Select a plan —</option>' +
+    allPlans.map(p =>
+      `<option value="${p.id}">${p.name} — ${p.duration}, ${p.shift} (${p.section}) — ₹${p.price}</option>`
+    ).join("");
+}
+
+// ── STUDENT MODE ───────────────────────────────────────────────────
+function setStudentMode(mode) {
+  studentMode = mode;
+  document.getElementById("btn-existing").classList.toggle("active", mode === "existing");
+  document.getElementById("btn-new").classList.toggle("active", mode === "new");
+  document.getElementById("sec-existing").style.display = mode === "existing" ? "block" : "none";
+  document.getElementById("sec-new").style.display      = mode === "new"      ? "block" : "none";
+  if (mode === "new") {
+    selectedStudent = null;
+    document.getElementById("student-search").value = "";
+    document.getElementById("search-results").style.display = "none";
+    document.getElementById("selected-student").style.display = "none";
+  }
+  updateSummary();
+}
+
+// ── STUDENT SEARCH ─────────────────────────────────────────────────
+async function searchStudents(q) {
+  const el = document.getElementById("search-results");
+  clearTimeout(searchTimer);
+  if (!q || q.length < 2) { el.style.display = "none"; return; }
+  searchTimer = setTimeout(async () => {
+    const { data } = await sb.from("students")
+      .select("id,full_name,email,phone,student_code")
+      .or(`full_name.ilike.%${q}%,phone.ilike.%${q}%`)
+      .limit(8);
+    if (!data?.length) {
+      el.innerHTML = '<div class="search-item" style="color:#94a3b8">No students found</div>';
+    } else {
+      el.innerHTML = data.map(s =>
+        `<div class="search-item" onclick='selectStudent(${JSON.stringify(s).replace(/'/g,"&#39;")})'>
+          <strong>${s.full_name}</strong>
+          <span style="color:#94a3b8;font-size:.78rem;margin-left:.4rem">${s.phone||""}</span>
+          ${s.student_code ? `<span style="color:#f59e0b;font-size:.75rem;float:right">${s.student_code}</span>` : ""}
+        </div>`
+      ).join("");
+    }
+    el.style.display = "block";
+  }, 280);
+}
+
+function selectStudent(s) {
+  selectedStudent = s;
+  document.getElementById("search-results").style.display = "none";
+  document.getElementById("student-search").value = s.full_name;
+  document.getElementById("selected-student").innerHTML = `
+    <div class="student-card">
+      <div class="info">
+        <div class="name">${s.full_name}</div>
+        <div class="sub">${s.email} · ${s.phone||"—"}</div>
+        ${s.student_code ? `<div class="code">ID: ${s.student_code}</div>` : ""}
+      </div>
+      <button class="change-btn" onclick="clearStudent()">Change</button>
+    </div>`;
+  document.getElementById("selected-student").style.display = "block";
+  updateSummary();
+}
+
+function clearStudent() {
+  selectedStudent = null;
+  document.getElementById("student-search").value = "";
+  document.getElementById("selected-student").style.display = "none";
+  updateSummary();
+}
+
+// ── PLAN TYPE ──────────────────────────────────────────────────────
+function setPlanType(type) {
+  planType = type;
+  selectedPlan = null;
+  document.getElementById("btn-fixed").classList.toggle("active",  type === "fixed");
+  document.getElementById("btn-custom").classList.toggle("active", type === "custom");
+  document.getElementById("sec-fixed").style.display  = type === "fixed"  ? "block" : "none";
+  document.getElementById("sec-custom").style.display = type === "custom" ? "block" : "none";
+  document.getElementById("plan-select").value = "";
+  recalcBase();
+  updateEndDate();
+  updateSummary();
+}
+
+function onPlanSelected() {
+  const id = document.getElementById("plan-select").value;
+  selectedPlan = allPlans.find(p => p.id === id) || null;
+  recalcBase();
+  updateEndDate();
+  updateSummary();
+}
+
+// ── CUSTOM PLAN ────────────────────────────────────────────────────
+function onCustomChange() {
+  const days    = parseInt(document.getElementById("c-days").value);
+  const shift   = document.getElementById("c-shift").value;
+  const section = document.getElementById("c-section").value;
+  const rateEl  = document.getElementById("c-rate");
+
+  // Auto-fill rate when shift+section first selected
+  if (shift && section && !rateEl.value) {
+    rateEl.value = defaultRate(shift, section);
+  }
+
+  const rate  = parseFloat(rateEl.value);
+  const calcEl = document.getElementById("c-calc");
+
+  if (days > 0 && rate > 0) {
+    const total = days * rate;
+    document.getElementById("c-calc-val").textContent = "₹" + total.toLocaleString("en-IN");
+    document.getElementById("c-calc-brk").textContent = `${days} days × ₹${rate}/day`;
+    calcEl.style.display = "block";
+  } else {
+    calcEl.style.display = "none";
+  }
+
+  recalcBase();
+  updateEndDate();
+  updateSummary();
+}
+
+// ── PRICING ────────────────────────────────────────────────────────
+function getBase() {
+  if (planType === "fixed") return selectedPlan ? selectedPlan.price : null;
+  const days = parseInt(document.getElementById("c-days").value);
+  const rate = parseFloat(document.getElementById("c-rate").value);
+  return (days > 0 && rate > 0) ? days * rate : null;
+}
+
+function recalcBase() {
+  const base      = getBase();
+  const baseEl    = document.getElementById("base-display");
+  const finalEl   = document.getElementById("final-amount");
+
+  if (base !== null) {
+    baseEl.value = "₹" + base.toLocaleString("en-IN");
+    // Auto-fill final amount only if it hasn't been manually changed
+    if (!finalEl.dataset.manual || finalEl.dataset.manual === "false") {
+      finalEl.value = base;
+    }
+  } else {
+    baseEl.value = "";
+  }
+  onFinalChange();
+}
+
+function onFinalChange() {
+  document.getElementById("final-amount").dataset.manual = "true";
+  const final       = parseFloat(document.getElementById("final-amount").value);
+  const base        = getBase();
+  const mode        = document.getElementById("payment-mode").value;
+  const discountWrap = document.getElementById("discount-wrap");
+  const discountLbl  = document.getElementById("discount-label");
+
+  const reasonInput = document.getElementById("discount-reason");
+  if (mode === "complimentary") {
+    discountWrap.style.display = "block";
+    discountLbl.textContent = "ℹ️ Complimentary registration — reason required";
+    if (!reasonInput.value.trim()) reasonInput.value = "Complimentary registration";
+  } else if (base !== null && !isNaN(final) && final < base) {
+    discountWrap.style.display = "block";
+    discountLbl.textContent = "⚠️ Amount is below standard rate — reason required";
+    if (!reasonInput.value.trim()) reasonInput.value = "Negotiated";
+  } else {
+    discountWrap.style.display = "none";
+    reasonInput.value = "";
+  }
+  updateSummary();
+}
+
+function onModeChange() {
+  const mode    = document.getElementById("payment-mode").value;
+  const finalEl = document.getElementById("final-amount");
+  if (mode === "complimentary") {
+    finalEl.value    = 0;
+    finalEl.readOnly = true;
+  } else {
+    finalEl.readOnly = false;
+    const base = getBase();
+    if (base !== null) {
+      finalEl.value = base;
+      finalEl.dataset.manual = "false";
+    }
+  }
+  onFinalChange();
+}
+
+// ── DATES ──────────────────────────────────────────────────────────
+// Reuses same calculation logic as cash-registration.js and verify-payment.js
+function calcEnd(startStr, pid, customDays) {
+  if (!startStr) return null;
+  const [y, m, d] = startStr.split("-").map(Number);
+  const end = new Date(y, m - 1, d);
+  if (customDays > 0) {
+    end.setDate(end.getDate() + (customDays - 1));   // same pattern as 15days (+14)
+  } else if (pid) {
+    if      (pid.startsWith("monthly"))  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+    else if (pid.startsWith("15days"))     end.setDate(end.getDate() + 14);
+    else if (pid.startsWith("3month"))   { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
+  }
+  return [end.getFullYear(), String(end.getMonth()+1).padStart(2,"0"), String(end.getDate()).padStart(2,"0")].join("-");
+}
+
+function initDates() {
+  const now    = new Date();
+  const pad    = n => String(n).padStart(2,"0");
+  const toStr  = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const today  = toStr(now);
+  const minD   = new Date(now); minD.setDate(minD.getDate() - 7);
+  const maxD   = new Date(now); maxD.setDate(maxD.getDate() + 7);
+  const el     = document.getElementById("start-date");
+  el.value = today;
+  el.min   = toStr(minD);
+  el.max   = toStr(maxD);
+  updateEndDate();
+}
+
+function onDateChange() { updateEndDate(); updateSummary(); }
+
+function updateEndDate() {
+  const start   = document.getElementById("start-date").value;
+  const dispEl  = document.getElementById("end-display");
+  let end = null;
+
+  if (planType === "fixed" && selectedPlan && start) {
+    end = calcEnd(start, selectedPlan.id, 0);
+  } else if (planType === "custom" && start) {
+    const days = parseInt(document.getElementById("c-days").value);
+    if (days > 0) end = calcEnd(start, "", days);
+  }
+
+  dispEl.value          = end ? fmtD(end) : "—";
+  dispEl.dataset.raw    = end || "";
+}
+
+function fmtD(s) {
+  if (!s) return "—";
+  const [y,m,d] = s.split("-").map(Number);
+  return new Date(y, m-1, d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+}
+
+// ── SUMMARY ────────────────────────────────────────────────────────
+function updateSummary() {
+  let studentLabel = "—";
+  if (studentMode === "existing" && selectedStudent) {
+    studentLabel = selectedStudent.full_name;
+  } else if (studentMode === "new") {
+    const n = document.getElementById("ns-fullname")?.value?.trim();
+    studentLabel = n ? n + " (new)" : "(New student — fill form above)";
+  }
+
+  let planLabel = "—";
+  if (planType === "fixed" && selectedPlan) {
+    planLabel = selectedPlan.name + " · " + selectedPlan.duration;
+  } else if (planType === "custom") {
+    const days = document.getElementById("c-days")?.value;
+    const sh   = document.getElementById("c-shift")?.value;
+    const sec  = document.getElementById("c-section")?.value;
+    if (days && sh && sec) planLabel = `Custom ${days} days · ${sh} (${sec})`;
+  }
+
+  const final    = parseFloat(document.getElementById("final-amount")?.value);
+  const amtLabel = isNaN(final) ? "—" : "₹" + final.toLocaleString("en-IN");
+  const start    = document.getElementById("start-date")?.value || "";
+  const endRaw   = document.getElementById("end-display")?.dataset?.raw || "";
+  const mode     = document.getElementById("payment-mode")?.value;
+  const modeLbl  = mode === "complimentary" ? "Complimentary (₹0)" : "Cash";
+
+  document.getElementById("summary").innerHTML = `
+    <div class="info-row"><span class="k">Student</span><span class="v">${studentLabel}</span></div>
+    <div class="info-row"><span class="k">Plan</span><span class="v">${planLabel}</span></div>
+    <div class="info-row"><span class="k">Amount</span><span class="v" style="color:#15803d;font-size:1rem">${amtLabel}</span></div>
+    <div class="info-row"><span class="k">Payment</span><span class="v">${modeLbl}</span></div>
+    <div class="info-row"><span class="k">Start</span><span class="v">${start ? fmtD(start) : "—"}</span></div>
+    <div class="info-row" style="border:none"><span class="k">End</span><span class="v">${endRaw ? fmtD(endRaw) : "—"}</span></div>
+  `;
+}
+
+// ── VALIDATION ─────────────────────────────────────────────────────
+function validate() {
+  if (studentMode === "existing") {
+    if (!selectedStudent) return "Search and select an existing student.";
+  } else {
+    if (!document.getElementById("ns-fullname").value.trim())  return "Full name is required.";
+    if (!document.getElementById("ns-fathername").value.trim()) return "Father's name is required.";
+    if (!document.getElementById("ns-gender").value)           return "Gender is required.";
+    const email = document.getElementById("ns-email").value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))  return "Valid email is required.";
+    const phone = document.getElementById("ns-phone").value.trim();
+    if (!/^[6-9][0-9]{9}$/.test(phone))                       return "Phone must be a valid 10-digit mobile number starting with 6–9.";
+    if (!/^[0-9]{12}$/.test(document.getElementById("ns-aadhar").value.trim())) return "Aadhar must be exactly 12 digits.";
+    if (!document.getElementById("ns-address").value.trim())   return "Residential address is required.";
+    if (!document.getElementById("ns-exam").value)             return "Exam target is required.";
+  }
+
+  if (planType === "fixed") {
+    if (!selectedPlan) return "Please select a plan.";
+  } else {
+    const days = parseInt(document.getElementById("c-days").value);
+    if (!days || days < 1 || days > 365) return "Duration must be between 1 and 365 days.";
+    if (!document.getElementById("c-shift").value)   return "Please select a shift.";
+    if (!document.getElementById("c-section").value) return "Please select a section.";
+    const rate = parseFloat(document.getElementById("c-rate").value);
+    if (!rate || rate <= 0) return "Please enter a valid daily rate.";
+  }
+
+  const final = parseFloat(document.getElementById("final-amount").value);
+  if (isNaN(final) || final < 0) return "Please enter a valid final amount.";
+
+  const mode = document.getElementById("payment-mode").value;
+  if (final === 0 && mode !== "complimentary") return "Zero amount is only valid for complimentary registrations.";
+
+  const base = getBase();
+  if (base !== null && !isNaN(final) && final < base) {
+    if (!document.getElementById("discount-reason").value.trim())
+      return "Discount reason is required when amount is below standard rate.";
+  }
+  if (mode === "complimentary") {
+    if (!document.getElementById("discount-reason").value.trim())
+      return "Please enter a reason for the complimentary registration.";
+  }
+
+  if (!document.getElementById("start-date").value)   return "Start date is required.";
+  if (!document.getElementById("end-display").dataset.raw) return "End date could not be calculated — check plan selection.";
+
+  return null;
+}
+
+// ── SUBMIT ─────────────────────────────────────────────────────────
+async function submitRegistration() {
+  const btn   = document.getElementById("submit-btn");
+  const errEl = document.getElementById("submit-err");
+  errEl.style.display = "none";
+
+  const err = validate();
+  if (err) {
+    errEl.textContent    = err;
+    errEl.style.display  = "block";
+    errEl.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "Registering…";
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error("Session expired — please refresh.");
+
+    let photoBase64 = null;
+    if (studentMode === "new") {
+      const f = document.getElementById("ns-photo").files[0];
+      if (f) photoBase64 = await toBase64(f);
+    }
+
+    const payload = {
+      planType,
+      planId:             planType === "fixed"  ? selectedPlan.id : null,
+      customDurationDays: planType === "custom" ? parseInt(document.getElementById("c-days").value) : null,
+      customDailyRate:    planType === "custom" ? parseFloat(document.getElementById("c-rate").value) : null,
+      shift:              planType === "custom" ? document.getElementById("c-shift").value   : null,
+      section:            planType === "custom" ? document.getElementById("c-section").value : null,
+      amountPaid:         parseFloat(document.getElementById("final-amount").value),
+      discountReason:     document.getElementById("discount-reason").value.trim() || null,
+      fixedSeat:          document.getElementById("fixed-seat").checked,
+      locker:             document.getElementById("locker").checked,
+      startDate:          document.getElementById("start-date").value,
+      paymentMode:        document.getElementById("payment-mode").value,
+    };
+
+    if (studentMode === "existing") {
+      payload.existingStudentId = selectedStudent.id;
+    } else {
+      payload.studentData = {
+        fullName:         document.getElementById("ns-fullname").value.trim(),
+        fatherName:       document.getElementById("ns-fathername").value.trim(),
+        gender:           document.getElementById("ns-gender").value,
+        email:            document.getElementById("ns-email").value.trim(),
+        phone:            document.getElementById("ns-phone").value.trim(),
+        parentMobile:     document.getElementById("ns-parent").value.trim(),
+        aadhar:           document.getElementById("ns-aadhar").value.trim(),
+        address:          document.getElementById("ns-address").value.trim(),
+        permanentAddress: document.getElementById("ns-perm-address").value.trim(),
+        examTarget:       document.getElementById("ns-exam").value,
+      };
+      payload.photoBase64 = photoBase64;
+    }
+
+    const res  = await fetch("/.netlify/functions/admin-direct-register", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": "Bearer " + session.access_token,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || "Registration failed — please try again.");
+
+    lastReceipt = data.receiptData;
+
+    document.getElementById("success-detail").innerHTML =
+      `<strong>${data.receiptData.name}</strong> registered successfully<br>` +
+      `Student ID: <strong style="color:#f59e0b">${data.studentCode}</strong><br>` +
+      `Membership: <strong>${fmtD(data.startDate)}</strong> → <strong>${fmtD(data.endDate)}</strong>`;
+
+    document.getElementById("success-sec").style.display = "block";
+    document.getElementById("success-sec").scrollIntoView({ behavior:"smooth" });
+    generateReceipt(lastReceipt);
+if (data.conflictWarning) {
+  const w = document.createElement("div");
+  w.style.cssText = "background:#fef3c7;border:1.5px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.85rem;color:#92400e;text-align:left";
+  w.innerHTML = `⚠️ <strong>Duplicate notice:</strong> This student already had an active membership (${data.conflictWarning.existingPlanName}) expiring on ${fmtD(data.conflictWarning.existingEndDate)}. Both are now active — verify if intentional.`;
+  document.getElementById("success-detail").appendChild(w);
+}
+
+  } catch (e) {
+    errEl.textContent   = e.message;
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = "Register Student & Activate Membership";
+  }
+}
+
+function showReceipt() { if (lastReceipt) generateReceipt(lastReceipt); }
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = () => rej(new Error("File read failed"));
+    r.readAsDataURL(file);
+  });
+}
+
+// ── RESET ──────────────────────────────────────────────────────────
+function resetForm() {
+  selectedStudent = null; selectedPlan = null; lastReceipt = null;
+  studentMode = "existing"; planType = "fixed";
+  document.getElementById("success-sec").style.display = "none";
+  document.getElementById("student-search").value = "";
+  document.getElementById("selected-student").style.display = "none";
+  document.getElementById("search-results").style.display = "none";
+  document.getElementById("plan-select").value = "";
+  document.getElementById("final-amount").value = "";
+  document.getElementById("final-amount").dataset.manual = "false";
+  document.getElementById("final-amount").readOnly = false;
+  document.getElementById("base-display").value = "";
+  document.getElementById("discount-reason").value = "";
+  document.getElementById("discount-wrap").style.display = "none";
+  document.getElementById("payment-mode").value = "cash";
+  document.getElementById("fixed-seat").checked = false;
+  document.getElementById("locker").checked = false;
+  document.getElementById("submit-err").style.display = "none";
+  document.getElementById("c-days").value = "";
+  document.getElementById("c-shift").value = "";
+  document.getElementById("c-section").value = "";
+  document.getElementById("c-rate").value = "";
+  document.getElementById("c-calc").style.display = "none";
+  setStudentMode("existing");
+  setPlanType("fixed");
+  initDates();
+  updateSummary();
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+// ── RECEIPT ────────────────────────────────────────────────────────
+// Same as admin.html generateReceipt with 'complimentary' mode label added
+function generateReceipt(p) {
+  const photo = p.photoSignedUrl
+    ? `<div style="text-align:center;margin-bottom:20px"><img src="${p.photoSignedUrl}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:3px solid #e2e8f0"></div>`
+    : "";
+  const regDate = p.registeredDate
+    ? `<div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Reg. Date</span><span class="v" style="color:#1e40af;font-weight:800">${p.registeredDate}</span></div>
+       <div class="r-row" style="background:#eff6ff;border-radius:6px;padding:10px 12px;margin:8px 0"><span class="k">Reg. Time</span><span class="v" style="color:#1e40af;font-weight:800">${p.registeredTime}</span></div>`
+    : "";
+  const dates = (p.startDate && p.endDate)
+    ? `<div class="r-row"><span class="k">Membership Start</span><span class="v">${fmtD(p.startDate)}</span></div>
+       <div class="r-row"><span class="k">Membership End</span><span class="v">${fmtD(p.endDate)}</span></div>`
+    : "";
+  const dateObj   = new Date(p.date);
+  const shortId   = (p.id||"").replace(/-/g,"").slice(-6).toUpperCase();
+  const receiptNo = "SL-" + dateObj.getFullYear() + "-" + (shortId || Math.floor(Math.random()*900000+100000));
+  const planLbl   = (p.plan||"").replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+  const modeLbl   = p.mode === "cash" ? "Cash (Paid at Library)"
+    : p.mode === "complimentary" ? "Complimentary (No Charge)"
+    : "Online (Razorpay)";
+  const dateLbl   = dateObj.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  const amtLbl    = "₹" + Number(p.amount).toLocaleString("en-IN");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt ${receiptNo}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;padding:20px;color:#1e293b}
+  .receipt{max-width:600px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.1)}
+  .r-head{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
+  .r-head h1{font-size:1.4rem;font-weight:800}.r-head .sub{font-size:.82rem;opacity:.85;margin-top:2px}
+  .r-head .paid{background:#16a34a;color:#fff;padding:6px 16px;border-radius:999px;font-size:.8rem;font-weight:700}
+  .r-body{padding:28px 32px}
+  .r-no{display:flex;justify-content:space-between;font-size:.85rem;color:#64748b;margin-bottom:20px;padding-bottom:16px;border-bottom:2px dashed #e2e8f0;flex-wrap:wrap;gap:6px}
+  .r-no b{color:#1e293b}
+  .r-row{display:flex;justify-content:space-between;padding:9px 0;font-size:.92rem;border-bottom:1px solid #f1f5f9}
+  .r-row .k{color:#64748b}.r-row .v{font-weight:600;text-align:right}
+  .r-total{display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-top:20px}
+  .r-total .k{font-size:.95rem;font-weight:700;color:#15803d}.r-total .v{font-size:1.6rem;font-weight:900;color:#15803d}
+  .r-foot{text-align:center;padding:20px 32px 28px;color:#94a3b8;font-size:.78rem;line-height:1.6}
+  .r-foot .thanks{color:#1e293b;font-weight:700;font-size:.95rem;margin-bottom:6px}
+  .r-actions{max-width:600px;margin:18px auto 0;display:flex;gap:10px;justify-content:center}
+  .r-actions button{padding:10px 24px;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+  @media print{body{background:#fff;padding:0}.receipt{box-shadow:none;border-radius:0;max-width:100%}.r-actions{display:none}}
+  </style></head><body>
+  <div class="receipt">
+    <div class="r-head">
+      <div><h1>Shiksha Library</h1><div class="sub">Vigyan Nagar, Kota, Rajasthan — 324005</div><div class="sub">+91 75974 74668</div></div>
+      <div class="paid">✓ PAID</div>
+    </div>
+    <div class="r-body">
+      <div class="r-no"><span>Receipt No: <b>${receiptNo}</b></span><span>Date: <b>${dateLbl}</b></span></div>
+      ${photo}
+      <div class="r-row"><span class="k">Student Name</span><span class="v">${p.name}</span></div>
+      ${p.studentCode ? `<div class="r-row"><span class="k">Student ID</span><span class="v" style="color:#f59e0b;font-weight:800">${p.studentCode}</span></div>` : ""}
+      ${regDate}
+      ${p.phone ? `<div class="r-row"><span class="k">Phone</span><span class="v">${p.phone}</span></div>` : ""}
+      <div class="r-row"><span class="k">Membership Plan</span><span class="v">${planLbl}</span></div>
+      <div class="r-row"><span class="k">Payment Mode</span><span class="v">${modeLbl}</span></div>
+      ${dates}
+      <div class="r-total"><span class="k">Amount Paid</span><span class="v">${amtLbl}</span></div>
+    </div>
+    <div class="r-foot"><div class="thanks">Thank you for choosing Shiksha Library!</div>
+    Computer-generated receipt — no signature required.<br>Queries: +91 75974 74668</div>
+  </div>
+  <div class="r-actions">
+    <button style="background:#1a73e8;color:#fff" onclick="window.print()">🖨 Print / Save PDF</button>
+    <button style="background:#e2e8f0;color:#1e293b" onclick="window.close()">Close</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open("","_blank");
+  if (!w) { alert("Allow pop-ups to view receipt."); return; }
+  w.document.write(html); w.document.close();
+}
+
+// ── START ──────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

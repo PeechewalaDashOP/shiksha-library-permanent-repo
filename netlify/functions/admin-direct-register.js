@@ -1,8 +1,13 @@
 // netlify/functions/admin-direct-register.js
 const { createClient } = require("@supabase/supabase-js");
 
-// ── PREFIX FROM PLAN ID (fixed plans) ───────────────────────────
-// Identical to existing getPlanPrefix in cash-registration.js
+// ── ADMIN EMAILS ──────────────────────────────────────────────────
+// Same mechanism as admin.html — single source of truth for admin access.
+// Phase 2: move to DB or env variable when supporting multiple library owners.
+const ADMIN_EMAILS = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com"];
+
+// ── PLAN PREFIX FROM PLAN ID (fixed plans) ────────────────────────
+// Identical to existing cash-registration.js — do not modify.
 function getPlanPrefix(planId) {
   if (!planId) return "";
   const id = planId.toLowerCase();
@@ -28,46 +33,69 @@ function getPlanPrefix(planId) {
   return "";
 }
 
-// ── PREFIX FROM SHIFT + SECTION (custom plans — no planId) ──────
+// ── PLAN PREFIX FROM SHIFT + SECTION (custom plans) ───────────────
 function getPrefixFromShiftSection(shift, section) {
   const s   = (shift   || "").toLowerCase();
   const sec = (section || "").toLowerCase();
   const isPrime    = sec.includes("prime");
   const isBasement = sec.includes("basement");
   if (isPrime) {
-    if (s.includes("morning"))   return "PM";
-    if (s.includes("evening"))   return "PE";
-    if (s.includes("full"))      return "PFD";
+    if (s.includes("morning"))  return "PM";
+    if (s.includes("evening"))  return "PE";
+    if (s.includes("full"))     return "PFD";
   }
   if (isBasement) {
-    if (s.includes("morning"))   return "BM";
-    if (s.includes("evening"))   return "BE";
-    if (s.includes("full"))      return "BFD";
+    if (s.includes("morning"))  return "BM";
+    if (s.includes("evening"))  return "BE";
+    if (s.includes("full"))     return "BFD";
   }
-  // Ground floor (default)
-  if (s.includes("morning"))     return "GM";
-  if (s.includes("evening"))     return "GE";
-  if (s.includes("full night"))  return "GN";
-  if (s.includes("full"))        return "GFD";
+  if (s.includes("morning"))    return "GM";
+  if (s.includes("evening"))    return "GE";
+  if (s.includes("full night")) return "GN";
+  if (s.includes("full"))       return "GFD";
   return "";
 }
 
-// ── END DATE CALCULATOR ──────────────────────────────────────────
-// Reuses the exact same logic as verify-payment.js and cash-registration.js.
-// For custom plans: start + (days - 1), consistent with 15days pattern (+14).
-// Accepts start date as YYYY-MM-DD string, returns YYYY-MM-DD string.
+// ── BASE AMOUNT CALCULATOR ────────────────────────────────────────
+// Isolated function so Phase 2 can replace the custom rate source without
+// changing the calling code or the API contract.
+//
+// Phase 1: customDailyRate comes from the client (admin-entered).
+//          Server recalculates — never trusts any pre-calculated total from client.
+//
+// Phase 2 upgrade path: add a supabase lookup inside the custom branch:
+//   const { data } = await supabase.from("shift_rates")
+//     .select("daily_rate").eq("shift", shift).eq("section", section).single();
+//   const serverRate = data?.daily_rate ?? customDailyRate; // fallback
+//   baseAmount = days * serverRate;
+//   Frontend can still send customDailyRate as a "suggested" display value.
+//   API contract (what frontend sends) does not need to change.
+//
+// Returns { baseAmount: number, source: string }
+function calculateBaseAmount({ planType, planRecord, customDurationDays, customDailyRate }) {
+  if (planType === "fixed") {
+    // Source of truth: plan.price from DB — client-sent amount is never used here.
+    return { baseAmount: planRecord.price, source: "plan_price" };
+  }
+  // Custom: server recalculates from raw inputs supplied by client.
+  // Phase 2: replace customDailyRate with DB lookup (see comment above).
+  const days = parseInt(customDurationDays);
+  const rate = parseFloat(customDailyRate);
+  return { baseAmount: Math.round(days * rate), source: "daily_rate_calculation" };
+}
+
+// ── END DATE CALCULATOR ───────────────────────────────────────────
+// Identical logic to verify-payment.js and cash-registration.js.
 function calculateEndDate(startDateStr, planId, customDurationDays) {
   const [y, m, d] = startDateStr.split("-").map(Number);
-  const end = new Date(y, m - 1, d); // local date arithmetic — no timezone shift needed
-
-  if (customDurationDays && customDurationDays > 0) {
-    end.setDate(end.getDate() + (customDurationDays - 1));
+  const end = new Date(y, m - 1, d);
+  if (customDurationDays > 0) {
+    end.setDate(end.getDate() + (customDurationDays - 1)); // same as 15days (+14)
   } else if (planId) {
     if      (planId.startsWith("monthly"))  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
     else if (planId.startsWith("15days"))     end.setDate(end.getDate() + 14);
     else if (planId.startsWith("3month"))   { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   }
-
   return [
     end.getFullYear(),
     String(end.getMonth() + 1).padStart(2, "0"),
@@ -75,7 +103,22 @@ function calculateEndDate(startDateStr, planId, customDurationDays) {
   ].join("-");
 }
 
-// ── MAIN HANDLER ─────────────────────────────────────────────────
+// ── STUDENT FIELD VALIDATOR ───────────────────────────────────────
+// Validates all mandatory fields required by the existing registration flow.
+// Matches: fullName, fatherName, gender, email, phone, aadhar, address, examTarget.
+function validateStudentData(data) {
+  if (!data?.fullName?.trim())                                      return "fullName is required.";
+  if (!data?.fatherName?.trim())                                    return "fatherName is required.";
+  if (!["Male", "Female"].includes(data?.gender))                   return "gender must be Male or Female.";
+  if (!data?.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return "Valid email is required.";
+  if (!/^[6-9][0-9]{9}$/.test(data?.phone?.trim()))                return "phone must be a valid 10-digit mobile number.";
+  if (!/^[0-9]{12}$/.test(data?.aadhar?.trim()))                   return "aadhar must be exactly 12 digits.";
+  if (!data?.address?.trim())                                       return "address is required.";
+  if (!data?.examTarget?.trim())                                    return "examTarget is required.";
+  return null;
+}
+
+// ── MAIN HANDLER ──────────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
     "Access-Control-Allow-Origin":  "*",
@@ -88,48 +131,47 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST")    return { statusCode: 405, headers, body: "Method Not Allowed" };
 
   try {
-    // ── ADMIN AUTH CHECK ─────────────────────────────────────────
+
+    // ── 1. ADMIN AUTH CHECK ───────────────────────────────────────
+    // Email-based — same mechanism as admin.html ADMIN_EMAILS check.
     const authHeader = event.headers.authorization || event.headers.Authorization || "";
     if (!authHeader.startsWith("Bearer ")) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: "Unauthorized" }) };
     }
-    const token = authHeader.replace("Bearer ", "");
+    const token    = authHeader.replace("Bearer ", "");
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid session" }) };
+      return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid or expired session" }) };
     }
-    if (user.app_metadata?.role !== "admin") {
+    if (!ADMIN_EMAILS.includes(user.email)) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: "Admin access required" }) };
     }
 
-    // ── PARSE BODY ───────────────────────────────────────────────
+    // ── 2. PARSE BODY ─────────────────────────────────────────────
     const {
-      // Student — one of these two must be provided
-      existingStudentId,  // UUID — select an existing student
-      studentData,        // object — create a new student inline
+      existingStudentId,
+      studentData,
       photoBase64,
 
-      // Plan
-      planType,           // 'fixed' | 'custom'
-      planId,             // required for fixed plans
-      customDurationDays, // required for custom plans (integer 1–365)
-      shift,              // required for custom plans
-      section,            // required for custom plans
+      planType,
+      planId,
+      customDurationDays,
+      customDailyRate,        // raw rate from frontend — server recalculates base from this
+      shift,
+      section,
 
-      // Pricing
-      amountPaid,         // final negotiated amount — stored in amount_paid
-      discountReason,     // required when amountPaid < base calculated amount
+      amountPaid,             // final negotiated amount — stored as amount_paid
+      discountReason,
 
-      // Other
       fixedSeat,
       locker,
-      startDate,          // YYYY-MM-DD, admin-entered, validated server-side
-      paymentMode,        // 'cash' | 'complimentary'
+      startDate,
+      paymentMode,
     } = JSON.parse(event.body);
 
-    // ── INPUT VALIDATION ─────────────────────────────────────────
+    // ── 3. INPUT VALIDATION ───────────────────────────────────────
     if (!planType || !["fixed", "custom"].includes(planType)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "planType must be 'fixed' or 'custom'" }) };
     }
@@ -139,10 +181,14 @@ exports.handler = async (event) => {
     if (planType === "custom") {
       const days = parseInt(customDurationDays);
       if (!days || days < 1 || days > 365) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: "customDurationDays must be between 1 and 365" }) };
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "customDurationDays must be 1–365" }) };
       }
       if (!shift || !section) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: "shift and section are required for custom plans" }) };
+      }
+      const rate = parseFloat(customDailyRate);
+      if (!rate || rate <= 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "customDailyRate must be a positive number" }) };
       }
     }
     if (amountPaid === undefined || amountPaid === null || Number(amountPaid) < 0) {
@@ -152,24 +198,23 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Zero amount is only valid for complimentary registrations" }) };
     }
     if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "startDate must be in YYYY-MM-DD format" }) };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "startDate must be YYYY-MM-DD" }) };
+    }
+    if (!existingStudentId && !studentData) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "existingStudentId or studentData is required" }) };
     }
 
-    // Start date must be within ±7 days of today (IST)
+    // Start date ±7 days from today IST
     const nowIST     = new Date(new Date().getTime() + 5.5 * 60 * 60000);
     const todayStr   = nowIST.toISOString().split("T")[0];
-    const minAllowed = new Date(nowIST); minAllowed.setDate(minAllowed.getDate() - 7);
-    const maxAllowed = new Date(nowIST); maxAllowed.setDate(maxAllowed.getDate() + 7);
+    const minDate    = new Date(nowIST); minDate.setDate(minDate.getDate() - 7);
+    const maxDate    = new Date(nowIST); maxDate.setDate(maxDate.getDate() + 7);
     const startObj   = new Date(startDate);
-    if (startObj < minAllowed || startObj > maxAllowed) {
+    if (startObj < minDate || startObj > maxDate) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "startDate must be within 7 days of today" }) };
     }
 
-    if (!existingStudentId && !studentData) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "Either existingStudentId or studentData must be provided" }) };
-    }
-
-    // ── FETCH PLAN (fixed plans only) ────────────────────────────
+    // ── 4. FETCH PLAN (fixed only) ────────────────────────────────
     let planRecord = null;
     if (planType === "fixed") {
       const { data: p, error: pErr } = await supabase
@@ -177,31 +222,50 @@ exports.handler = async (event) => {
         .select("id, name, price, duration, shift, section, is_active")
         .eq("id", planId)
         .single();
-      if (pErr || !p)  return { statusCode: 400, headers, body: JSON.stringify({ error: "Plan not found" }) };
+      if (pErr || !p)   return { statusCode: 400, headers, body: JSON.stringify({ error: "Plan not found" }) };
       if (!p.is_active) return { statusCode: 400, headers, body: JSON.stringify({ error: "Selected plan is inactive" }) };
       planRecord = p;
     }
 
-    // ── STUDENT ──────────────────────────────────────────────────
+    // ── 5. SERVER-SIDE BASE AMOUNT CALCULATION & VALIDATION ───────
+    // Server recalculates base independently — never trusts any pre-computed
+    // total from the client. Only raw inputs (planId→DB price, or days×rate) are trusted.
+    const { baseAmount } = calculateBaseAmount({
+      planType,
+      planRecord,
+      customDurationDays,
+      customDailyRate,
+    });
+    const finalAmount = Number(amountPaid);
+
+    if (finalAmount < baseAmount && !discountReason?.trim()) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: `Amount ₹${finalAmount} is below the standard ₹${baseAmount}. discountReason is required.`,
+        }),
+      };
+    }
+    if (paymentMode === "complimentary" && !discountReason?.trim()) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "discountReason is required for complimentary registrations" }) };
+    }
+
+    // ── 6. STUDENT ────────────────────────────────────────────────
     let student;
 
     if (existingStudentId) {
-      // ── Existing student: fetch only ──────────────────────────
       const { data: s, error: e } = await supabase
-        .from("students")
-        .select("*")
-        .eq("id", existingStudentId)
-        .single();
+        .from("students").select("*").eq("id", existingStudentId).single();
       if (e || !s) return { statusCode: 400, headers, body: JSON.stringify({ error: "Student not found" }) };
       student = s;
 
     } else {
-      // ── New student: same pattern as cash-registration.js ─────
-      if (!studentData?.email || !studentData?.fullName || !studentData?.phone) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: "fullName, email, and phone are required for new students" }) };
-      }
+      // Validate all mandatory fields — same as existing registration flow
+      const fieldError = validateStudentData(studentData);
+      if (fieldError) return { statusCode: 400, headers, body: JSON.stringify({ error: fieldError }) };
 
-      // Auth user (non-blocking on duplicate)
+      // Auth user (non-blocking on already-registered)
       let authUserId = null;
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email:         studentData.email.toLowerCase(),
@@ -217,12 +281,10 @@ exports.handler = async (event) => {
         authUserId = found?.id || null;
       }
 
-      // Student code — only generated for brand new students
+      // Student code
       const { data: existingCheck } = await supabase
-        .from("students")
-        .select("id, student_code")
-        .eq("email", studentData.email.toLowerCase())
-        .maybeSingle();
+        .from("students").select("id, student_code")
+        .eq("email", studentData.email.toLowerCase()).maybeSingle();
 
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
@@ -269,7 +331,7 @@ exports.handler = async (event) => {
       student = s;
     }
 
-    // ── PHOTO UPLOAD (non-blocking) ──────────────────────────────
+    // ── 7. PHOTO UPLOAD (non-blocking) ────────────────────────────
     if (photoBase64) {
       try {
         const photoUrl = await uploadStudentPhoto(supabase, student.id, photoBase64);
@@ -279,56 +341,73 @@ exports.handler = async (event) => {
       }
     }
 
-    // ── CALCULATE END DATE ───────────────────────────────────────
+    // ── 8. CONFLICT CHECK ─────────────────────────────────────────
+    // Check for existing active membership for this student.
+    // Policy: warn in response, do not block. Admin decides.
+    let conflictWarning = null;
+    const { data: existingActive } = await supabase
+      .from("memberships")
+      .select("id, end_date, plan_id, plans(name, shift)")
+      .eq("student_id", student.id)
+      .eq("status", "active")
+      .gte("end_date", todayStr)
+      .maybeSingle();
+
+    if (existingActive) {
+      conflictWarning = {
+        message:          "Student already has an active membership",
+        existingPlanName: existingActive.plans?.name || existingActive.plan_id || "—",
+        existingEndDate:  existingActive.end_date,
+      };
+    }
+
+    // ── 9. CALCULATE END DATE ─────────────────────────────────────
     const endDate = calculateEndDate(
       startDate,
       planId || "",
       planType === "custom" ? parseInt(customDurationDays) : 0
     );
 
-    // ── PLAN LABEL (for receipt display) ─────────────────────────
-    // Fixed: use plan name from DB. Custom: build a readable label.
+    // ── 10. PLAN LABEL (for receipt) ──────────────────────────────
     const planLabel = planType === "fixed"
       ? planRecord.name
-      : `Custom ${customDurationDays} Day${customDurationDays > 1 ? "s" : ""} – ${shift} (${section})`;
+      : `Custom ${customDurationDays} Day${parseInt(customDurationDays) > 1 ? "s" : ""} – ${shift} (${section})`;
 
-    // ── MEMBERSHIP INSERT ────────────────────────────────────────
-    // status = 'active' immediately — admin direct never enters approval queue
-    // registration_type = 'admin_direct' — reuses existing column, new value
+    // ── 11. MEMBERSHIP INSERT ─────────────────────────────────────
+    // amount_paid is the single source of truth. No new monetary columns added.
     const { data: membership, error: membershipError } = await supabase
       .from("memberships")
       .insert({
-        student_id:          student.id,
-        plan_id:             planType === "fixed" ? planId : null,
-        fixed_seat:          fixedSeat || false,
-        locker:              locker    || false,
-        amount_paid:         Number(amountPaid),
-        start_date:          startDate,
-        end_date:            endDate,
-        status:              "active",
-        payment_mode:        paymentMode || "cash",
-        registration_type:   "admin_direct",
-        plan_type:           planType,
+        student_id:           student.id,
+        plan_id:              planType === "fixed" ? planId : null,
+        fixed_seat:           fixedSeat || false,
+        locker:               locker    || false,
+        amount_paid:          finalAmount,
+        start_date:           startDate,
+        end_date:             endDate,
+        status:               "active",
+        payment_mode:         paymentMode || "cash",
+        registration_type:    "admin_direct",
+        plan_type:            planType,
         custom_duration_days: planType === "custom" ? parseInt(customDurationDays) : null,
-        discount_reason:     discountReason || null,
+        discount_reason:      discountReason?.trim() || null,
       })
       .select()
       .single();
 
     if (membershipError) throw new Error("Failed to create membership: " + membershipError.message);
 
-    // ── PAYMENT LOG ──────────────────────────────────────────────
-    // status = 'success' — admin is confirming payment at point of registration
+    // ── 12. PAYMENT LOG ───────────────────────────────────────────
     await supabase.from("payments").insert({
-      student_id:   student.id,
+      student_id:    student.id,
       membership_id: membership.id,
-      amount:        Number(amountPaid),
+      amount:        finalAmount,
       status:        "success",
       plan_id:       planType === "fixed" ? planId : null,
       payment_mode:  paymentMode || "cash",
     });
 
-    // ── PHOTO SIGNED URL (for receipt) ───────────────────────────
+    // ── 13. PHOTO SIGNED URL (for receipt) ────────────────────────
     let photoSignedUrl = null;
     if (student.photo_url) {
       const { data: signed } = await supabase.storage
@@ -337,24 +416,24 @@ exports.handler = async (event) => {
       photoSignedUrl = signed?.signedUrl || null;
     }
 
-    // ── RESPONSE ─────────────────────────────────────────────────
+    // ── 14. RESPONSE ──────────────────────────────────────────────
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        success:      true,
-        studentId:    student.id,
-        studentCode:  student.student_code,
-        membershipId: membership.id,
+        success:         true,
+        studentId:       student.id,
+        studentCode:     student.student_code,
+        membershipId:    membership.id,
         startDate,
         endDate,
-        // receiptData matches generateReceipt(p) parameter shape exactly
+        conflictWarning,   // null if clean, object if duplicate existed — frontend displays
         receiptData: {
           name:           student.full_name,
           studentCode:    student.student_code,
           phone:          student.phone,
           plan:           planLabel,
-          amount:         Number(amountPaid),
+          amount:         finalAmount,
           mode:           paymentMode || "cash",
           date:           new Date().toISOString(),
           id:             membership.id,
@@ -377,8 +456,8 @@ exports.handler = async (event) => {
   }
 };
 
-// ── PHOTO UPLOAD HELPER ──────────────────────────────────────────
-// Identical to the helper in cash-registration.js and verify-payment.js
+// ── PHOTO UPLOAD HELPER ───────────────────────────────────────────
+// Identical to cash-registration.js and verify-payment.js.
 async function uploadStudentPhoto(supabase, studentId, photoBase64) {
   const match = /^data:(image\/\w+);base64,(.+)$/.exec(photoBase64 || "");
   if (!match) return null;
