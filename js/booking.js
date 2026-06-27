@@ -585,7 +585,7 @@ function getModalHTML() {
           <p style="font-size:.72rem;color:#64748b;margin-top:.65rem">Pay using either option above, then submit the form below.</p>
         </div>
         <p class="sl-err" id="sl-form-error"></p>
-        <button type="submit" class="sl-submit" id="sl-submit-btn">Proceed to Pay <span id="sl-submit-price">₹0</span></button>
+        <button type="submit" class="sl-submit" id="sl-submit-btn"> submit your registration <span id="sl-submit-price">₹0</span></button>
         <div style="margin-top:1rem;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
           <div style="background:#f8fafc;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#374151">Choose Payment Method</div>
           <label style="display:none;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid #f1f5f9">

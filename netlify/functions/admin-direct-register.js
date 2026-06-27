@@ -354,12 +354,15 @@ exports.handler = async (event) => {
       .maybeSingle();
 
     if (existingActive) {
-      conflictWarning = {
-        message:          "Student already has an active membership",
-        existingPlanName: existingActive.plans?.name || existingActive.plan_id || "—",
-        existingEndDate:  existingActive.end_date,
-      };
-    }
+  const planName = existingActive.plans?.name || existingActive.plan_id || "—";
+  return {
+    statusCode: 409,
+    headers,
+    body: JSON.stringify({
+      error: `Student ko pehle se active membership hai (${planName}, expires ${existingActive.end_date}). Naya register karne se pehle dashboard se existing membership cancel karo.`,
+    }),
+  };
+}
 
     // ── 9. CALCULATE END DATE ─────────────────────────────────────
     const endDate = calculateEndDate(
@@ -427,7 +430,6 @@ exports.handler = async (event) => {
         membershipId:    membership.id,
         startDate,
         endDate,
-        conflictWarning,   // null if clean, object if duplicate existed — frontend displays
         receiptData: {
           name:           student.full_name,
           studentCode:    student.student_code,
