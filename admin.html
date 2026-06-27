@@ -510,7 +510,7 @@ function renderStats() {
 
   // Renewal vs new admission counts
   const renewals = allMembershipsData.filter(m => m.registration_type === "renewal" && m.status === "active").length;
-  const newAdmissions = allMembershipsData.filter(m => (m.registration_type || "new") === "new" && m.status === "active").length;
+  const newAdmissions = allMembershipsData.filter(m => m.registration_type !== "renewal" && m.status === "active").length;
   const sRenewals = document.getElementById("s-renewals");
   const sNew = document.getElementById("s-new");
   if (sRenewals) sRenewals.textContent = renewals;
@@ -1098,7 +1098,7 @@ if (statusFilter === "queued")   return m.status === "queued";
 
   // Type filter (new admission vs renewal)
   if (typeFilter !== "all") {
-    list = list.filter(m => (m.registration_type || "new") === typeFilter);
+    list = list.filter(m => typeFilter === "renewal" ? m.registration_type === "renewal" : m.registration_type !== "renewal");
   }
 
   // Start-date filter
