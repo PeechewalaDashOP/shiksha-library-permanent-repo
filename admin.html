@@ -1891,6 +1891,30 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   await loadAll();
   viewStudent(studentId);
 }
+async function upgradeMembershipPlan(studentId, membershipId) {
+  if (!membershipId) { alert("This student has no current membership to update."); return; }
+
+  const select = document.getElementById("plan-type-select");
+  const newPlanId = select.value;
+  if (!newPlanId) { alert("Please select a plan."); return; }
+
+  const newPlan = allPlansData.find(p => p.id === newPlanId);
+  if (!newPlan) { alert("Selected plan not found."); return; }
+
+  if (!confirm(`Update this membership to "${newPlan.name}" at ₹${newPlan.price}? This changes their recorded plan and amount.`)) return;
+
+  const { data, error } = await sb
+    .from("memberships")
+    .update({ plan_id: newPlan.id, amount_paid: newPlan.price })
+    .eq("id", membershipId)
+    .select();
+
+  if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
+
+  await loadAll();
+  viewStudent(studentId);
+}
 checkSession();
 </script>
 </body>
