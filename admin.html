@@ -1000,6 +1000,7 @@ function closeStudentModal() {
 // ── PAUSE / RESUME STUDENT ──────────────────────────────────────
 // On PAUSE : freeze membership days (pg_cron skips paused students).
 // On RESUME: extend membership end_date by exact days spent paused.
+// ── PAUSE / RESUME STUDENT ──────────────────────────────────────
 async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   const newStatus = currentStatus === "paused" ? "active" : "paused";
   const ok = confirm(newStatus === "paused"
@@ -1010,16 +1011,31 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   let updateObj;
 
   if (newStatus === "paused") {
+    // ── PAUSE ─────────────────────────────────────────────────────
     const daysRemaining = activeEndDate
       ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
       : null;
-    updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+    updateObj = {
+      status: "paused",
+      pause_date: new Date().toISOString(),
+      paused_days_remaining: daysRemaining
+    };
 
   } else {
-    // ── RESUME: extend membership end_date by paused duration ─────
-    const s = allStudentsData.find(x => x.id === studentId);
-    if (s?.pause_date) {
-      const daysPaused = Math.round((Date.now() - new Date(s.pause_date).getTime()) / 86400000);
+    // ── RESUME ────────────────────────────────────────────────────
+    // CRITICAL FIX: allStudentsData pe depend mat karo — fresh DB fetch karo
+    const { data: freshStudent, error: stuErr } = await sb
+      .from("students")
+      .select("id, pause_date")
+      .eq("id", studentId)
+      .single();
+
+    if (stuErr) { alert("Error fetching student data: " + stuErr.message); return; }
+
+    if (freshStudent?.pause_date) {
+      const pauseMs = Date.now() - new Date(freshStudent.pause_date).getTime();
+      const daysPaused = Math.ceil(pauseMs / 86400000); // ceil: partial day bhi count hoga
+
       if (daysPaused > 0) {
         const { data: activeMemb, error: fetchErr } = await sb
           .from("memberships")
@@ -1028,10 +1044,7 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
           .eq("status", "active")
           .maybeSingle();
 
-        if (fetchErr) {
-          alert("Error fetching membership: " + fetchErr.message);
-          return;
-        }
+        if (fetchErr) { alert("Error fetching membership: " + fetchErr.message); return; }
 
         if (activeMemb?.end_date) {
           const [y, mo, d] = activeMemb.end_date.split("-").map(Number);
@@ -1044,24 +1057,35 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
             .update({ end_date: newEndStr })
             .eq("id", activeMemb.id);
 
-          if (extErr) {
-            alert("Error extending membership: " + extErr.message);
-            return;
-          }
+          if (extErr) { alert("Error extending membership: " + extErr.message); return; }
+        } else {
+          // Membership nahi mili — resume karo but warn karo
+          console.warn("[Pause/Resume] No active membership found for student:", studentId);
         }
       }
+    } else {
+      // pause_date nahi mila — resume karo silently (edge case)
+      console.warn("[Pause/Resume] pause_date not found for student:", studentId);
     }
+
     updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
   }
 
-  const { data, error } = await sb.from("students").update(updateObj).eq("id", studentId).select();
+  const { data, error } = await sb
+    .from("students")
+    .update(updateObj)
+    .eq("id", studentId)
+    .select();
+
   if (error) { alert("Error: " + error.message); return; }
-  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
+  if (!data || !data.length) {
+    alert("Update didn't apply — likely a database permission (RLS) issue.");
+    return;
+  }
 
   await loadAll();
   viewStudent(studentId);
 }
-
 // ── PLAN TYPE UPDATE (independent, manual only, no pricing logic) ──
 async function updatePlanType(studentId) {
   const val = document.getElementById("plan-type-select").value;
@@ -1781,6 +1805,7 @@ function renderPhase4() {
 // ── PAUSE / RESUME STUDENT ──────────────────────────────────────
 // On PAUSE : freeze membership days (pg_cron skips paused students).
 // On RESUME: extend membership end_date by exact days spent paused.
+// ── PAUSE / RESUME STUDENT ──────────────────────────────────────
 async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   const newStatus = currentStatus === "paused" ? "active" : "paused";
   const ok = confirm(newStatus === "paused"
@@ -1791,16 +1816,31 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
   let updateObj;
 
   if (newStatus === "paused") {
+    // ── PAUSE ─────────────────────────────────────────────────────
     const daysRemaining = activeEndDate
       ? Math.max(0, Math.ceil((new Date(activeEndDate) - new Date()) / 86400000))
       : null;
-    updateObj = { status: "paused", pause_date: new Date().toISOString(), paused_days_remaining: daysRemaining };
+    updateObj = {
+      status: "paused",
+      pause_date: new Date().toISOString(),
+      paused_days_remaining: daysRemaining
+    };
 
   } else {
-    // ── RESUME: extend membership end_date by paused duration ─────
-    const s = allStudentsData.find(x => x.id === studentId);
-    if (s?.pause_date) {
-      const daysPaused = Math.round((Date.now() - new Date(s.pause_date).getTime()) / 86400000);
+    // ── RESUME ────────────────────────────────────────────────────
+    // CRITICAL FIX: allStudentsData pe depend mat karo — fresh DB fetch karo
+    const { data: freshStudent, error: stuErr } = await sb
+      .from("students")
+      .select("id, pause_date")
+      .eq("id", studentId)
+      .single();
+
+    if (stuErr) { alert("Error fetching student data: " + stuErr.message); return; }
+
+    if (freshStudent?.pause_date) {
+      const pauseMs = Date.now() - new Date(freshStudent.pause_date).getTime();
+      const daysPaused = Math.ceil(pauseMs / 86400000); // ceil: partial day bhi count hoga
+
       if (daysPaused > 0) {
         const { data: activeMemb, error: fetchErr } = await sb
           .from("memberships")
@@ -1809,10 +1849,7 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
           .eq("status", "active")
           .maybeSingle();
 
-        if (fetchErr) {
-          alert("Error fetching membership: " + fetchErr.message);
-          return;
-        }
+        if (fetchErr) { alert("Error fetching membership: " + fetchErr.message); return; }
 
         if (activeMemb?.end_date) {
           const [y, mo, d] = activeMemb.end_date.split("-").map(Number);
@@ -1825,81 +1862,35 @@ async function togglePauseStudent(studentId, currentStatus, activeEndDate) {
             .update({ end_date: newEndStr })
             .eq("id", activeMemb.id);
 
-          if (extErr) {
-            alert("Error extending membership: " + extErr.message);
-            return;
-          }
+          if (extErr) { alert("Error extending membership: " + extErr.message); return; }
+        } else {
+          // Membership nahi mili — resume karo but warn karo
+          console.warn("[Pause/Resume] No active membership found for student:", studentId);
         }
       }
+    } else {
+      // pause_date nahi mila — resume karo silently (edge case)
+      console.warn("[Pause/Resume] pause_date not found for student:", studentId);
     }
+
     updateObj = { status: "active", pause_date: null, paused_days_remaining: null };
   }
 
-  const { data, error } = await sb.from("students").update(updateObj).eq("id", studentId).select();
-  if (error) { alert("Error: " + error.message); return; }
-  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
-
-  await loadAll();
-  viewStudent(studentId);
-}
-
-async function cancelActiveMembership(studentId, membershipId) {
-  const s = allStudentsData.find(x => x.id === studentId);
-  const name = s?.full_name || "this student";
-
-  // Double confirm — as requested
-  const first = confirm(`⚠️ Cancel Active Membership\n\nAre you sure you want to cancel ${name}'s active membership?\n\nThis will mark it as REJECTED. This action cannot be undone automatically.`);
-  if (!first) return;
-
-  const second = confirm(`🔴 Final Confirmation\n\nYou are about to CANCEL and REJECT the active membership for:\n\n👤 ${name}\n\nPress OK to confirm cancellation.`);
-  if (!second) return;
-
   const { data, error } = await sb
-    .from("memberships")
-    .update({ status: "rejected" })
-    .eq("id", membershipId)
+    .from("students")
+    .update(updateObj)
+    .eq("id", studentId)
     .select();
 
   if (error) { alert("Error: " + error.message); return; }
-  if (!data || !data.length) { alert("Update didn't apply — likely an RLS issue."); return; }
-
-  // Also mark the corresponding payment as failed
-  await sb
-    .from("payments")
-    .update({ status: "failed" })
-    .eq("membership_id", membershipId)
-    .eq("status", "success");
-
-  await loadAll();
-  viewStudent(studentId);
-  alert("✅ Membership cancelled successfully. The student has been removed from active list.");
-}
-
-async function upgradeMembershipPlan(studentId, membershipId) {
-  if (!membershipId) { alert("This student has no current membership to update."); return; }
-
-  const select = document.getElementById("plan-type-select");
-  const newPlanId = select.value;
-  if (!newPlanId) { alert("Please select a plan."); return; }
-
-  const newPlan = allPlansData.find(p => p.id === newPlanId);
-  if (!newPlan) { alert("Selected plan not found."); return; }
-
-  if (!confirm(`Update this membership to "${newPlan.name}" at ₹${newPlan.price}? This changes their recorded plan and amount.`)) return;
-
-  const { data, error } = await sb
-    .from("memberships")
-    .update({ plan_id: newPlan.id, amount_paid: newPlan.price })
-    .eq("id", membershipId)
-    .select();
-
-  if (error) { alert("Error: " + error.message); return; }
-  if (!data || !data.length) { alert("Update didn't apply — likely a database permission (RLS) issue."); return; }
+  if (!data || !data.length) {
+    alert("Update didn't apply — likely a database permission (RLS) issue.");
+    return;
+  }
 
   await loadAll();
   viewStudent(studentId);
 }
-
 checkSession();
 </script>
 </body>
