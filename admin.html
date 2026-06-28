@@ -1915,6 +1915,35 @@ async function upgradeMembershipPlan(studentId, membershipId) {
   await loadAll();
   viewStudent(studentId);
 }
+async function cancelActiveMembership(studentId, membershipId) {
+  const s = allStudentsData.find(x => x.id === studentId);
+  const name = s?.full_name || "this student";
+
+  const first = confirm(`⚠️ Cancel Active Membership\n\nAre you sure you want to cancel ${name}'s active membership?\n\nThis will mark it as REJECTED. This action cannot be undone automatically.`);
+  if (!first) return;
+
+  const second = confirm(`🔴 Final Confirmation\n\nYou are about to CANCEL and REJECT the active membership for:\n\n👤 ${name}\n\nPress OK to confirm cancellation.`);
+  if (!second) return;
+
+  const { data, error } = await sb
+    .from("memberships")
+    .update({ status: "rejected" })
+    .eq("id", membershipId)
+    .select();
+
+  if (error) { alert("Error: " + error.message); return; }
+  if (!data || !data.length) { alert("Update didn't apply — likely an RLS issue."); return; }
+
+  await sb
+    .from("payments")
+    .update({ status: "failed" })
+    .eq("membership_id", membershipId)
+    .eq("status", "success");
+
+  await loadAll();
+  viewStudent(studentId);
+  alert("✅ Membership cancelled successfully.");
+}
 checkSession();
 </script>
 </body>
