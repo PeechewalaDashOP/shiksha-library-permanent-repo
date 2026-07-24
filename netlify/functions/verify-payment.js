@@ -181,7 +181,6 @@ exports.handler = async (event) => {
         console.error("Photo upload failed (registration continued):", photoErr.message);
       }
     }
-photoBase64, aadharFrontBase64, aadharBackBase64,
     // ── RENEWAL QUEUE GUARD ──────────────────────────────────────
     // Online payment is already captured when this runs.
     // If isQueued: store as "queued" with NULL dates (activation calculates them).

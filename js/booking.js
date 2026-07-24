@@ -275,7 +275,38 @@ function handlePhotoSelected(inputEl) {
     return;
   }
 
-  function resetAadharFrontUI() {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1000;
+      let { width, height } = img;
+      if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      currentPlan.photoBase64 = dataUrl;
+
+      const preview = document.getElementById("sl-photo-preview");
+      const prompt  = document.getElementById("sl-photo-prompt");
+      if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
+      if (prompt) prompt.style.display = "none";
+      document.getElementById("sl-form-error").textContent = "";
+    };
+    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetPhotoUI(); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetPhotoUI(); };
+  reader.readAsDataURL(file);
+}
+
+function resetAadharFrontUI() {
   const input = document.getElementById("sl-aadhar-front-input");
   const preview = document.getElementById("sl-aadhar-front-preview");
   const prompt = document.getElementById("sl-aadhar-front-prompt");
@@ -352,38 +383,6 @@ function handleAadharBackSelected(inputEl) {
   reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetAadharBackUI(); };
   reader.readAsDataURL(file);
 }
-
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 1000;
-      let { width, height } = img;
-      if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
-      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-      currentPlan.photoBase64 = dataUrl;
-
-      const preview = document.getElementById("sl-photo-preview");
-      const prompt  = document.getElementById("sl-photo-prompt");
-      if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
-      if (prompt) prompt.style.display = "none";
-      document.getElementById("sl-form-error").textContent = "";
-    };
-    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetPhotoUI(); };
-    img.src = ev.target.result;
-  };
-  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetPhotoUI(); };
-  reader.readAsDataURL(file);
-}
-
 async function handleBookingSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById("sl-submit-btn");
