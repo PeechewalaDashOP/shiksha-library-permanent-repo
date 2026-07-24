@@ -84,9 +84,65 @@ function attachBookingListeners() {
       if (plansSection) plansSection.scrollIntoView({ behavior: "smooth" });
     });
   });
+  const bookingForm = document.getElementById("sl-booking-form");
+  if (bookingForm) {
+    bookingForm.addEventListener("input", debouncedSaveBookingDraft);
+    bookingForm.addEventListener("change", debouncedSaveBookingDraft);
+  }
 }
 
 let currentPlan = {};
+
+// ── AUTOSAVE (localStorage draft) ──────────────────────────────
+const SL_DRAFT_KEY = "sl_booking_draft";
+const SL_AUTOSAVE_FIELD_IDS = [
+  "sl-name","sl-father","sl-email","sl-phone","sl-parent-mobile",
+  "sl-aadhar","sl-address","sl-permanent-address","sl-exam"
+];
+
+function saveBookingDraft() {
+  try {
+    const draft = {};
+    SL_AUTOSAVE_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) draft[id] = el.value;
+    });
+    const genderEl = document.querySelector('input[name="sl-gender"]:checked');
+    draft["sl-gender"] = genderEl ? genderEl.value : "";
+    draft["sl-fixed-seat"] = document.getElementById("sl-fixed-seat")?.checked || false;
+    draft["sl-locker"] = document.getElementById("sl-locker")?.checked || false;
+    localStorage.setItem(SL_DRAFT_KEY, JSON.stringify(draft));
+  } catch(e) {}
+}
+
+function restoreBookingDraft() {
+  try {
+    const raw = localStorage.getItem(SL_DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    SL_AUTOSAVE_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && draft[id]) el.value = draft[id];
+    });
+    if (draft["sl-gender"]) {
+      const g = document.querySelector(`input[name="sl-gender"][value="${draft["sl-gender"]}"]`);
+      if (g) g.checked = true;
+    }
+    if (draft["sl-fixed-seat"]) document.getElementById("sl-fixed-seat").checked = true;
+    if (draft["sl-locker"]) document.getElementById("sl-locker").checked = true;
+  } catch(e) {}
+}
+
+function clearBookingDraft() {
+  try { localStorage.removeItem(SL_DRAFT_KEY); } catch(e) {}
+}
+
+function debounce(fn, wait) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+}
+const debouncedSaveBookingDraft = debounce(saveBookingDraft, 400);
+
 async function checkExistingActiveMembership(email, phone) {
   try {
     const today = new Date(new Date().getTime() + 5.5*60*60000).toISOString().split("T")[0];
@@ -142,6 +198,7 @@ function openBookingModal(planId, planData) {
   document.getElementById("sl-locker").checked        = false;
   document.getElementById("sl-form-error").textContent = "";
   resetPhotoUI();
+  restoreBookingDraft();
   updateMembershipDates();
   updateTotalPrice();
   document.getElementById("sl-booking-modal").style.display = "flex";
@@ -397,6 +454,7 @@ async function verifyAndSave(razorpayResponse, studentData, orderId) {
 }
 
 function showSuccessModal(studentData, data) {
+  clearBookingDraft();
   hideLoader();
   document.getElementById("sl-success-name").textContent   = studentData.fullName;
   document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
@@ -410,6 +468,7 @@ function showSuccessModal(studentData, data) {
 }
 
 function showCashSuccessModal(studentData) {
+  clearBookingDraft();
   document.getElementById("sl-success-name").textContent   = studentData.fullName;
   document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
   document.getElementById("sl-success-expiry").textContent = formatDate(currentPlan.endDate);
@@ -497,7 +556,7 @@ function getModalHTML() {
     @keyframes sl-spin{to{transform:rotate(360deg)}}
   </style>
 
-  <div class="sl-overlay" id="sl-booking-modal" onclick="if(event.target===this)closeBookingModal()">
+  <div class="sl-overlay" id="sl-booking-modal">
     <div class="sl-box">
       <button class="sl-close" onclick="closeBookingModal()">×</button>
       <p class="sl-title">Complete Your Registration</p>
