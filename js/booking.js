@@ -688,7 +688,6 @@ function getModalHTML() {
     <div id="sl-aadhar-back-prompt" style="display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#475569">
       <span style="font-size:1.8rem">🪪</span>
       <span style="font-size:.85rem;font-weight:600">Tap to upload Aadhar back photo</span>
-      <span style="font-size:.72rem;color:#94a3b8">Optional — can be added later</span>
     </div>
     <img id="sl-aadhar-back-preview" alt="Aadhar back" style="display:none;max-width:160px;max-height:160px;border-radius:10px;margin:0 auto;object-fit:cover">
   </div>
