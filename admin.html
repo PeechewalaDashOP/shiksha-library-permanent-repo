@@ -871,7 +871,15 @@ function openEditStudentModal(studentId) {
         <input type="file" id="edit-photo-input" accept="image/*" style="font-size:.82rem">
         <div style="font-size:.72rem;color:#94a3b8;margin-top:3px">Leave blank to keep existing photo</div>
       </div>
-    </div>
+      <div style="grid-column:1/-1">
+  <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Aadhar Front Photo (optional)</div>
+  <input type="file" id="edit-aadhar-front-input" accept="image/*" style="font-size:.82rem">
+</div>
+<div style="grid-column:1/-1">
+  <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Aadhar Back Photo (optional)</div>
+  <input type="file" id="edit-aadhar-back-input" accept="image/*" style="font-size:.82rem">
+</div>
+ </div>
     <div id="edit-student-error" style="color:#dc2626;font-size:.82rem;margin-top:.75rem;min-height:1.2em"></div>
   `;
   document.getElementById("edit-student-modal").dataset.studentId = studentId;
@@ -909,10 +917,9 @@ async function saveEditStudent() {
   const photoFile    = document.getElementById("edit-photo-input").files[0];
 
   if (!fullName)                                              { errEl.textContent = "Full name is required."; return; }
-  if (!fatherName)                                            { errEl.textContent = "Father's name is required."; return; }
   if (!/^[6-9][0-9]{9}$/.test(phone))                        { errEl.textContent = "Phone must be a valid 10-digit mobile number."; return; }
   if (parentMobile && !/^[0-9]{10}$/.test(parentMobile))     { errEl.textContent = "Parent mobile must be 10 digits."; return; }
-  if (aadhar.length !== 12 || !/^[0-9]{12}$/.test(aadhar))  { errEl.textContent = "Aadhar must be exactly 12 digits."; return; }
+  if (aadhar && (aadhar.length !== 12 || !/^[0-9]{12}$/.test(aadhar))) { errEl.textContent = "Aadhar must be exactly 12 digits if provided."; return; }
   if (!address)                                               { errEl.textContent = "Residential address is required."; return; }
 
   if (!confirm("Are you sure? This will update the student's details.")) return;
@@ -937,7 +944,26 @@ async function saveEditStudent() {
       if (uploadErr) throw new Error("Photo upload failed: " + uploadErr.message);
       photoUrl = path;
     }
+const aadharFrontFile = document.getElementById("edit-aadhar-front-input").files[0];
+const aadharBackFile  = document.getElementById("edit-aadhar-back-input").files[0];
 
+let aadharFrontUrl = s.aadhar_front_url;
+if (aadharFrontFile) {
+  const ext  = aadharFrontFile.name.split(".").pop() || "jpg";
+  const path = `${studentId}-aadhar-front-${Date.now()}.${ext}`;
+  const { error: err1 } = await sb.storage.from("student-photos").upload(path, aadharFrontFile, { upsert: true });
+  if (err1) throw new Error("Aadhar front upload failed: " + err1.message);
+  aadharFrontUrl = path;
+}
+
+let aadharBackUrl = s.aadhar_back_url;
+if (aadharBackFile) {
+  const ext  = aadharBackFile.name.split(".").pop() || "jpg";
+  const path = `${studentId}-aadhar-back-${Date.now()}.${ext}`;
+  const { error: err2 } = await sb.storage.from("student-photos").upload(path, aadharBackFile, { upsert: true });
+  if (err2) throw new Error("Aadhar back upload failed: " + err2.message);
+  aadharBackUrl = path;
+}
     const { data, error } = await sb
       .from("students")
       .update({
@@ -951,6 +977,8 @@ async function saveEditStudent() {
         permanent_address: permAddress,
         exam_target:       examTarget,
         photo_url:         photoUrl,
+        aadhar_front_url:  aadharFrontUrl,
+        aadhar_back_url:   aadharBackUrl,
         last_edited_by:    editorEmail,
         last_edited_at:    ist.toISOString(),
       })
@@ -986,6 +1014,7 @@ async function saveEditStudent() {
     saveBtn.textContent = "Save Changes";
   }
 }
+
 
 function closeEditStudentModal() {
   document.getElementById("edit-student-modal").style.display = "none";

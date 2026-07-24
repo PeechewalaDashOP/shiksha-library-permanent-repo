@@ -51,7 +51,7 @@ exports.handler = async (event) => {
       locker,
       startDate: startDateInput,
       endDate: endDateInput,
-      photoBase64,
+      photoBase64, aadharFrontBase64, aadharBackBase64,
       isRenewal,
       existingStudentId,
       isQueued,             // ── RENEWAL QUEUE: true when active membership exists
@@ -181,7 +181,7 @@ exports.handler = async (event) => {
         console.error("Photo upload failed (registration continued):", photoErr.message);
       }
     }
-
+photoBase64, aadharFrontBase64, aadharBackBase64,
     // ── RENEWAL QUEUE GUARD ──────────────────────────────────────
     // Online payment is already captured when this runs.
     // If isQueued: store as "queued" with NULL dates (activation calculates them).

@@ -188,7 +188,7 @@ async function checkExistingActiveMembership(email, phone) {
 }
 
 function openBookingModal(planId, planData) {
-  currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null };
+  currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null, aadharFrontBase64: null, aadharBackBase64: null };
   document.getElementById("sl-modal-plan-name").textContent = planData.name + " — " + planData.duration;
   document.getElementById("sl-plan-id-hidden").value  = planId;
   document.getElementById("sl-plan-base-price").value = planData.price;
@@ -198,6 +198,8 @@ function openBookingModal(planId, planData) {
   document.getElementById("sl-locker").checked        = false;
   document.getElementById("sl-form-error").textContent = "";
   resetPhotoUI();
+  resetAadharFrontUI();
+  resetAadharBackUI();
   restoreBookingDraft();
   updateMembershipDates();
   updateTotalPrice();
@@ -273,6 +275,84 @@ function handlePhotoSelected(inputEl) {
     return;
   }
 
+  function resetAadharFrontUI() {
+  const input = document.getElementById("sl-aadhar-front-input");
+  const preview = document.getElementById("sl-aadhar-front-preview");
+  const prompt = document.getElementById("sl-aadhar-front-prompt");
+  if (input) input.value = "";
+  if (preview) { preview.src = ""; preview.style.display = "none"; }
+  if (prompt) prompt.style.display = "flex";
+  if (typeof currentPlan === "object") currentPlan.aadharFrontBase64 = null;
+}
+
+function handleAadharFrontSelected(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { showFormError("Please select a valid image file."); resetAadharFrontUI(); return; }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+      currentPlan.aadharFrontBase64 = dataUrl;
+      const preview = document.getElementById("sl-aadhar-front-preview");
+      const prompt = document.getElementById("sl-aadhar-front-prompt");
+      if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
+      if (prompt) prompt.style.display = "none";
+    };
+    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetAadharFrontUI(); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetAadharFrontUI(); };
+  reader.readAsDataURL(file);
+}
+
+function resetAadharBackUI() {
+  const input = document.getElementById("sl-aadhar-back-input");
+  const preview = document.getElementById("sl-aadhar-back-preview");
+  const prompt = document.getElementById("sl-aadhar-back-prompt");
+  if (input) input.value = "";
+  if (preview) { preview.src = ""; preview.style.display = "none"; }
+  if (prompt) prompt.style.display = "flex";
+  if (typeof currentPlan === "object") currentPlan.aadharBackBase64 = null;
+}
+
+function handleAadharBackSelected(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { showFormError("Please select a valid image file."); resetAadharBackUI(); return; }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+      currentPlan.aadharBackBase64 = dataUrl;
+      const preview = document.getElementById("sl-aadhar-back-preview");
+      const prompt = document.getElementById("sl-aadhar-back-prompt");
+      if (preview) { preview.src = dataUrl; preview.style.display = "block"; }
+      if (prompt) prompt.style.display = "none";
+    };
+    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetAadharBackUI(); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetAadharBackUI(); };
+  reader.readAsDataURL(file);
+}
+
   const reader = new FileReader();
   reader.onload = (ev) => {
     const img = new Image();
@@ -319,14 +399,13 @@ async function handleBookingSubmit(e) {
     email      : document.getElementById("sl-email").value.trim().toLowerCase(),
     phone      : document.getElementById("sl-phone").value.trim(),
     parentMobile : "",
-    aadhar     : document.getElementById("sl-aadhar").value.trim(),
     address    : document.getElementById("sl-address").value.trim(),
     permanentAddress : document.getElementById("sl-address").value.trim(),
     examTarget : document.getElementById("sl-exam").value.trim(),
   };
 
   if (!studentData.gender) { showFormError("Please select gender."); resetBtn(btn); return; }
-  if (studentData.aadhar.length !== 12) { showFormError("Please enter valid 12-digit Aadhar number."); resetBtn(btn); return; }
+ 
   if (!currentPlan.photoBase64) { showFormError("Please upload your photo (selfie) to continue."); resetBtn(btn); return; }
 
   const existingActive = await checkExistingActiveMembership(studentData.email, studentData.phone);
@@ -349,6 +428,8 @@ async function handleBookingSubmit(e) {
           fixedSeat: currentPlan.fixedSeat, locker: currentPlan.locker,
           startDate: currentPlan.startDate, endDate: currentPlan.endDate,
           photoBase64: currentPlan.photoBase64 || null,
+          aadharFrontBase64: currentPlan.aadharFrontBase64 || null,
+aadharBackBase64: currentPlan.aadharBackBase64 || null,
         }),
       });
       const data = await res.json();
@@ -441,6 +522,8 @@ async function verifyAndSave(razorpayResponse, studentData, orderId) {
         fixedSeat: currentPlan.fixedSeat, locker: currentPlan.locker,
         startDate: currentPlan.startDate, endDate: currentPlan.endDate,
         photoBase64: currentPlan.photoBase64 || null,
+        aadharFrontBase64: currentPlan.aadharFrontBase64 || null,
+aadharBackBase64: currentPlan.aadharBackBase64 || null,
       }),
     });
     const data = await res.json();
@@ -588,7 +671,30 @@ function getModalHTML() {
         </div>
         <div class="sl-fg"><label>Email Address *</label><input type="email" id="sl-email" placeholder="your@email.com" required></div>
         <div class="sl-fg"><label>Phone Number *</label><input type="tel" id="sl-phone" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}" required></div>
-        <div class="sl-fg"><label>Aadhar Card Number *</label><input type="text" id="sl-aadhar" placeholder="12-digit Aadhar number" maxlength="12" pattern="[0-9]{12}" required></div>
+        <div class="sl-fg">
+  <label>Aadhar Card — Front Photo</label>
+  <input type="file" id="sl-aadhar-front-input" accept="image/*" style="display:none" onchange="handleAadharFrontSelected(this)">
+  <div id="sl-aadhar-front-wrap" onclick="document.getElementById('sl-aadhar-front-input').click()" style="cursor:pointer;border:1.5px dashed #94a3b8;border-radius:10px;padding:1rem;text-align:center;background:#f8fafc">
+    <div id="sl-aadhar-front-prompt" style="display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#475569">
+      <span style="font-size:1.8rem">🪪</span>
+      <span style="font-size:.85rem;font-weight:600">Tap to upload Aadhar front photo</span>
+      <span style="font-size:.72rem;color:#94a3b8">Optional — can be added later</span>
+    </div>
+    <img id="sl-aadhar-front-preview" alt="Aadhar front" style="display:none;max-width:160px;max-height:160px;border-radius:10px;margin:0 auto;object-fit:cover">
+  </div>
+</div>
+<div class="sl-fg">
+  <label>Aadhar Card — Back Photo</label>
+  <input type="file" id="sl-aadhar-back-input" accept="image/*" style="display:none" onchange="handleAadharBackSelected(this)">
+  <div id="sl-aadhar-back-wrap" onclick="document.getElementById('sl-aadhar-back-input').click()" style="cursor:pointer;border:1.5px dashed #94a3b8;border-radius:10px;padding:1rem;text-align:center;background:#f8fafc">
+    <div id="sl-aadhar-back-prompt" style="display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#475569">
+      <span style="font-size:1.8rem">🪪</span>
+      <span style="font-size:.85rem;font-weight:600">Tap to upload Aadhar back photo</span>
+      <span style="font-size:.72rem;color:#94a3b8">Optional — can be added later</span>
+    </div>
+    <img id="sl-aadhar-back-preview" alt="Aadhar back" style="display:none;max-width:160px;max-height:160px;border-radius:10px;margin:0 auto;object-fit:cover">
+  </div>
+</div>
         <div class="sl-fg"><label>Present Address *</label><textarea id="sl-address" placeholder="Full present address" required rows="3"></textarea></div>
         <div class="sl-fg">
           <label>Your Photo (Selfie) *</label>

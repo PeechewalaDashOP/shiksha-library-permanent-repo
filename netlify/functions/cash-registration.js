@@ -41,7 +41,7 @@ exports.handler = async (event) => {
   try {
     const {
       studentData, planId, amount, fixedSeat, locker,
-      startDate, endDate, photoBase64,
+      startDate, endDate, photoBase64, aadharFrontBase64, aadharBackBase64,
       isRenewal,
       existingStudentId,
       isQueued,             // ── RENEWAL QUEUE: true when active membership exists
@@ -172,6 +172,18 @@ exports.handler = async (event) => {
         console.error("Photo upload failed (registration continued):", photoErr.message);
       }
     }
+    if (aadharFrontBase64) {
+  try {
+    const path = await uploadStudentPhoto(supabase, student.id + "-aadhar-front", aadharFrontBase64);
+    if (path) await supabase.from("students").update({ aadhar_front_url: path }).eq("id", student.id);
+  } catch (err) { console.error("Aadhar front upload failed:", err.message); }
+}
+if (aadharBackBase64) {
+  try {
+    const path = await uploadStudentPhoto(supabase, student.id + "-aadhar-back", aadharBackBase64);
+    if (path) await supabase.from("students").update({ aadhar_back_url: path }).eq("id", student.id);
+  } catch (err) { console.error("Aadhar back upload failed:", err.message); }
+}
 
     // ── RENEWAL QUEUE GUARD ──────────────────────────────────────
     // If frontend signals isQueued, verify backend and guard duplicates.
