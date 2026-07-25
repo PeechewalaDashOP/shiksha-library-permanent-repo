@@ -744,6 +744,19 @@ async function viewStudent(studentId) {
       ${detailRow("Last Edited By", s.last_edited_by || "—")}
       ${detailRow("Last Edited At", s.last_edited_at ? fmt(s.last_edited_at) : "—")}
     </div>
+    <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
+      <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Aadhar Documents</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Front</div>
+          <div id="aadhar-front-box" style="width:140px;height:90px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.75rem;text-align:center;overflow:hidden;border:1.5px solid #e2e8f0">Loading…</div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Back</div>
+          <div id="aadhar-back-box" style="width:140px;height:90px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.75rem;text-align:center;overflow:hidden;border:1.5px solid #e2e8f0">Loading…</div>
+        </div>
+      </div>
+    </div>
 
     <div style="margin-top:1rem;border-top:1px solid #f1f5f9;padding-top:1rem">
       <div style="font-weight:700;color:#1e293b;margin-bottom:.6rem">Current Membership</div>
@@ -808,6 +821,42 @@ async function viewStudent(studentId) {
     }
   } else {
     photoBox.textContent = "No photo";
+  }
+  // Load Aadhar front/back via signed URL (private bucket).
+  const aadharFrontBox = document.getElementById("aadhar-front-box");
+  if (s.aadhar_front_url) {
+    try {
+      const { data, error } = await sb.storage.from("student-photos").createSignedUrl(s.aadhar_front_url, 3600);
+      if (!error && data?.signedUrl) {
+        aadharFrontBox.innerHTML = `<a href="${data.signedUrl}" target="_blank" title="Open full photo" style="display:block;width:100%;height:100%">
+            <img src="${data.signedUrl}" alt="Aadhar front" style="width:100%;height:100%;object-fit:cover">
+          </a>`;
+      } else {
+        aadharFrontBox.textContent = "Unavailable";
+      }
+    } catch (e) {
+      aadharFrontBox.textContent = "Unavailable";
+    }
+  } else {
+    aadharFrontBox.textContent = "Not uploaded";
+  }
+
+  const aadharBackBox = document.getElementById("aadhar-back-box");
+  if (s.aadhar_back_url) {
+    try {
+      const { data, error } = await sb.storage.from("student-photos").createSignedUrl(s.aadhar_back_url, 3600);
+      if (!error && data?.signedUrl) {
+        aadharBackBox.innerHTML = `<a href="${data.signedUrl}" target="_blank" title="Open full photo" style="display:block;width:100%;height:100%">
+            <img src="${data.signedUrl}" alt="Aadhar back" style="width:100%;height:100%;object-fit:cover">
+          </a>`;
+      } else {
+        aadharBackBox.textContent = "Unavailable";
+      }
+    } catch (e) {
+      aadharBackBox.textContent = "Unavailable";
+    }
+  } else {
+    aadharBackBox.textContent = "Not uploaded";
   }
 }
 
