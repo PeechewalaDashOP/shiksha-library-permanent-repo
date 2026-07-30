@@ -434,7 +434,7 @@ aadharBackBase64: currentPlan.aadharBackBase64 || null,
       const data = await res.json();
       if (data.success) {
         closeBookingModal();
-        showCashSuccessModal(studentData);
+        showCashSuccessModal(studentData, data);
       } else throw new Error(data.error || "Registration failed");
     } catch(ex) {
       showFormError(ex.message || "Something went wrong.");
@@ -537,6 +537,10 @@ aadharBackBase64: currentPlan.aadharBackBase64 || null,
 function showSuccessModal(studentData, data) {
   clearBookingDraft();
   hideLoader();
+  if (data && data.studentCode) {
+  document.getElementById("sl-success-code").textContent = data.studentCode;
+  document.getElementById("sl-success-id-row").style.display = "flex";
+}
   document.getElementById("sl-success-name").textContent   = studentData.fullName;
   document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
   document.getElementById("sl-success-expiry").textContent = formatDate(data.endDate || currentPlan.endDate);
@@ -548,9 +552,13 @@ function showSuccessModal(studentData, data) {
   document.body.style.overflow = "hidden";
 }
 
-function showCashSuccessModal(studentData) {
+function showCashSuccessModal(studentData, data) {
   clearBookingDraft();
   document.getElementById("sl-success-name").textContent   = studentData.fullName;
+  if (data && data.studentCode) {
+    document.getElementById("sl-success-code").textContent = data.studentCode;
+    document.getElementById("sl-success-id-row").style.display = "flex";
+  }
   document.getElementById("sl-success-plan").textContent   = currentPlan.name + " — " + currentPlan.duration;
   document.getElementById("sl-success-expiry").textContent = formatDate(currentPlan.endDate);
   document.getElementById("sl-success-email").textContent  = studentData.email;
@@ -769,6 +777,7 @@ function getModalHTML() {
         <div class="sl-srow"><span class="sl-skey">Plan</span><span class="sl-sval" id="sl-success-plan"></span></div>
         <div class="sl-srow"><span class="sl-skey">Valid Until</span><span class="sl-sval" id="sl-success-expiry"></span></div>
         <div class="sl-srow"><span class="sl-skey">Login Email</span><span class="sl-sval" id="sl-success-email"></span></div>
+        <div class="sl-srow" id="sl-success-id-row" style="display:none"><span class="sl-skey">Your Student ID</span><span class="sl-sval" id="sl-success-code" style="font-weight:800;color:#f59e0b"></span></div>
       </div>
       <div class="sl-hint" id="sl-success-pwd"></div>
       <div class="sl-sbtns">
