@@ -78,6 +78,17 @@
   <!-- MAIN FORM -->
   <div id="main-form" style="display:none">
 
+    <!-- ── SECTION 0: BRANCH ───────────────────────────────────── -->
+    <div class="card">
+      <div class="section-title">🏢 Step 0 — Branch</div>
+      <div class="field">
+        <label>Registering For <span class="req">*</span></label>
+        <select id="branch-select" onchange="onBranchSelected()">
+          <option value="">Loading branches…</option>
+        </select>
+      </div>
+    </div>
+
     <!-- ── SECTION 1: STUDENT ──────────────────────────────────── -->
     <div class="card">
       <div class="section-title">👤 Step 1 — Student</div>
@@ -343,6 +354,7 @@ let selectedPlan    = null;
 let allPlans        = [];
 let lastReceipt     = null;
 let searchTimer     = null;
+let selectedBranchId = null;
 
 // ── INIT ───────────────────────────────────────────────────────────
 async function init() {
@@ -353,17 +365,47 @@ async function init() {
   }
   document.getElementById("auth-check").style.display  = "none";
   document.getElementById("main-form").style.display   = "block";
-  await loadPlans();
+  await loadBranches();
   initDates();
   updateSummary();
 }
 
+// ── BRANCH ─────────────────────────────────────────────────────────
+async function loadBranches() {
+  const sel = document.getElementById("branch-select");
+  const [{ data: branches }, { data: myBranchId }] = await Promise.all([
+    sb.from("branches").select("id, name").order("name"),
+    sb.rpc("admin_branch_id"),
+  ]);
+  sel.innerHTML = '<option value="">— Select branch —</option>' +
+    (branches || []).map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+
+  if (myBranchId) {
+    // Single-branch admin — lock to their branch (RLS would enforce this
+    // regardless, this just saves them a click and avoids confusion).
+    sel.value = myBranchId;
+    sel.disabled = true;
+    await onBranchSelected();
+  }
+}
+
+function onBranchSelected() {
+  selectedBranchId = document.getElementById("branch-select").value || null;
+  selectedPlan = null;
+  return loadPlans();
+}
+
 // ── PLANS ──────────────────────────────────────────────────────────
 async function loadPlans() {
-  const { data } = await sb.from("plans").select("*").eq("is_active", true)
+  const sel = document.getElementById("plan-select");
+  if (!selectedBranchId) {
+    allPlans = [];
+    sel.innerHTML = '<option value="">— Select a branch first —</option>';
+    return;
+  }
+  const { data } = await sb.from("plans").select("*").eq("is_active", true).eq("branch_id", selectedBranchId)
     .order("shift").order("section").order("duration");
   allPlans = data || [];
-  const sel = document.getElementById("plan-select");
   sel.innerHTML = '<option value="">— Select a plan —</option>' +
     allPlans.map(p =>
       `<option value="${p.id}">${p.name} — ${p.duration}, ${p.shift} (${p.section}) — ₹${p.price}</option>`
@@ -645,6 +687,7 @@ function updateSummary() {
 
 // ── VALIDATION ─────────────────────────────────────────────────────
 function validate() {
+  if (!selectedBranchId) return "Please select a branch.";
   if (studentMode === "existing") {
     if (!selectedStudent) return "Search and select an existing student.";
   } else {
@@ -721,6 +764,7 @@ async function submitRegistration() {
     }
 
     const payload = {
+      branchId: selectedBranchId,
       planType,
       planId:             planType === "fixed"  ? selectedPlan.id : null,
       customDurationDays: planType === "custom" ? parseInt(document.getElementById("c-days").value) : null,
