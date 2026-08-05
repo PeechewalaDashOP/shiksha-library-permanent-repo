@@ -45,6 +45,7 @@ exports.handler = async (event) => {
       isRenewal,
       existingStudentId,
       isQueued,             // ── RENEWAL QUEUE: true when active membership exists
+      branchId,
     } = JSON.parse(event.body);
 
     const supabase = createClient(
@@ -111,6 +112,9 @@ exports.handler = async (event) => {
         .single();
       if (e || !s) throw new Error("Could not find student record for renewal.");
       student = s;
+      if (branchId) {
+        await supabase.from("students").update({ branch_id: branchId }).eq("id", student.id);
+      }
     } else {
       const { data: existingCheck } = await supabase
         .from("students")
@@ -152,6 +156,7 @@ exports.handler = async (event) => {
           permanent_address: studentData.permanentAddress || "",
           exam_target: studentData.examTarget || "",
           student_code: studentCode,
+          branch_id: branchId || null,
           ...auditFields,
         }, { onConflict: "email" })
         .select()
@@ -250,6 +255,7 @@ if (aadharBackBase64) {
         status: "pending",                                  // always pending for cash
         payment_mode: "cash",
         registration_type: registrationType,
+        branch_id: branchId || null,
       })
       .select()
       .single();
@@ -264,6 +270,7 @@ if (aadharBackBase64) {
       status: "pending",
       plan_id: planId,
       payment_mode: "cash",
+      branch_id: branchId || null,
     });
 
     return {

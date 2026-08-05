@@ -55,6 +55,7 @@ exports.handler = async (event) => {
       isRenewal,
       existingStudentId,
       isQueued,             // ── RENEWAL QUEUE: true when active membership exists
+      branchId,
     } = JSON.parse(event.body);
 
     // 1. Verify Razorpay signature
@@ -120,6 +121,9 @@ exports.handler = async (event) => {
         .single();
       if (e || !s) throw new Error("Could not find student record for renewal.");
       student = s;
+      if (branchId) {
+        await supabase.from("students").update({ branch_id: branchId }).eq("id", student.id);
+      }
     } else {
       const { data: existingCheck } = await supabase
         .from("students")
@@ -161,6 +165,7 @@ exports.handler = async (event) => {
           permanent_address: studentData.permanentAddress || "",
           exam_target: studentData.examTarget || "",
           student_code: studentCode,
+          branch_id: branchId || null,
           ...auditFields,
         }, { onConflict: "email", ignoreDuplicates: false })
         .select()
@@ -262,6 +267,7 @@ exports.handler = async (event) => {
         registration_type: registrationType,
         razorpay_order_id,
         razorpay_payment_id,
+        branch_id: branchId || null,
       })
       .select()
       .single();
@@ -279,6 +285,7 @@ exports.handler = async (event) => {
       status: "success",
       plan_id: planId,
       payment_mode: "online",
+      branch_id: branchId || null,
     });
 
     return {

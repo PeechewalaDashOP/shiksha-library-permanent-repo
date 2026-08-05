@@ -169,9 +169,13 @@ exports.handler = async (event) => {
       locker,
       startDate,
       paymentMode,
+      branchId,
     } = JSON.parse(event.body);
 
     // ── 3. INPUT VALIDATION ───────────────────────────────────────
+    if (!branchId) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "branchId is required" }) };
+    }
     if (!planType || !["fixed", "custom"].includes(planType)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "planType must be 'fixed' or 'custom'" }) };
     }
@@ -221,6 +225,7 @@ exports.handler = async (event) => {
         .from("plans")
         .select("id, name, price, duration, shift, section, is_active")
         .eq("id", planId)
+        .eq("branch_id", branchId)
         .single();
       if (pErr || !p)   return { statusCode: 400, headers, body: JSON.stringify({ error: "Plan not found" }) };
       if (!p.is_active) return { statusCode: 400, headers, body: JSON.stringify({ error: "Selected plan is inactive" }) };
@@ -259,6 +264,7 @@ exports.handler = async (event) => {
         .from("students").select("*").eq("id", existingStudentId).single();
       if (e || !s) return { statusCode: 400, headers, body: JSON.stringify({ error: "Student not found" }) };
       student = s;
+      await supabase.from("students").update({ branch_id: branchId }).eq("id", student.id);
 
     } else {
       // Validate all mandatory fields — same as existing registration flow
@@ -322,6 +328,7 @@ exports.handler = async (event) => {
           permanent_address: studentData.permanentAddress || "",
           exam_target:       studentData.examTarget       || "",
           student_code:      studentCode,
+          branch_id:         branchId,
           ...auditFields,
         }, { onConflict: "email" })
         .select()
@@ -394,6 +401,7 @@ exports.handler = async (event) => {
         plan_type:            planType,
         custom_duration_days: planType === "custom" ? parseInt(customDurationDays) : null,
         discount_reason:      discountReason?.trim() || null,
+        branch_id:            branchId,
       })
       .select()
       .single();
@@ -408,6 +416,7 @@ exports.handler = async (event) => {
       status:        "success",
       plan_id:       planType === "fixed" ? planId : null,
       payment_mode:  paymentMode || "cash",
+      branch_id:     branchId,
     });
 
     // ── 13. PHOTO SIGNED URL (for receipt) ────────────────────────
