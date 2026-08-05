@@ -80,7 +80,10 @@
       <p id="admin-greeting">Owner Dashboard</p>
     </div>
   </div>
-  <button class="logout-btn" onclick="adminLogout()">Logout</button>
+  <div style="display:flex;align-items:center;gap:.75rem">
+    <select id="branch-filter" onchange="onBranchFilterChange()" style="display:none;padding:.4rem .7rem;border-radius:7px;border:1.5px solid #334155;background:#0f172a;color:#fff;font-size:.85rem;font-family:inherit"></select>
+    <button class="logout-btn" onclick="adminLogout()">Logout</button>
+  </div>
 </header>
 
 <div class="container">
@@ -394,6 +397,7 @@ async function adminLogin() {
     err.style.display = "block";
   } else {
     document.getElementById("login-overlay").style.display = "none";
+    await setupBranchScope();
     loadAll();
   }
 }
@@ -407,10 +411,44 @@ async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
   if (session && ADMIN_EMAILS.includes(session.user.email)) {
     document.getElementById("login-overlay").style.display = "none";
+    await setupBranchScope();
     loadAll();
   } else {
     document.getElementById("admin-loader").style.display = "none";
   }
+}
+
+// ── BRANCH SCOPE ────────────────────────────────────────────────
+// adminBranchId: this admin's fixed branch (null = sees all branches, via admin_branch_id()).
+// branchFilter: "all" or a specific branch id — what the current view is scoped to.
+// For a global admin, branchFilter starts at "all" and the switcher lets them narrow it.
+// For a single-branch admin, branchFilter is locked to their branch and the switcher is hidden
+// (RLS enforces this regardless — the switcher is a convenience, not the security boundary).
+let adminBranchId = null;
+let branchFilter = "all";
+
+async function setupBranchScope() {
+  const { data: myBranchId } = await sb.rpc("admin_branch_id");
+  adminBranchId = myBranchId || null;
+
+  const sel = document.getElementById("branch-filter");
+  if (adminBranchId) {
+    branchFilter = adminBranchId;
+    sel.style.display = "none";
+    return;
+  }
+
+  const { data: branches } = await sb.from("branches").select("id, name").order("name");
+  branchFilter = "all";
+  sel.innerHTML = '<option value="all">All Branches</option>' +
+    (branches || []).map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+  sel.value = "all";
+  sel.style.display = "";
+}
+
+function onBranchFilterChange() {
+  branchFilter = document.getElementById("branch-filter").value;
+  loadAll();
 }
 
 // ── GLOBAL CACHE ──────────────────────────────────────────────
@@ -463,11 +501,13 @@ async function loadAll() {
   document.getElementById("admin-loader").style.display = "none";
   document.getElementById("admin-content").style.display = "block";
 
+  const scoped = (q) => branchFilter === "all" ? q : q.eq("branch_id", branchFilter);
+
   const [{ data: students }, { data: memberships }, { data: payments }, { data: plans }] = await Promise.all([
-    sb.from("students").select("*").order("created_at", { ascending: false }),
-    sb.from("memberships").select("*, students(full_name,email,phone), plans(name,duration,shift,section)").order("created_at", { ascending: false }),
-    sb.from("payments").select("*, students(full_name,email,phone)").order("created_at", { ascending: false }),
-    sb.from("plans").select("*").order("id"),
+    scoped(sb.from("students").select("*")).order("created_at", { ascending: false }),
+    scoped(sb.from("memberships").select("*, students(full_name,email,phone), plans(name,duration,shift,section)")).order("created_at", { ascending: false }),
+    scoped(sb.from("payments").select("*, students(full_name,email,phone)")).order("created_at", { ascending: false }),
+    scoped(sb.from("plans").select("*")).order("id"),
   ]);
 
   allMembershipsData = memberships || [];
@@ -1450,12 +1490,13 @@ function clearMembFilters() {
 
 // ── CASH APPROVALS ────────────────────────────────────────────────
 async function loadCashPending() {
-  const { data, error } = await sb
+  let q = sb
     .from("memberships")
     .select("*, students(full_name, email, phone)")
     .eq("status", "pending")
-    .eq("payment_mode", "cash")
-    .order("created_at", { ascending: false });
+    .eq("payment_mode", "cash");
+  if (branchFilter !== "all") q = q.eq("branch_id", branchFilter);
+  const { data, error } = await q.order("created_at", { ascending: false });
 
   if (error) {
     document.getElementById("cash-body").innerHTML = `<tr><td colspan="6" class="empty">Error: ${error.message}</td></tr>`;
