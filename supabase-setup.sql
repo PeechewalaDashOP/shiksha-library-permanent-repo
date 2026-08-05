@@ -2,6 +2,12 @@
 -- SHIKSHA LIBRARY - SUPABASE DATABASE SETUP
 -- Paste this entire file in Supabase → SQL Editor → Run
 -- ============================================================
+-- NOTE: this file reflects the initial setup only. The live schema has
+-- since drifted from it (columns/functions/policies added directly via
+-- the Supabase dashboard were never backported here). For all changes
+-- since initial setup, see the migrations/ folder — start there, not
+-- here, if you need the current real schema.
+-- ============================================================
 
 -- 1. PLANS TABLE (admin can update prices here)
 CREATE TABLE plans (
