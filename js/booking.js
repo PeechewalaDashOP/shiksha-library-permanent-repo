@@ -57,7 +57,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.body.insertAdjacentHTML("beforeend", getModalHTML());
   attachBookingListeners();
   checkLoggedInUser();
-  loadBranches();
+  await loadBranches();
+  // Vigyan Nagar is the default — its plans show immediately (matching the
+  // site's behavior before this feature), no click required. Picking a
+  // different branch radio swaps the plans below to that branch's.
+  selectBranch(VIGYAN_NAGAR_NAME, { isInitial: true });
 });
 
 // ── BRANCHES ─────────────────────────────────────────────────────
@@ -82,7 +86,7 @@ function getBranchId(name) {
   return SL_BRANCHES.find((b) => b.name === name)?.id || null;
 }
 
-async function selectBranch(branchName) {
+async function selectBranch(branchName, opts = {}) {
   const branchId = getBranchId(branchName);
   if (!branchId) {
     alert("This branch is temporarily unavailable. Please refresh the page and try again.");
@@ -91,8 +95,12 @@ async function selectBranch(branchName) {
   selectedBranchId = branchId;
   window.SL_CURRENT_BRANCH_NAME = branchName;
 
-  document.querySelectorAll(".branch-select-btn").forEach((b) => b.classList.remove("active"));
-  document.querySelector(`.branch-select-btn[data-branch-name="${branchName}"]`)?.classList.add("active");
+  document.querySelectorAll(".branch-radio-card").forEach((card) => {
+    const isThisOne = card.dataset.branchName === branchName;
+    card.classList.toggle("selected", isThisOne);
+    const radio = card.querySelector('input[type="radio"]');
+    if (radio) radio.checked = isThisOne;
+  });
 
   document.getElementById("plans-content").style.display = "block";
 
@@ -104,7 +112,9 @@ async function selectBranch(branchName) {
     await renderDynamicPlans(branchId);
   }
 
-  document.getElementById("plans-content").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!opts.isInitial) {
+    document.getElementById("plans-content").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 const DYN_PLAN_PERIOD = {

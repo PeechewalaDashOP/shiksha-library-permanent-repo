@@ -645,6 +645,45 @@
       background: transparent;
     }
     .toggle-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(26,115,232,0.3); }
+
+    /* Branch selector — single-choice "radio card" picker, deliberately distinct
+       from the .toggle-btn pill style used for Monthly/15-Day/3-Month, so it reads
+       as a separate one-at-a-time choice rather than another toggle row. */
+    .branch-select-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 700px;
+      margin: 0 auto 3rem;
+    }
+    .branch-radio-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .branch-radio-card:hover { border-color: var(--primary); }
+    .branch-radio-card.selected { border-color: var(--primary); background: rgba(26,115,232,0.06); }
+    .branch-radio-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .branch-radio-mark {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid #cbd5e1; flex-shrink: 0; position: relative;
+      transition: var(--transition);
+    }
+    .branch-radio-card.selected .branch-radio-mark { border-color: var(--primary); }
+    .branch-radio-mark::after {
+      content: ""; position: absolute; inset: 4px; border-radius: 50%;
+      background: var(--primary); transform: scale(0); transition: var(--transition);
+    }
+    .branch-radio-card.selected .branch-radio-mark::after { transform: scale(1); }
+    .branch-radio-label { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--text-dark); }
+
     .plans-grid {
       display: none;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1341,13 +1380,25 @@
       <p class="section-sub">Select the center / branch in which you want to take admission.</p>
     </div>
 
-    <!-- BRANCH SELECTOR — shown first (progressive disclosure), plans load after a branch is picked -->
-    <div class="plans-toggle-wrap" id="branch-select-wrap">
-      <div class="plans-toggle" id="branch-select">
-        <button class="toggle-btn branch-select-btn" data-branch-name="Vigyan Nagar" onclick="selectBranch('Vigyan Nagar')">Vigyan Nagar</button>
-        <button class="toggle-btn branch-select-btn" data-branch-name="Mahaveer Nagar" onclick="selectBranch('Mahaveer Nagar')">Mahaveer Nagar</button>
-        <button class="toggle-btn branch-select-btn" data-branch-name="Kunhadi" onclick="selectBranch('Kunhadi')">Kunhadi</button>
-      </div>
+    <!-- BRANCH SELECTOR — single-select radio cards, one at a time. Vigyan Nagar is
+         the default (its plans show immediately, matching today's behavior); picking
+         a different branch swaps the plans below to that branch's. -->
+    <div class="branch-select-grid" id="branch-select">
+      <label class="branch-radio-card" data-branch-name="Vigyan Nagar" onclick="selectBranch('Vigyan Nagar')">
+        <input type="radio" name="sl-branch" value="Vigyan Nagar" checked>
+        <span class="branch-radio-mark"></span>
+        <span class="branch-radio-label">Vigyan Nagar</span>
+      </label>
+      <label class="branch-radio-card" data-branch-name="Mahaveer Nagar" onclick="selectBranch('Mahaveer Nagar')">
+        <input type="radio" name="sl-branch" value="Mahaveer Nagar">
+        <span class="branch-radio-mark"></span>
+        <span class="branch-radio-label">Mahaveer Nagar</span>
+      </label>
+      <label class="branch-radio-card" data-branch-name="Kunhadi" onclick="selectBranch('Kunhadi')">
+        <input type="radio" name="sl-branch" value="Kunhadi">
+        <span class="branch-radio-mark"></span>
+        <span class="branch-radio-label">Kunhadi</span>
+      </label>
     </div>
 
     <div id="plans-content" style="display:none">
