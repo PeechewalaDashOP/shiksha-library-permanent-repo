@@ -109,7 +109,7 @@ header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:1re
   <div id="loading" class="loader"><div class="spinner"></div>Loading your account...</div>
   <div id="content" style="display:none">
     <p class="greeting">Hello, <span id="student-name">Student</span> 👋</p>
-    <p class="greeting-sub">Welcome to your Shiksha Library account.</p>
+    <p class="greeting-sub">Welcome to your Shiksha Library account.<span id="student-branch"></span></p>
 
     <!-- STAT CARDS -->
     <div class="grid3">
@@ -347,7 +347,7 @@ async function loadDashboard() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = "login.html"; return; }
 
-  const { data: student } = await sb.from("students").select("*").eq("email", session.user.email).single();
+  const { data: student } = await sb.from("students").select("*, branches(name)").eq("email", session.user.email).single();
   if (!student) {
     document.getElementById("loading").innerHTML = "<p style='text-align:center;color:#94a3b8;padding:2rem'>Profile not found. Please contact the library.</p>";
     return;
@@ -368,6 +368,9 @@ async function loadDashboard() {
   document.getElementById("loading").style.display = "none";
   document.getElementById("content").style.display = "block";
   document.getElementById("student-name").textContent = student.full_name.split(" ")[0];
+  if (student.branches?.name) {
+    document.getElementById("student-branch").textContent = " Your Branch: " + student.branches.name + ".";
+  }
 
   // ── RENEWAL QUEUE: lazy activation — if queued exists and no active, activate now ──
   // This handles the case where pg_cron hasn't run yet but active has expired.
@@ -874,6 +877,7 @@ async function submitRenewal() {
     isRenewal:        true,
     isQueued:         rnlState.isQueuedRenewal,   // ── RENEWAL QUEUE flag
     existingStudentId: STUDENT.id,
+    branchId:         STUDENT.branch_id || null,
     studentData: {    // sent for completeness; backend uses existingStudentId
       fullName:  STUDENT.full_name,
       email:     STUDENT.email,
