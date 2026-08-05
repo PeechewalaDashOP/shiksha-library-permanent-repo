@@ -57,20 +57,115 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.body.insertAdjacentHTML("beforeend", getModalHTML());
   attachBookingListeners();
   checkLoggedInUser();
+  loadBranches();
 });
 
+// ── BRANCHES ─────────────────────────────────────────────────────
+// Fetched once on load; selectBranch() (called from index.html's branch
+// selector buttons) drives which plan grid is visible and which
+// branch_id flows through to registration.
+const VIGYAN_NAGAR_NAME = "Vigyan Nagar";
+let SL_BRANCHES = [];       // [{id, name}]
+let selectedBranchId = null;
+let DYNAMIC_PLANS = {};     // plan_id -> {name, duration, shift, price} for the currently-selected non-Vigyan-Nagar branch
+
+async function loadBranches() {
+  try {
+    const { data } = await sbClient.from("branches").select("id, name").order("name");
+    SL_BRANCHES = data || [];
+  } catch (e) {
+    console.log("Could not load branches:", e);
+  }
+}
+
+function getBranchId(name) {
+  return SL_BRANCHES.find((b) => b.name === name)?.id || null;
+}
+
+async function selectBranch(branchName) {
+  const branchId = getBranchId(branchName);
+  if (!branchId) {
+    alert("This branch is temporarily unavailable. Please refresh the page and try again.");
+    return;
+  }
+  selectedBranchId = branchId;
+  window.SL_CURRENT_BRANCH_NAME = branchName;
+
+  document.querySelectorAll(".branch-select-btn").forEach((b) => b.classList.remove("active"));
+  document.querySelector(`.branch-select-btn[data-branch-name="${branchName}"]`)?.classList.add("active");
+
+  document.getElementById("plans-content").style.display = "block";
+
+  const isVigyanNagar = branchName === VIGYAN_NAGAR_NAME;
+  document.getElementById("vn-plans-wrap").style.display = isVigyanNagar ? "" : "none";
+  document.getElementById("dyn-plans-wrap").style.display = isVigyanNagar ? "none" : "";
+
+  if (!isVigyanNagar) {
+    await renderDynamicPlans(branchId);
+  }
+
+  document.getElementById("plans-content").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const DYN_PLAN_PERIOD = {
+  "Morning": "6:00 AM – 2:00 PM",
+  "Evening": "2:00 PM – 10:00 PM",
+  "Full Day": "24×7 Access",
+  "Full Night": "10:00 PM – 6:00 AM",
+};
+const DYN_DURATION_LABEL = { "1 Month": "per month", "15 Days": "per 15 days", "3 Months": "per 3 months" };
+
+async function renderDynamicPlans(branchId) {
+  DYNAMIC_PLANS = {};
+  const grids = {
+    "1 Month": document.getElementById("dyn-plans-monthly"),
+    "15 Days": document.getElementById("dyn-plans-fifteenday"),
+    "3 Months": document.getElementById("dyn-plans-threemonth"),
+  };
+  Object.values(grids).forEach((g) => { if (g) g.innerHTML = ""; });
+
+  const { data: plans, error } = await sbClient
+    .from("plans")
+    .select("*")
+    .eq("branch_id", branchId)
+    .eq("is_active", true)
+    .order("shift");
+
+  if (error || !plans?.length) {
+    if (grids["1 Month"]) grids["1 Month"].innerHTML = "<p style='text-align:center;color:#64748b'>Plans for this branch aren't available yet — please contact the library.</p>";
+    return;
+  }
+
+  plans.forEach((p) => {
+    DYNAMIC_PLANS[p.id] = { name: p.name, duration: p.duration, shift: p.shift, price: p.price };
+    const grid = grids[p.duration];
+    if (!grid) return;
+    grid.insertAdjacentHTML("beforeend", `
+      <div class="plan-card reveal">
+        <div class="plan-name">${p.name}</div>
+        <div class="plan-price">₹${p.price.toLocaleString("en-IN")}</div>
+        <div class="plan-period">${DYN_DURATION_LABEL[p.duration] || ""} &nbsp;•&nbsp; ${DYN_PLAN_PERIOD[p.shift] || ""}</div>
+        <div class="plan-divider"></div>
+        <a class="btn btn-primary plan-cta" data-plan-id="${p.id}" href="javascript:void(0)">
+          <i class="fas fa-calendar-check"></i> Book Now
+        </a>
+      </div>
+    `);
+  });
+}
+
 function attachBookingListeners() {
-  document.querySelectorAll('[data-plan-id]').forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const planId = btn.dataset.planId;
-      const planData = PLANS[planId];
-      if (!planData) {
-        alert("This plan is temporarily unavailable. Please refresh the page and try again, or contact the library.");
-        return;
-      }
-      openBookingModal(planId, planData);
-    });
+  document.addEventListener("click", (e) => {
+    const planBtn = e.target.closest("[data-plan-id]");
+    if (!planBtn) return;
+    e.preventDefault();
+    const planId = planBtn.dataset.planId;
+    const planData = PLANS[planId] || DYNAMIC_PLANS[planId];
+    if (!planData) {
+      alert("This plan is temporarily unavailable. Please refresh the page and try again, or contact the library.");
+      return;
+    }
+    openBookingModal(planId, planData);
   });
 
   document.querySelectorAll('a.btn-gold, a.btn-primary, a[href*="wa.me"]').forEach((btn) => {
@@ -188,7 +283,7 @@ async function checkExistingActiveMembership(email, phone) {
 }
 
 function openBookingModal(planId, planData) {
-  currentPlan = { planId, ...planData, fixedSeat: false, locker: false, photoBase64: null, aadharFrontBase64: null, aadharBackBase64: null };
+  currentPlan = { planId, ...planData, branchId: selectedBranchId, fixedSeat: false, locker: false, photoBase64: null, aadharFrontBase64: null, aadharBackBase64: null };
   document.getElementById("sl-modal-plan-name").textContent = planData.name + " — " + planData.duration;
   document.getElementById("sl-plan-id-hidden").value  = planId;
   document.getElementById("sl-plan-base-price").value = planData.price;
@@ -429,6 +524,7 @@ async function handleBookingSubmit(e) {
           photoBase64: currentPlan.photoBase64 || null,
           aadharFrontBase64: currentPlan.aadharFrontBase64 || null,
 aadharBackBase64: currentPlan.aadharBackBase64 || null,
+          branchId: currentPlan.branchId || null,
         }),
       });
       const data = await res.json();
@@ -446,7 +542,7 @@ aadharBackBase64: currentPlan.aadharBackBase64 || null,
     const orderRes  = await fetch("/.netlify/functions/create-order", {
       method : "POST",
       headers: { "Content-Type": "application/json" },
-      body   : JSON.stringify({ amount: currentPlan.finalPrice, planId: currentPlan.planId, planName: currentPlan.name }),
+      body   : JSON.stringify({ amount: currentPlan.finalPrice, planId: currentPlan.planId, planName: currentPlan.name, branchId: currentPlan.branchId || null }),
     });
     const orderData = await orderRes.json();
     if (!orderData.orderId) throw new Error("Could not create order. Try again.");
@@ -523,6 +619,7 @@ async function verifyAndSave(razorpayResponse, studentData, orderId) {
         photoBase64: currentPlan.photoBase64 || null,
         aadharFrontBase64: currentPlan.aadharFrontBase64 || null,
 aadharBackBase64: currentPlan.aadharBackBase64 || null,
+        branchId: currentPlan.branchId || null,
       }),
     });
     const data = await res.json();

@@ -1341,14 +1341,25 @@
       <p class="section-sub">Flexible plans for every budget. Prime Section means a Premium Seating with Enhanced Cooling.</p>
     </div>
 
-    <div class="plans-toggle-wrap">
-      <div class="plans-toggle">
-        <button class="toggle-btn active" onclick="showPlans('monthly')">Monthly</button>
-        <button class="toggle-btn" onclick="showPlans('fifteenday')">15-Day</button>
-        <button class="toggle-btn" onclick="showPlans('threemonth')">3-Month</button>
+    <!-- BRANCH SELECTOR — shown first (progressive disclosure), plans load after a branch is picked -->
+    <div class="plans-toggle-wrap" id="branch-select-wrap">
+      <div class="plans-toggle" id="branch-select">
+        <button class="toggle-btn branch-select-btn" data-branch-name="Vigyan Nagar" onclick="selectBranch('Vigyan Nagar')">Vigyan Nagar</button>
+        <button class="toggle-btn branch-select-btn" data-branch-name="Mahaveer Nagar" onclick="selectBranch('Mahaveer Nagar')">Mahaveer Nagar</button>
+        <button class="toggle-btn branch-select-btn" data-branch-name="Kunhadi" onclick="selectBranch('Kunhadi')">Kunhadi</button>
       </div>
     </div>
 
+    <div id="plans-content" style="display:none">
+      <div class="plans-toggle-wrap">
+        <div class="plans-toggle">
+          <button class="toggle-btn active" onclick="showPlans('monthly')">Monthly</button>
+          <button class="toggle-btn" onclick="showPlans('fifteenday')">15-Day</button>
+          <button class="toggle-btn" onclick="showPlans('threemonth')">3-Month</button>
+        </div>
+      </div>
+
+      <div id="vn-plans-wrap">
     <!-- MONTHLY PLANS -->
     <div class="plans-grid active" id="plans-monthly">
       <!-- Basement Section -->
@@ -1908,6 +1919,15 @@
         </a>
       </div>
     </div>
+      </div><!-- /vn-plans-wrap -->
+
+      <!-- Mahaveer Nagar / Kunhadi: rendered dynamically from the plans table by selectBranch() in js/booking.js -->
+      <div id="dyn-plans-wrap" style="display:none">
+        <div class="plans-grid active" id="dyn-plans-monthly"></div>
+        <div class="plans-grid" id="dyn-plans-fifteenday"></div>
+        <div class="plans-grid" id="dyn-plans-threemonth"></div>
+      </div>
+    </div><!-- /plans-content -->
   </div>
 </section>
 
@@ -2240,11 +2260,13 @@
     track.appendChild(item);
   });
 
-  // PLANS TOGGLE
+  // PLANS TOGGLE — id prefix depends on which branch is currently selected
+  // (window.SL_CURRENT_BRANCH_NAME, set by selectBranch() in js/booking.js)
   function showPlans(type) {
-    document.querySelectorAll('.plans-grid').forEach(g => g.classList.remove('active'));
-    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('plans-' + type).classList.add('active');
+    document.querySelectorAll('#plans-content .plans-grid').forEach(g => g.classList.remove('active'));
+    document.querySelectorAll('#plans-content .toggle-btn').forEach(b => b.classList.remove('active'));
+    const prefix = window.SL_CURRENT_BRANCH_NAME === 'Vigyan Nagar' ? 'plans-' : 'dyn-plans-';
+    document.getElementById(prefix + type).classList.add('active');
     event.target.classList.add('active');
   }
 
