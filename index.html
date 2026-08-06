@@ -684,6 +684,16 @@
     .branch-radio-card.selected .branch-radio-mark::after { transform: scale(1); }
     .branch-radio-label { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--text-dark); }
 
+    /* Gentle nudge until a branch is picked — removed via JS (selectBranch) once one is */
+    .pulse-hint .branch-radio-card { animation: branchPulse 2.2s ease-in-out infinite; }
+    .pulse-hint .branch-radio-card:nth-child(2) { animation-delay: 0.15s; }
+    .pulse-hint .branch-radio-card:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes branchPulse {
+      0%, 100% { box-shadow: var(--shadow-sm); }
+      50% { box-shadow: 0 0 0 5px rgba(26,115,232,0.12), var(--shadow-sm); }
+    }
+    #branch-select-hint { transition: opacity 0.25s ease; }
+
     .plans-grid {
       display: none;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1380,12 +1390,13 @@
       <p class="section-sub">Select the center / branch in which you want to take admission.</p>
     </div>
 
-    <!-- BRANCH SELECTOR — single-select radio cards, one at a time. Vigyan Nagar is
-         the default (its plans show immediately, matching today's behavior); picking
-         a different branch swaps the plans below to that branch's. -->
-    <div class="branch-select-grid" id="branch-select">
+    <!-- BRANCH SELECTOR — single-select radio cards, one at a time. No default —
+         the student must actively pick a branch before its plans appear, so a
+         Mahaveer Nagar/Kunhadi student can't accidentally register under Vigyan
+         Nagar's plans just because nothing else was selected yet. -->
+    <div class="branch-select-grid pulse-hint" id="branch-select">
       <label class="branch-radio-card" data-branch-name="Vigyan Nagar" onclick="selectBranch('Vigyan Nagar')">
-        <input type="radio" name="sl-branch" value="Vigyan Nagar" checked>
+        <input type="radio" name="sl-branch" value="Vigyan Nagar">
         <span class="branch-radio-mark"></span>
         <span class="branch-radio-label">Vigyan Nagar</span>
       </label>
@@ -1400,6 +1411,7 @@
         <span class="branch-radio-label">Kunhadi</span>
       </label>
     </div>
+    <p class="section-sub" id="branch-select-hint" style="text-align:center;margin-top:-2rem;margin-bottom:2.5rem">👆 Please select your branch to continue</p>
 
     <div id="plans-content" style="display:none">
       <div class="reveal">

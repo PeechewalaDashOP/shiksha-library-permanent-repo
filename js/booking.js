@@ -57,11 +57,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.body.insertAdjacentHTML("beforeend", getModalHTML());
   attachBookingListeners();
   checkLoggedInUser();
-  await loadBranches();
-  // Vigyan Nagar is the default — its plans show immediately (matching the
-  // site's behavior before this feature), no click required. Picking a
-  // different branch radio swaps the plans below to that branch's.
-  selectBranch(VIGYAN_NAGAR_NAME, { isInitial: true });
+  loadBranches();
+  // No default branch — plans-content stays hidden (see index.html) until the
+  // student actively picks one of the radio cards. Deliberate: pre-selecting
+  // Vigyan Nagar risked a Mahaveer Nagar/Kunhadi student registering under the
+  // wrong branch's plans by not noticing they needed to switch it.
 });
 
 // ── BRANCHES ─────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ function getBranchId(name) {
   return SL_BRANCHES.find((b) => b.name === name)?.id || null;
 }
 
-async function selectBranch(branchName, opts = {}) {
+async function selectBranch(branchName) {
   const branchId = getBranchId(branchName);
   if (!branchId) {
     alert("This branch is temporarily unavailable. Please refresh the page and try again.");
@@ -102,6 +102,11 @@ async function selectBranch(branchName, opts = {}) {
     if (radio) radio.checked = isThisOne;
   });
 
+  // A real choice has been made — stop nudging.
+  document.getElementById("branch-select")?.classList.remove("pulse-hint");
+  const hint = document.getElementById("branch-select-hint");
+  if (hint) hint.style.display = "none";
+
   document.getElementById("plans-content").style.display = "block";
 
   const isVigyanNagar = branchName === VIGYAN_NAGAR_NAME;
@@ -112,9 +117,7 @@ async function selectBranch(branchName, opts = {}) {
     await renderDynamicPlans(branchId);
   }
 
-  if (!opts.isInitial) {
-    document.getElementById("plans-content").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  document.getElementById("plans-content").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 const DYN_PLAN_PERIOD = {
