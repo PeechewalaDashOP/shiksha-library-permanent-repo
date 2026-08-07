@@ -1,0 +1,5 @@
+# Local Netlify folder
+.netlify
+
+# Local env overrides (netlify dev)
+.env
