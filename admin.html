@@ -78,6 +78,7 @@
     <div>
       <h1>Shiksha Library Admin</h1>
       <p id="admin-greeting">Owner Dashboard</p>
+      <p id="branch-name-badge" style="display:none;font-weight:800;font-size:1.05rem;color:#f59e0b;margin-top:.15rem;letter-spacing:.02em"></p>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:.75rem">
@@ -420,14 +421,27 @@ async function checkSession() {
 
 // ── BRANCH SCOPE ────────────────────────────────────────────────
 // adminBranchId: this admin's fixed branch (null = sees all branches, via admin_branch_id()).
-// branchFilter: "all" or a specific branch id — what the current view is scoped to.
-// For a global admin, branchFilter starts at "all" and the switcher lets them narrow it.
-// For a single-branch admin, branchFilter is locked to their branch and the switcher is hidden
-// (RLS enforces this regardless — the switcher is a convenience, not the security boundary).
+// No "All Branches" view — mixing every branch's data together in one list isn't useful here.
+// branchFilter always holds one real branch id: for a global admin (adminBranchId null) it
+// starts on Vigyan Nagar and the dropdown switches between branches one at a time; for a
+// single-branch admin it's locked to their branch and the switcher is hidden (RLS enforces
+// this regardless — the switcher is a convenience, not the security boundary).
 let adminBranchId = null;
-let branchFilter = "all";
+let branchFilter = null;
+let branchNames = {}; // id -> name, populated once in setupBranchScope
+
+function updateBranchBadge() {
+  const badge = document.getElementById("branch-name-badge");
+  const name = branchNames[branchFilter] || "";
+  badge.textContent = `Shiksha Library ${name} Dashboard`;
+  badge.style.display = "block";
+  document.title = `Shiksha Library ${name} Dashboard`;
+}
 
 async function setupBranchScope() {
+  const { data: branches } = await sb.from("branches").select("id, name").order("name");
+  (branches || []).forEach(b => { branchNames[b.id] = b.name; });
+
   const { data: myBranchId } = await sb.rpc("admin_branch_id");
   adminBranchId = myBranchId || null;
 
@@ -435,19 +449,26 @@ async function setupBranchScope() {
   if (adminBranchId) {
     branchFilter = adminBranchId;
     sel.style.display = "none";
+    updateBranchBadge();
     return;
   }
 
-  const { data: branches } = await sb.from("branches").select("id, name").order("name");
-  branchFilter = "all";
-  sel.innerHTML = '<option value="all">All Branches</option>' +
-    (branches || []).map(b => `<option value="${b.id}">${b.name}</option>`).join("");
-  sel.value = "all";
+  // Fixed display order (not alphabetical): Vigyan Nagar, then Mahaveer Nagar, then Kunhadi.
+  const BRANCH_ORDER = ["Vigyan Nagar", "Mahaveer Nagar", "Kunhadi"];
+  const ordered = [...(branches || [])].sort(
+    (a, b) => BRANCH_ORDER.indexOf(a.name) - BRANCH_ORDER.indexOf(b.name)
+  );
+  sel.innerHTML = ordered.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+  const vn = ordered.find(b => b.name === "Vigyan Nagar");
+  branchFilter = vn ? vn.id : (ordered?.[0]?.id || null);
+  sel.value = branchFilter;
   sel.style.display = "";
+  updateBranchBadge();
 }
 
 function onBranchFilterChange() {
   branchFilter = document.getElementById("branch-filter").value;
+  updateBranchBadge();
   loadAll();
 }
 
@@ -501,7 +522,7 @@ async function loadAll() {
   document.getElementById("admin-loader").style.display = "none";
   document.getElementById("admin-content").style.display = "block";
 
-  const scoped = (q) => branchFilter === "all" ? q : q.eq("branch_id", branchFilter);
+  const scoped = (q) => q.eq("branch_id", branchFilter);
 
   const [{ data: students }, { data: memberships }, { data: payments }, { data: plans }] = await Promise.all([
     scoped(sb.from("students").select("*")).order("created_at", { ascending: false }),
@@ -1490,12 +1511,12 @@ function clearMembFilters() {
 
 // ── CASH APPROVALS ────────────────────────────────────────────────
 async function loadCashPending() {
-  let q = sb
+  const q = sb
     .from("memberships")
     .select("*, students(full_name, email, phone)")
     .eq("status", "pending")
-    .eq("payment_mode", "cash");
-  if (branchFilter !== "all") q = q.eq("branch_id", branchFilter);
+    .eq("payment_mode", "cash")
+    .eq("branch_id", branchFilter);
   const { data, error } = await q.order("created_at", { ascending: false });
 
   if (error) {
