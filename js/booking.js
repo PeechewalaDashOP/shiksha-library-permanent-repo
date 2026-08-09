@@ -50,6 +50,8 @@ const PLANS = {
   "3month-fullday-basement":  { name: "Basement Full Day",      duration: "3 Months", shift: "Full Day Basement Section – 3 Months", price: 2160 },
   // Feature 6: Full Night plan — Ground Floor, Monthly only
   "monthly-fullnight-regular": { name: "Full Night",           duration: "1 Month",  shift: "Full Night Ground Floor – 10PM to 6AM", price: 400 },
+  // 24 Hours plan — Ground Floor, Monthly only. Full Day + Full Night combined access.
+  "monthly-24hours-regular":   { name: "24 Hours",             duration: "1 Month",  shift: "24 Hours Ground Floor – Round the Clock", price: 1500 },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -86,7 +88,17 @@ function getBranchId(name) {
   return SL_BRANCHES.find((b) => b.name === name)?.id || null;
 }
 
+// Clicking a <label> that wraps a form control (our branch radio cards) fires the label's
+// onclick TWICE in most browsers: once for the direct click, and once more when the click
+// bubbles up from the browser's synthetic activation of the wrapped <input>. This lock
+// collapses that into a single selectBranch() run per real user click.
+let selectBranchLock = false;
+
 async function selectBranch(branchName) {
+  if (selectBranchLock) return;
+  selectBranchLock = true;
+  setTimeout(() => { selectBranchLock = false; }, 150);
+
   const branchId = getBranchId(branchName);
   if (!branchId) {
     alert("This branch is temporarily unavailable. Please refresh the page and try again.");
@@ -113,6 +125,16 @@ async function selectBranch(branchName) {
   document.getElementById("vn-plans-wrap").style.display = isVigyanNagar ? "" : "none";
   document.getElementById("dyn-plans-wrap").style.display = isVigyanNagar ? "none" : "";
 
+  // Reset the Monthly/15-Day/3-Month toggle to "Monthly" on every branch switch. Without this,
+  // whichever tab was left active from a previous branch (e.g. "3-Month") keeps its .active
+  // class — and since only the .active grid is visible (display:grid vs display:none), the
+  // new branch's matching grid can end up with real data but zero visible cards.
+  document.querySelectorAll("#plans-content .plans-grid").forEach((g) => g.classList.remove("active"));
+  document.querySelectorAll("#plans-content .toggle-btn").forEach((b) => b.classList.remove("active"));
+  const prefix = isVigyanNagar ? "plans-" : "dyn-plans-";
+  document.getElementById(prefix + "monthly")?.classList.add("active");
+  document.querySelector("#plans-content .toggle-btn")?.classList.add("active");
+
   if (!isVigyanNagar) {
     await renderDynamicPlans(branchId);
   }
@@ -125,10 +147,26 @@ const DYN_PLAN_PERIOD = {
   "Evening": "2:00 PM – 10:00 PM",
   "Full Day": "24×7 Access",
   "Full Night": "10:00 PM – 6:00 AM",
+  "24 Hours": "Round the Clock (Day + Night)",
 };
 const DYN_DURATION_LABEL = { "1 Month": "per month", "15 Days": "per 15 days", "3 Months": "per 3 months" };
+// Display order within a duration tab — not alphabetical (DB's default .order("shift") would
+// put "24 Hours" first). Any shift not listed here sorts after these, in whatever order it
+// came back in.
+const DYN_SHIFT_ORDER = ["Morning", "Evening", "Full Day", "Full Night", "24 Hours"];
+const DYN_PLAN_FEATURES = [
+  "comfortable Seat", "Silent Study Environment", "High-Speed WiFi",
+  "Power Backup", "Clean Facilities", "Drinking Water",
+];
+
+// Bumped on every call; a response only gets applied if it's still the most recent call by
+// the time it resolves. Guards against overlapping renderDynamicPlans() calls (e.g. the
+// double-click quirk above, or a fast branch switch before the previous fetch lands) racing
+// and appending duplicate cards.
+let dynPlansRequestId = 0;
 
 async function renderDynamicPlans(branchId) {
+  const requestId = ++dynPlansRequestId;
   DYNAMIC_PLANS = {};
   const grids = {
     "1 Month": document.getElementById("dyn-plans-monthly"),
@@ -141,24 +179,48 @@ async function renderDynamicPlans(branchId) {
     .from("plans")
     .select("*")
     .eq("branch_id", branchId)
-    .eq("is_active", true)
-    .order("shift");
+    .eq("is_active", true);
+
+  if (requestId !== dynPlansRequestId) return; // superseded by a newer call — discard
+
+  if (error) console.error("renderDynamicPlans: failed to load plans for branch", branchId, error);
 
   if (error || !plans?.length) {
-    if (grids["1 Month"]) grids["1 Month"].innerHTML = "<p style='text-align:center;color:#64748b'>Plans for this branch aren't available yet — please contact the library.</p>";
+    const msg = "<p style='text-align:center;color:#64748b'>Plans for this branch aren't available yet — please contact the library.</p>";
+    Object.values(grids).forEach((g) => { if (g) g.innerHTML = msg; });
     return;
   }
+
+  plans.sort((a, b) => DYN_SHIFT_ORDER.indexOf(a.shift) - DYN_SHIFT_ORDER.indexOf(b.shift));
+
+  const featuresHTML = DYN_PLAN_FEATURES
+    .map((f) => `<div class="plan-feature"><i class="fas fa-check"></i> ${f}</div>`)
+    .join("");
 
   plans.forEach((p) => {
     DYNAMIC_PLANS[p.id] = { name: p.name, duration: p.duration, shift: p.shift, price: p.price };
     const grid = grids[p.duration];
     if (!grid) return;
+    // Discount sticker + crossed-out MRP, matching the static Vigyan Nagar cards — only
+    // when the plan actually has a saving (original_price set and higher than price).
+    const hasDiscount = p.original_price && p.original_price > p.price;
+    const discountHTML = hasDiscount
+      ? `<div class="discount-sticker"><i class="fas fa-tag"></i> Save ₹${(p.original_price - p.price).toLocaleString("en-IN")}</div>
+         <div class="plan-orig-price">₹${p.original_price.toLocaleString("en-IN")}${DYN_DURATION_LABEL[p.duration] ? "/" + DYN_DURATION_LABEL[p.duration].replace("per ", "") : ""}</div>`
+      : "";
+
+    // No "reveal" class here (unlike the static Vigyan Nagar cards) — the page's
+    // IntersectionObserver only ever observes elements present at DOMContentLoaded, so a
+    // .reveal element inserted later never gets its "visible" class and stays opacity:0
+    // forever. Render these plainly visible instead.
     grid.insertAdjacentHTML("beforeend", `
-      <div class="plan-card reveal">
+      <div class="plan-card">
+        ${discountHTML}
         <div class="plan-name">${p.name}</div>
         <div class="plan-price">₹${p.price.toLocaleString("en-IN")}</div>
         <div class="plan-period">${DYN_DURATION_LABEL[p.duration] || ""} &nbsp;•&nbsp; ${DYN_PLAN_PERIOD[p.shift] || ""}</div>
         <div class="plan-divider"></div>
+        <div class="plan-features">${featuresHTML}</div>
         <a class="btn btn-primary plan-cta" data-plan-id="${p.id}" href="javascript:void(0)">
           <i class="fas fa-calendar-check"></i> Book Now
         </a>
