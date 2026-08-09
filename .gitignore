@@ -3,3 +3,6 @@
 
 # Local env overrides (netlify dev)
 .env
+
+# Installed dependencies (Netlify installs these from package.json at build/deploy time)
+node_modules/
