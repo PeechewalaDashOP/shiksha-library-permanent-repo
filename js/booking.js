@@ -410,14 +410,19 @@ function updateTotalPrice() {
 // 15days  : +14 days               →  25 Jun → 09 Jul
 // 3month  : +3 months then -1 day  →  25 Jun → 24 Sep
 function updateMembershipDates() {
-  const planId     = document.getElementById("sl-plan-id-hidden").value;
   const startInput = document.getElementById("sl-start-date").value;
   const nowIST = new Date(new Date().getTime() + 5.5*60*60000);
   const start  = startInput ? new Date(startInput + "T00:00:00") : new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
   const end        = new Date(start);
-  if (planId.startsWith("monthly"))     { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
-  else if (planId.startsWith("15days")) end.setDate(end.getDate() + 14);
-  else if (planId.startsWith("3month")) { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
+  // Driven by currentPlan.duration (from PLANS/DYNAMIC_PLANS — the plan's actual duration
+  // field), not the plan id's text prefix. Mahaveer Nagar/Kunhadi plan ids are "mn-"/"kh-"
+  // prefixed (e.g. "mn-monthly-evening-regular"), so an id.startsWith("monthly") check never
+  // matched them — end silently stayed equal to start, producing an already-"expired"
+  // same-day membership. This was the actual bug behind that.
+  const duration = currentPlan.duration || "";
+  if (duration === "1 Month")       { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+  else if (duration === "15 Days")  end.setDate(end.getDate() + 14);
+  else if (duration === "3 Months") { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   const fmt = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   document.getElementById("sl-date-display").value = `From ${fmt(start)} to ${fmt(end)}`;
   const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };

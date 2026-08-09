@@ -596,16 +596,20 @@ function onModeChange() {
 
 // ── DATES ──────────────────────────────────────────────────────────
 // Reuses same calculation logic as cash-registration.js and verify-payment.js
-function calcEnd(startStr, pid, customDays) {
+// Driven by the plan's actual duration column, not the plan id's text prefix — Mahaveer
+// Nagar/Kunhadi plan ids are "mn-"/"kh-" prefixed (e.g. "mn-monthly-evening-regular"), so a
+// pid.startsWith("monthly") check never matched them and left end == start (an
+// instantly-"expired" membership).
+function calcEnd(startStr, duration, customDays) {
   if (!startStr) return null;
   const [y, m, d] = startStr.split("-").map(Number);
   const end = new Date(y, m - 1, d);
   if (customDays > 0) {
     end.setDate(end.getDate() + (customDays - 1));   // same pattern as 15days (+14)
-  } else if (pid) {
-    if      (pid.startsWith("monthly"))  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
-    else if (pid.startsWith("15days"))     end.setDate(end.getDate() + 14);
-    else if (pid.startsWith("3month"))   { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
+  } else if (duration) {
+    if      (duration === "1 Month")  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+    else if (duration === "15 Days")    end.setDate(end.getDate() + 14);
+    else if (duration === "3 Months") { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   }
   return [end.getFullYear(), String(end.getMonth()+1).padStart(2,"0"), String(end.getDate()).padStart(2,"0")].join("-");
 }
@@ -632,7 +636,7 @@ function updateEndDate() {
   let end = null;
 
   if (planType === "fixed" && selectedPlan && start) {
-    end = calcEnd(start, selectedPlan.id, 0);
+    end = calcEnd(start, selectedPlan.duration, 0);
   } else if (planType === "custom" && start) {
     const days = parseInt(document.getElementById("c-days").value);
     if (days > 0) end = calcEnd(start, "", days);

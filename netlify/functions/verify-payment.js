@@ -241,9 +241,16 @@ exports.handler = async (event) => {
       const nowIST    = new Date(new Date().getTime() + 5.5*60*60000);
       const startDate = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
       const endDate   = new Date(startDate);
-      if (planId.startsWith("monthly"))     { endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(endDate.getDate() - 1); }
-      else if (planId.startsWith("15days")) endDate.setDate(endDate.getDate() + 14);
-      else if (planId.startsWith("3month")) { endDate.setMonth(endDate.getMonth() + 3); endDate.setDate(endDate.getDate() - 1); }
+      // Driven by the plan's actual duration column, not the plan id's text prefix — Mahaveer
+      // Nagar/Kunhadi plan ids are "mn-"/"kh-" prefixed (e.g. "mn-monthly-evening-regular"),
+      // so a startsWith("monthly") check never matched them and left endDate == startDate
+      // (an instantly-"expired" membership). This is only a fallback (the client normally
+      // sends startDate/endDate already), but must still be correct.
+      const { data: planRow } = await supabase.from("plans").select("duration").eq("id", planId).single();
+      const duration = planRow?.duration || "";
+      if (duration === "1 Month")       { endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(endDate.getDate() - 1); }
+      else if (duration === "15 Days")  endDate.setDate(endDate.getDate() + 14);
+      else if (duration === "3 Months") { endDate.setMonth(endDate.getMonth() + 3); endDate.setDate(endDate.getDate() - 1); }
       const toIST = (d) => { const x = new Date(d.getTime() + 5.5*60*60000); return x.toISOString().split("T")[0]; };
       startStr = toIST(startDate);
       endStr   = toIST(endDate);

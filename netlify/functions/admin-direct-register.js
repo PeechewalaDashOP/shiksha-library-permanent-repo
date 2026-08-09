@@ -86,15 +86,19 @@ function calculateBaseAmount({ planType, planRecord, customDurationDays, customD
 
 // ── END DATE CALCULATOR ───────────────────────────────────────────
 // Identical logic to verify-payment.js and cash-registration.js.
-function calculateEndDate(startDateStr, planId, customDurationDays) {
+// Driven by the plan's actual duration column, not the plan id's text prefix — Mahaveer
+// Nagar/Kunhadi plan ids are "mn-"/"kh-" prefixed (e.g. "mn-monthly-evening-regular"), so a
+// planId.startsWith("monthly") check never matched them and left end == start (an
+// instantly-"expired" membership).
+function calculateEndDate(startDateStr, duration, customDurationDays) {
   const [y, m, d] = startDateStr.split("-").map(Number);
   const end = new Date(y, m - 1, d);
   if (customDurationDays > 0) {
     end.setDate(end.getDate() + (customDurationDays - 1)); // same as 15days (+14)
-  } else if (planId) {
-    if      (planId.startsWith("monthly"))  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
-    else if (planId.startsWith("15days"))     end.setDate(end.getDate() + 14);
-    else if (planId.startsWith("3month"))   { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
+  } else if (duration) {
+    if      (duration === "1 Month")  { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+    else if (duration === "15 Days")    end.setDate(end.getDate() + 14);
+    else if (duration === "3 Months") { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   }
   return [
     end.getFullYear(),
@@ -374,7 +378,7 @@ exports.handler = async (event) => {
     // ── 9. CALCULATE END DATE ─────────────────────────────────────
     const endDate = calculateEndDate(
       startDate,
-      planId || "",
+      planRecord?.duration || "",
       planType === "custom" ? parseInt(customDurationDays) : 0
     );
 

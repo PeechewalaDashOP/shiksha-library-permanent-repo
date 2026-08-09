@@ -831,7 +831,12 @@ function calcRenewalTotal() {
 // monthly : +1 month  then -1 day  →  25 Jun → 24 Jul
 // 15days  : +14 days               →  25 Jun → 09 Jul
 // 3month  : +3 months then -1 day  →  25 Jun → 24 Sep
-function calcDates(planId, startInput) {
+// Takes the duration category ("monthly"/"15days"/"3month" — from rnlState.duration, i.e.
+// which renewal tab is active) rather than parsing the plan id's text prefix. PLAN_CATALOG is
+// Vigyan-Nagar-only today so the old id-prefix check happened to work, but it's the same
+// fragile pattern that broke Mahaveer Nagar/Kunhadi elsewhere (their ids are "mn-"/"kh-"
+// prefixed) — fixed here too in case this catalog ever becomes branch-aware.
+function calcDates(duration, startInput) {
   const toLocalIST = (d) => {
     const offset = 5.5 * 60 * 60000; // IST = UTC+5:30
     const local = new Date(d.getTime() + offset);
@@ -839,9 +844,9 @@ function calcDates(planId, startInput) {
   };
   const start = startInput ? new Date(startInput + "T00:00:00") : new Date();
   const end   = new Date(start);
-  if (planId.startsWith("monthly"))     { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
-  else if (planId.startsWith("15days")) end.setDate(end.getDate() + 14);
-  else if (planId.startsWith("3month")) { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
+  if (duration === "monthly")     { end.setMonth(end.getMonth() + 1); end.setDate(end.getDate() - 1); }
+  else if (duration === "15days") end.setDate(end.getDate() + 14);
+  else if (duration === "3month") { end.setMonth(end.getMonth() + 3); end.setDate(end.getDate() - 1); }
   return {
     startDate: toLocalIST(start),
     endDate:   toLocalIST(end),
@@ -863,7 +868,7 @@ async function submitRenewal() {
   const startInput = document.getElementById("rnl-start-date").value;
   let startDate = null, endDate = null;
   if (!rnlState.isQueuedRenewal) {
-    const calculated = calcDates(rnlState.selectedPlan.id, startInput);
+    const calculated = calcDates(rnlState.duration, startInput);
     startDate = calculated.startDate;
     endDate   = calculated.endDate;
   }
