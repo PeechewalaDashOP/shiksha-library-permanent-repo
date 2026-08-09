@@ -133,10 +133,13 @@ exports.handler = async (event) => {
 
       let studentCode = existingCheck?.student_code || null;
       if (!studentCode) {
-        const { data: codeData } = await supabase.rpc("generate_student_code");
-        const prefix = getPlanPrefix(planId);
-        const rawCode = (codeData || "").replace(/^SL-/, ""); // strip legacy SL- → new format: PREFIX-YYYY-NNN
-        studentCode = prefix ? prefix + "-" + rawCode : rawCode;
+        // Numbering (and the branch-abbreviation prefix that keeps it unique across branches)
+        // lives entirely in the DB function now — see migrations/003_per_branch_student_codes.sql.
+        const { data: codeData } = await supabase.rpc("generate_student_code", {
+          p_branch_id: branchId || null,
+          p_shift_prefix: getPlanPrefix(planId),
+        });
+        studentCode = codeData;
       }
 
       const auditFields = {};
