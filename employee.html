@@ -33,6 +33,9 @@
   .photo-box{width:100%;aspect-ratio:1;background:#f8fafc;border:1.5px dashed #e2e8f0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.78rem;overflow:hidden;margin-bottom:.5rem}
   .photo-box img{width:100%;height:100%;object-fit:cover}
   .selected-student{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .mi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem}
+  .mi-key{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+  .mi-val{font-weight:600;color:#1e293b}
   .selected-student .info .name{font-weight:700;font-size:.95rem}
   .selected-student .info .sub{font-size:.78rem;color:#64748b;margin-top:2px}
   .change-btn{background:#f1f5f9;border:none;padding:.35rem .8rem;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:500}
@@ -100,6 +103,8 @@
           </div>
           <button class="change-btn" onclick="clearSelectedStudent()">Change</button>
         </div>
+
+        <div id="sel-membership-info" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
 
         <div class="student-photo-grid">
           <div class="photo-slot">
@@ -243,8 +248,8 @@ function searchStudents(query) {
       return;
     }
     resultsEl.innerHTML = data.map(s => `
-      <div class="search-item" onclick='selectStudent(${JSON.stringify(s)})'>
-        <strong>${s.full_name}</strong> · ${s.phone} · ${s.student_code || "—"}
+      <div class="search-item" onclick='selectStudent(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
+        <strong>${s.full_name}</strong> · ${s.email || "—"} · ${s.student_code || "—"}
       </div>
     `).join("");
   }, 300);
@@ -256,7 +261,20 @@ async function selectStudent(s) {
   document.getElementById("student-search").value = "";
   document.getElementById("selected-student-wrap").style.display = "block";
   document.getElementById("sel-name").textContent = s.full_name;
-  document.getElementById("sel-sub").textContent = s.phone + " · " + (s.student_code || "—");
+  document.getElementById("sel-sub").textContent = s.email + " · " + (s.student_code || "—");
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  document.getElementById("sel-membership-info").innerHTML = `
+    <div class="mi-grid">
+      <div><div class="mi-key">Plan</div><div class="mi-val">${s.plan_name || "—"}</div></div>
+      <div><div class="mi-key">Duration / Shift / Section</div><div class="mi-val">${[s.duration, s.shift, s.section].filter(Boolean).join(" · ") || "—"}</div></div>
+      <div><div class="mi-key">Start – End</div><div class="mi-val">${fmtDate(s.start_date)} – ${fmtDate(s.end_date)}</div></div>
+      <div><div class="mi-key">Status</div><div class="mi-val">${s.membership_status || "—"}</div></div>
+      <div><div class="mi-key">Fixed Seat</div><div class="mi-val">${s.fixed_seat ? "Yes" : "No"}</div></div>
+      <div><div class="mi-key">Locker</div><div class="mi-val">${s.locker ? "Yes" : "No"}</div></div>
+    </div>
+  `;
+
   document.getElementById("photo-error").style.display = "none";
   document.getElementById("photo-ok").style.display = "none";
   document.getElementById("file-photo").value = "";
