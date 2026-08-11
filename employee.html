@@ -51,6 +51,17 @@
   .login-box input:focus{border-color:#f59e0b}
   .login-box button{width:100%;background:#f59e0b;border:none;color:#fff;padding:.75rem;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:.5rem}
   @media(max-width:520px){.student-photo-grid{grid-template-columns:1fr}}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+  .stat-tile{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:.85rem;text-align:center}
+  .stat-tile .val{font-size:1.4rem;font-weight:800;color:#f59e0b}
+  .stat-tile .lbl{font-size:.72rem;color:#64748b;margin-top:2px}
+  .roster-row{cursor:pointer}
+  .roster-row:hover{background:#fffbeb}
+  .badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600}
+  .badge-active{background:#dcfce7;color:#15803d}
+  .badge-expired{background:#fee2e2;color:#dc2626}
+  .badge-other{background:#f1f5f9;color:#64748b}
+  @media(max-width:520px){.stat-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -89,11 +100,23 @@
       </table>
     </div>
 
-    <!-- POWER 2: UPDATE STUDENT PHOTO / AADHAAR -->
+    <!-- STUDENTS: full roster + stats, select one to update photo/Aadhaar -->
     <div class="card">
-      <div class="card-title">📷 Update Student Photo / Aadhaar</div>
-      <input type="text" class="search-input" id="student-search" placeholder="Search by name or phone..." oninput="searchStudents(this.value)">
-      <div id="search-results"></div>
+      <div class="card-title">👥 Students</div>
+
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="val" id="stat-active">—</div><div class="lbl">Active Members</div></div>
+        <div class="stat-tile"><div class="val" id="stat-renewals">—</div><div class="lbl">Renewals</div></div>
+        <div class="stat-tile"><div class="val" id="stat-expired">—</div><div class="lbl">Expired</div></div>
+      </div>
+
+      <input type="text" class="search-input" id="student-search" placeholder="Search by name or phone..." oninput="filterRoster(this.value)">
+      <div style="overflow-x:auto;margin-bottom:1.25rem">
+        <table>
+          <thead><tr><th>Name</th><th>Plan</th><th>Status</th><th></th></tr></thead>
+          <tbody id="roster-body"><tr><td colspan="4" style="color:#94a3b8;text-align:center">Loading...</td></tr></tbody>
+        </table>
+      </div>
 
       <div id="selected-student-wrap" style="display:none">
         <div class="selected-student">
@@ -194,6 +217,7 @@ async function initDashboard(branchId) {
   document.getElementById("content").style.display = "block";
 
   await loadPrices();
+  await loadStudents();
 }
 
 // ── POWER 1: PRICES ──────────────────────────────────────────────
@@ -235,30 +259,72 @@ async function savePrice(planId) {
   setTimeout(() => { input.style.borderColor = "#e2e8f0"; }, 1200);
 }
 
-// ── POWER 2: STUDENT PHOTO / AADHAAR ─────────────────────────────
-let searchDebounce = null;
-function searchStudents(query) {
-  clearTimeout(searchDebounce);
-  const resultsEl = document.getElementById("search-results");
-  if (!query || query.trim().length < 2) { resultsEl.innerHTML = ""; return; }
-  searchDebounce = setTimeout(async () => {
-    const { data, error } = await sb.rpc("employee_search_students", { p_query: query.trim() });
-    if (error || !data?.length) {
-      resultsEl.innerHTML = `<div class="search-item" style="color:#94a3b8">No students found.</div>`;
-      return;
-    }
-    resultsEl.innerHTML = data.map(s => `
-      <div class="search-item" onclick='selectStudent(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
-        <strong>${s.full_name}</strong> · ${s.email || "—"} · ${s.student_code || "—"}
-      </div>
-    `).join("");
-  }, 300);
+// ── STUDENTS: full roster, stats, search-filters-the-table ──────────
+// Fetched once (branch-scoped, own-branch-only per employee_search_students'
+// server-side check) and filtered client-side — branch rosters are small
+// enough that re-querying per keystroke isn't worth the round-trip.
+let allStudents = [];
+
+async function loadStudents() {
+  const { data, error } = await sb.rpc("employee_search_students", { p_query: "" });
+  allStudents = (error ? [] : data) || [];
+  renderStudentStats(allStudents);
+  renderRoster(allStudents);
+}
+
+function renderStudentStats(list) {
+  const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
+  const todayStr = nowIST.toISOString().split("T")[0];
+  let active = 0, expired = 0, renewals = 0;
+  list.forEach(s => {
+    const pastEnd = s.end_date && s.end_date < todayStr;
+    if (s.membership_status === "active" && !pastEnd) active++;
+    else if (s.membership_status === "active" && pastEnd) expired++;
+    else if (s.membership_status === "expired") expired++;
+    if (s.registration_type === "renewal") renewals++;
+  });
+  document.getElementById("stat-active").textContent = active;
+  document.getElementById("stat-renewals").textContent = renewals;
+  document.getElementById("stat-expired").textContent = expired;
+}
+
+function statusBadge(s) {
+  const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60000);
+  const todayStr = nowIST.toISOString().split("T")[0];
+  const pastEnd = s.end_date && s.end_date < todayStr;
+  if (!s.membership_status) return `<span class="badge badge-other">No plan</span>`;
+  if (s.membership_status === "active" && !pastEnd) return `<span class="badge badge-active">Active</span>`;
+  if (s.membership_status === "active" && pastEnd)  return `<span class="badge badge-expired">Expired</span>`;
+  if (s.membership_status === "expired")            return `<span class="badge badge-expired">Expired</span>`;
+  return `<span class="badge badge-other">${s.membership_status}</span>`;
+}
+
+function renderRoster(list) {
+  const body = document.getElementById("roster-body");
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="4" style="color:#94a3b8;text-align:center">No students yet.</td></tr>`;
+    return;
+  }
+  body.innerHTML = list.map(s => `
+    <tr class="roster-row" onclick='selectStudent(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
+      <td><strong>${s.full_name}</strong><div style="font-size:.75rem;color:#94a3b8">${s.student_code || "—"}</div></td>
+      <td>${s.plan_name || "—"}</td>
+      <td>${statusBadge(s)}</td>
+      <td><button class="save-btn">Select</button></td>
+    </tr>
+  `).join("");
+}
+
+function filterRoster(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) { renderRoster(allStudents); return; }
+  renderRoster(allStudents.filter(s =>
+    s.full_name.toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q)
+  ));
 }
 
 async function selectStudent(s) {
   selectedStudent = s;
-  document.getElementById("search-results").innerHTML = "";
-  document.getElementById("student-search").value = "";
   document.getElementById("selected-student-wrap").style.display = "block";
   document.getElementById("sel-name").textContent = s.full_name;
   document.getElementById("sel-sub").textContent = s.email + " · " + (s.student_code || "—");
@@ -284,6 +350,8 @@ async function selectStudent(s) {
   await loadPhotoBox("box-photo", s.photo_url, "No photo");
   await loadPhotoBox("box-aadhar-front", s.aadhar_front_url, "Not uploaded");
   await loadPhotoBox("box-aadhar-back", s.aadhar_back_url, "Not uploaded");
+
+  document.getElementById("selected-student-wrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 async function loadPhotoBox(boxId, path, emptyText) {
@@ -351,6 +419,16 @@ async function savePhotos() {
     if (photoUrl) await loadPhotoBox("box-photo", photoUrl, "No photo");
     if (aadharFrontUrl) await loadPhotoBox("box-aadhar-front", aadharFrontUrl, "Not uploaded");
     if (aadharBackUrl) await loadPhotoBox("box-aadhar-back", aadharBackUrl, "Not uploaded");
+
+    // Keep the cached roster row in sync so re-selecting this student later (without a full
+    // reload) shows the new images.
+    const cached = allStudents.find(s => s.id === selectedStudent.id);
+    if (cached) {
+      if (photoUrl) cached.photo_url = photoUrl;
+      if (aadharFrontUrl) cached.aadhar_front_url = aadharFrontUrl;
+      if (aadharBackUrl) cached.aadhar_back_url = aadharBackUrl;
+    }
+
     document.getElementById("file-photo").value = "";
     document.getElementById("file-aadhar-front").value = "";
     document.getElementById("file-aadhar-back").value = "";
