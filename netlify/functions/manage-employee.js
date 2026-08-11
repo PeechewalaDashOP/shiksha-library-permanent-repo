@@ -6,7 +6,7 @@
 const { createClient } = require("@supabase/supabase-js");
 
 // Same allowlist used by admin.html / admin-register.html / admin-direct-register.js.
-const ADMIN_EMAILS = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com"];
+const ADMIN_EMAILS = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com", "shikshalibrary1@gmail.com"];
 
 exports.handler = async (event) => {
   const headers = {

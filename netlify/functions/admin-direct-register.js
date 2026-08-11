@@ -4,7 +4,7 @@ const { createClient } = require("@supabase/supabase-js");
 // ── ADMIN EMAILS ──────────────────────────────────────────────────
 // Same mechanism as admin.html — single source of truth for admin access.
 // Phase 2: move to DB or env variable when supporting multiple library owners.
-const ADMIN_EMAILS = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com"];
+const ADMIN_EMAILS = ["namangalav230@gmail.com", "mahaveerrathore112@gmail.com", "shikshalibrary1@gmail.com"];
 
 // ── PLAN PREFIX FROM PLAN ID (fixed plans) ────────────────────────
 // Identical to existing cash-registration.js — do not modify.
