@@ -450,6 +450,17 @@ function handlePhotoSelected(inputEl) {
     return;
   }
 
+  const ext = (file.name || "").toLowerCase();
+  if (ext.endsWith(".heic") || ext.endsWith(".heif") || file.type === "image/heic" || file.type === "image/heif") {
+    showFormError("This photo format (HEIC) isn't supported. Please retake the photo using the camera, or change your phone's camera settings to save photos as JPEG.");
+    resetPhotoUI();
+    return;
+  }
+
+  processPhotoFile(file, 1);
+}
+
+function processPhotoFile(file, attempt) {
   const reader = new FileReader();
   reader.onload = (ev) => {
     const img = new Image();
@@ -474,13 +485,26 @@ function handlePhotoSelected(inputEl) {
       if (prompt) prompt.style.display = "none";
       document.getElementById("sl-form-error").textContent = "";
     };
-    img.onerror = () => { showFormError("Could not read that image. Please try another."); resetPhotoUI(); };
+    img.onerror = () => {
+      if (attempt < 2) {
+        setTimeout(() => processPhotoFile(file, attempt + 1), 400);
+      } else {
+        showFormError("Could not process that photo. Please try taking the photo again, or use a slightly smaller/simpler photo.");
+        resetPhotoUI();
+      }
+    };
     img.src = ev.target.result;
   };
-  reader.onerror = () => { showFormError("Could not read that file. Please try again."); resetPhotoUI(); };
+  reader.onerror = () => {
+    if (attempt < 2) {
+      setTimeout(() => processPhotoFile(file, attempt + 1), 400);
+    } else {
+      showFormError("Could not read that file. Please try again.");
+      resetPhotoUI();
+    }
+  };
   reader.readAsDataURL(file);
 }
-
 function resetAadharFrontUI() {
   const input = document.getElementById("sl-aadhar-front-input");
   const preview = document.getElementById("sl-aadhar-front-preview");
